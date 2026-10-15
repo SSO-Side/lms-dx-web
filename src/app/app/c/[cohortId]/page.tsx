@@ -1,27 +1,56 @@
+import Link from "next/link";
 import { Role, EnrollmentStatus } from "@prisma/client";
-import { requireCohortAccess } from "@/lib/access/requireCohortAccess";
+import { FilePlus2 } from "lucide-react";
+import { tryCohortAccess } from "@/lib/access/pageAccess";
 import { db } from "@/lib/db";
 import { formatDate } from "@/lib/utils";
+import { todayYmd } from "@/lib/dates";
 import { Widget } from "@/components/Widget";
 import { StatusBadge } from "@/components/StatusBadge";
+import { buttonVariants } from "@/components/ui/button";
+import { AccessDenied } from "@/components/shell/AccessDenied";
 import { PageHeader } from "@/components/shell/PageHeader";
+import { AttendanceSummaryWidget } from "@/components/widgets/AttendanceSummaryWidget";
+import { TicketListWidget } from "@/components/widgets/TicketListWidget";
+import { TodayLessonWidget, AssignmentDueWidget, SubmissionFeedWidget } from "@/components/widgets/LessonWidgets";
+import {
+  RiskStudentsWidget,
+  RiskSummaryWidget,
+  TodayAttendanceWidget,
+  CohortStatusWidget,
+} from "@/components/widgets/AttendanceStaffWidgets";
+import { getAttendanceBase, computePeriodAttendance } from "@/server/attendance-queries";
+import { listTickets } from "@/server/ticket-queries";
+import { getTodayLessons, getDueAssignments, getRecentSubmissions } from "@/server/curriculum-queries";
+import { getCohortSummary, trainingProgress } from "@/server/dashboard-queries";
 
 interface CohortHomePageProps {
   params: Promise<{ cohortId: string }>;
 }
 
-// 위젯 구성은 screens.md §1. 데이터는 M3(출결)·M2(티켓)·M1(과제) 모듈에서 연결한다.
-const SOON = (module: string) => ({ message: `${module} 모듈이 연결되면 여기에 표시됩니다.` });
+const LOAD_ERROR = "불러오지 못했습니다. 잠시 후 새로고침해 주세요.";
+
+/** 위젯 단위 오류 격리: 하나가 실패해도 화면 전체를 막지 않는다 (ia.md §4). */
+async function safe<T>(p: Promise<T>): Promise<{ ok: true; data: T } | { ok: false }> {
+  try {
+    return { ok: true, data: await p };
+  } catch (e) {
+    console.error("[widget]", e);
+    return { ok: false };
+  }
+}
 
 export default async function CohortHomePage({ params }: CohortHomePageProps) {
   const { cohortId } = await params;
-  const ctx = await requireCohortAccess(cohortId, "material:read");
+  const ctx = await tryCohortAccess(cohortId, "material:read");
+  if (!ctx) return <AccessDenied />;
+  const id = ctx.cohortId;
 
   const cohort = await db.cohort.findUnique({
-    where: { id: ctx.cohortId },
+    where: { id },
     select: { name: true, trainingType: true, room: true, startDate: true, endDate: true, status: true },
   });
-  if (!cohort) return null;
+  if (!cohort) return <AccessDenied />;
 
   const period = `${formatDate(cohort.startDate)} ~ ${formatDate(cohort.endDate)}`;
   const header = (
@@ -31,64 +60,127 @@ export default async function CohortHomePage({ params }: CohortHomePageProps) {
       actions={<StatusBadge domain="cohortStatus" value={cohort.status} />}
     />
   );
+  const baseRes = await safe(getAttendanceBase(id));
+  const base = baseRes.ok ? baseRes.data : null;
+  const today = base?.today ?? todayYmd();
+  const now = new Date();
 
   if (ctx.role === Role.STUDENT) {
+    const [mine, tickets, due, lessons] = await Promise.all([
+      safe(base?.currentPeriod ? computePeriodAttendance(id, base, base.currentPeriod, ctx.user.id) : Promise.resolve([])),
+      safe(listTickets(id, { requesterId: ctx.user.id, statuses: ["PENDING", "IN_REVIEW", "NEEDS_REVISION"], take: 3 })),
+      safe(getDueAssignments(id, ctx.user.id, now)),
+      safe(getTodayLessons(id, today)),
+    ]);
     return (
       <>
         {header}
         <div className="grid gap-4 md:grid-cols-2">
-          <Widget title="내 출결" subtitle="참고용" density="comfortable" empty={SOON("출결")} />
-          <Widget title="내 티켓" density="comfortable" empty={SOON("티켓·결석계")} />
-          <Widget title="마감 임박 과제" density="comfortable" empty={SOON("커리큘럼·과제")} />
-          <Widget title="오늘 수업" density="comfortable" empty={SOON("커리큘럼·과제")} />
+          <AttendanceSummaryWidget
+            result={mine.ok ? mine.data[0]?.result ?? null : null}
+            periodLabel={base?.currentPeriod?.label}
+            lastClosedDate={base?.lastClosedDate ?? null}
+            excusedLimit={base?.config.excused.limit ?? null}
+            href={`/app/c/${id}/attendance`}
+            error={!mine.ok || !base ? LOAD_ERROR : undefined}
+          />
+          {tickets.ok ? (
+            <TicketListWidget
+              cohortId={id}
+              title="내 티켓"
+              tickets={tickets.data}
+              emptyMessage="진행 중인 티켓이 없습니다."
+              moreHref={`/app/c/${id}/tickets`}
+              action={
+                <Link href={`/app/c/${id}/tickets?new=absence`} className={buttonVariants({ size: "sm" })}>
+                  <FilePlus2 aria-hidden /> 결석계 접수
+                </Link>
+              }
+            />
+          ) : (
+            <Widget title="내 티켓" error={LOAD_ERROR} />
+          )}
+          {due.ok ? <AssignmentDueWidget cohortId={id} items={due.data} now={now} /> : <Widget title="마감 임박 과제" error={LOAD_ERROR} />}
+          {lessons.ok ? <TodayLessonWidget cohortId={id} lessons={lessons.data} /> : <Widget title="오늘 수업" error={LOAD_ERROR} />}
         </div>
       </>
     );
   }
 
+  const pendingTickets = safe(listTickets(id, { statuses: ["PENDING", "IN_REVIEW"], take: 5 }));
+
   if (ctx.role === Role.INSTRUCTOR) {
+    const [rows, tickets, subs, lessons] = await Promise.all([
+      safe(base?.currentPeriod ? computePeriodAttendance(id, base, base.currentPeriod) : Promise.resolve([])),
+      pendingTickets,
+      safe(getRecentSubmissions(id)),
+      safe(getTodayLessons(id, today)),
+    ]);
     return (
       <>
         {header}
         <div className="grid gap-4 lg:grid-cols-2">
-          <Widget title="위험·주의 학생" empty={SOON("출결")} />
-          <Widget title="처리 대기 티켓" empty={SOON("티켓·결석계")} />
-          <Widget title="최근 과제 제출" empty={SOON("커리큘럼·과제")} />
-          <Widget title="오늘 수업·자료" empty={SOON("커리큘럼·과제")} />
+          {rows.ok && base ? (
+            <RiskStudentsWidget cohortId={id} rows={rows.data} periodLabel={base.currentPeriod?.label} />
+          ) : (
+            <Widget title="위험·주의 학생" error={LOAD_ERROR} />
+          )}
+          {tickets.ok ? (
+            <TicketListWidget cohortId={id} title="처리 대기 티켓" tickets={tickets.data} showRequester emptyMessage="처리할 티켓이 없습니다." moreHref={`/app/c/${id}/tickets`} />
+          ) : (
+            <Widget title="처리 대기 티켓" error={LOAD_ERROR} />
+          )}
+          {subs.ok ? <SubmissionFeedWidget cohortId={id} items={subs.data} /> : <Widget title="최근 과제 제출" error={LOAD_ERROR} />}
+          {lessons.ok ? <TodayLessonWidget cohortId={id} title="오늘 수업·자료" lessons={lessons.data} /> : <Widget title="오늘 수업·자료" error={LOAD_ERROR} />}
         </div>
       </>
     );
   }
 
   // MANAGER, ACADEMY_ADMIN, ADMIN
-  const enrollmentCounts = await db.enrollment.groupBy({
-    by: ["status"],
-    where: { cohortId: ctx.cohortId },
-    _count: { _all: true },
-  });
-  const countOf = (s: EnrollmentStatus) => enrollmentCounts.find((e) => e.status === s)?._count._all ?? 0;
-  const enrolled = countOf(EnrollmentStatus.ENROLLED);
-  const dropped = countOf(EnrollmentStatus.DROPPED);
+  const [summary, tickets, counts] = await Promise.all([
+    safe(base ? getCohortSummary(id, base) : Promise.reject(new Error("no base"))),
+    pendingTickets,
+    safe(db.enrollment.groupBy({ by: ["status"], where: { cohortId: id }, _count: { _all: true } })),
+  ]);
+  const countOf = (s: EnrollmentStatus) => (counts.ok ? counts.data.find((e) => e.status === s)?._count._all ?? 0 : 0);
 
   return (
     <>
       {header}
       <div className="grid gap-4 lg:grid-cols-2">
-        <Widget title="오늘 출결 입력" empty={SOON("출결")} />
-        <Widget title="위험·주의 요약" empty={SOON("출결")} />
-        <Widget title="처리 대기 티켓" empty={SOON("티켓·결석계")} />
-        <Widget title="반 현황" subtitle={period}>
-          <dl className="grid grid-cols-2 gap-3">
-            <div className="rounded-lg bg-neutral-50 p-3">
-              <dt className="text-xs text-neutral-500">재적</dt>
-              <dd className="mt-1 text-2xl font-semibold text-neutral-900 tabular-nums">{enrolled}명</dd>
-            </div>
-            <div className="rounded-lg bg-neutral-50 p-3">
-              <dt className="text-xs text-neutral-500">이탈</dt>
-              <dd className="mt-1 text-2xl font-semibold text-neutral-900 tabular-nums">{dropped}명</dd>
-            </div>
-          </dl>
-        </Widget>
+        {summary.ok && base ? (
+          <TodayAttendanceWidget
+            cohortId={id}
+            today={today}
+            isTraining={summary.data.todayIsTraining}
+            closed={summary.data.todayClosed}
+            unclosedCount={summary.data.unclosedCount}
+            lastClosedDate={base.lastClosedDate}
+          />
+        ) : (
+          <Widget title="오늘 출결 입력" error={LOAD_ERROR} />
+        )}
+        {summary.ok ? (
+          <RiskSummaryWidget cohortId={id} danger={summary.data.danger} warn={summary.data.warn} periodLabel={base?.currentPeriod?.label} />
+        ) : (
+          <Widget title="위험·주의 요약" error={LOAD_ERROR} />
+        )}
+        {tickets.ok ? (
+          <TicketListWidget cohortId={id} title="처리 대기 티켓" tickets={tickets.data} showRequester emptyMessage="처리할 티켓이 없습니다." moreHref={`/app/c/${id}/tickets`} />
+        ) : (
+          <Widget title="처리 대기 티켓" error={LOAD_ERROR} />
+        )}
+        {counts.ok && base ? (
+          <CohortStatusWidget
+            enrolled={countOf(EnrollmentStatus.ENROLLED)}
+            dropped={countOf(EnrollmentStatus.DROPPED)}
+            progress={trainingProgress(base)}
+            period={period}
+          />
+        ) : (
+          <Widget title="반 현황" error={LOAD_ERROR} />
+        )}
       </div>
     </>
   );

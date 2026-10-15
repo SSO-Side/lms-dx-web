@@ -7,6 +7,10 @@ import { db } from "@/lib/db";
 import { requireAuthUser } from "@/lib/auth/session";
 import { requireCohortAccess } from "@/lib/access/requireCohortAccess";
 import { parseRosterCSV, type ParsedAccountRow } from "@/lib/csv";
+import { z } from "zod";
+import { isYmd, ymdToDate } from "@/lib/dates";
+import { DEFAULT_ATTENDANCE_CONFIG } from "@/lib/attendance/compute";
+import { DEFAULT_WEEKLY_SCHEDULE, generateMonthlyPeriods, generateTrainingDays } from "@/lib/attendance/schedule";
 
 function generateTempPassword(length = 10): string {
   const chars = "abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789!@#$";
@@ -18,59 +22,104 @@ function generateTempPassword(length = 10): string {
   return result;
 }
 
+const cohortInputSchema = z.object({
+  name: z.string().trim().min(1, "과정명은 필수입니다.").max(200),
+  trainingType: z.string().trim().max(100).optional(),
+  room: z.string().trim().max(100).optional(),
+  startDate: z.string().refine(isYmd, "시작일 형식이 올바르지 않습니다."),
+  endDate: z.string().refine(isYmd, "종료일 형식이 올바르지 않습니다."),
+  weeklySchedule: z.record(z.string().regex(/^[0-6]$/), z.tuple([z.string(), z.string()])),
+  holidays: z.array(z.string().refine(isYmd)),
+  staff: z.array(z.object({ userId: z.number().int(), isPrimary: z.boolean() })),
+});
+
 export async function createCohortAction(prevState: unknown, formData: FormData) {
   const user = await requireAuthUser();
   if (user.role !== Role.ACADEMY_ADMIN && user.role !== Role.ADMIN) {
     return { error: "반 개설 권한이 없습니다." };
   }
 
-  const name = formData.get("name") as string;
-  const trainingType = (formData.get("trainingType") as string) || "K-Digital Training";
-  const room = formData.get("room") as string;
-  const startDateStr = formData.get("startDate") as string;
-  const endDateStr = formData.get("endDate") as string;
-
-  if (!name || !startDateStr || !endDateStr) {
-    return { error: "과정명, 시작일, 종료일은 필수입니다." };
+  const parseJson = (key: string) => {
+    try {
+      return JSON.parse((formData.get(key) as string) || "null");
+    } catch {
+      return null;
+    }
+  };
+  const parsed = cohortInputSchema.safeParse({
+    name: formData.get("name"),
+    trainingType: formData.get("trainingType") || undefined,
+    room: formData.get("room") || undefined,
+    startDate: formData.get("startDate"),
+    endDate: formData.get("endDate"),
+    weeklySchedule: parseJson("weeklySchedule") ?? DEFAULT_WEEKLY_SCHEDULE,
+    holidays: parseJson("holidays") ?? [],
+    staff: parseJson("staff") ?? [],
+  });
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "입력값을 확인해 주세요." };
   }
-
-  const startDate = new Date(`${startDateStr}T00:00:00Z`);
-  const endDate = new Date(`${endDateStr}T00:00:00Z`);
-
-  if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
-    return { error: "올바른 날짜 형식이 아닙니다." };
+  const input = parsed.data;
+  if (input.endDate < input.startDate) {
+    return { error: "종료일은 시작일 이후여야 합니다." };
+  }
+  if (Object.keys(input.weeklySchedule).length === 0) {
+    return { error: "수업 요일을 하나 이상 선택해 주세요." };
   }
 
   const academyId = user.academyId ?? 1;
 
-  // 기본 주중 훈련시간 (월~목 09:00~17:40, 금 09:00~16:40)
-  const defaultWeeklySchedule = {
-    "1": ["09:00", "17:40"],
-    "2": ["09:00", "17:40"],
-    "3": ["09:00", "17:40"],
-    "4": ["09:00", "17:40"],
-    "5": ["09:00", "16:40"],
-  };
+  // 담당자는 같은 학원의 매니저·강사만 배정한다.
+  const staffUsers = input.staff.length
+    ? await db.user.findMany({
+        where: {
+          id: { in: input.staff.map((s) => s.userId) },
+          academyId,
+          role: { in: [Role.MANAGER, Role.INSTRUCTOR] },
+          status: ActiveStatus.ACTIVE,
+        },
+        select: { id: true, role: true },
+      })
+    : [];
+  if (staffUsers.length !== input.staff.length) {
+    return { error: "배정할 수 없는 담당자가 포함되어 있습니다." };
+  }
 
-  const cohort = await db.cohort.create({
-    data: {
-      academyId,
-      name,
-      trainingType,
-      room: room || null,
-      startDate,
-      endDate,
-      weeklySchedule: defaultWeeklySchedule,
-      holidays: [],
-      attendanceConfig: {
-        requiredPercent: 80,
-        lateEarlyToAbsent: 3,
-        combineLateEarly: true,
-        outCounts: "IGNORE",
-        excused: { limit: null, scope: "PERIOD", overflow: "COUNT_AS_ABSENT" },
-        grade: { normalMinRemaining: 2, warnMinRemaining: 1 },
+  const holidays = [...new Set(input.holidays)].filter((d) => d >= input.startDate && d <= input.endDate).sort();
+  const trainingDays = generateTrainingDays(input.startDate, input.endDate, input.weeklySchedule, holidays);
+  const periods = generateMonthlyPeriods(input.startDate, input.endDate);
+
+  const cohort = await db.$transaction(async (tx) => {
+    const created = await tx.cohort.create({
+      data: {
+        academyId,
+        name: input.name,
+        trainingType: input.trainingType || "K-Digital Training",
+        room: input.room || null,
+        startDate: ymdToDate(input.startDate),
+        endDate: ymdToDate(input.endDate),
+        weeklySchedule: input.weeklySchedule,
+        holidays,
+        attendanceConfig: DEFAULT_ATTENDANCE_CONFIG,
       },
-    },
+    });
+    await tx.trainingDay.createMany({
+      data: trainingDays.map((d) => ({ cohortId: created.id, date: ymdToDate(d.date), isTraining: d.isTraining, note: d.note ?? null })),
+    });
+    await tx.attendancePeriod.createMany({
+      data: periods.map((p) => ({ cohortId: created.id, label: p.label, startDate: ymdToDate(p.startDate), endDate: ymdToDate(p.endDate) })),
+    });
+    if (staffUsers.length) {
+      await tx.cohortStaff.createMany({
+        data: staffUsers.map((u) => ({
+          cohortId: created.id,
+          userId: u.id,
+          staffRole: u.role === Role.MANAGER ? StaffRole.MANAGER : StaffRole.INSTRUCTOR,
+          isPrimary: u.role === Role.MANAGER && !!input.staff.find((s) => s.userId === u.id)?.isPrimary,
+        })),
+      });
+    }
+    return created;
   });
 
   return { success: true, cohortId: cohort.id };

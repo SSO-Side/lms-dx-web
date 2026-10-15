@@ -9,6 +9,7 @@ import { StatusBadge } from "@/components/StatusBadge";
 import { buttonVariants } from "@/components/ui/button";
 import { AccessDenied } from "@/components/shell/AccessDenied";
 import { PageHeader } from "@/components/shell/PageHeader";
+import { getCohortSummary } from "@/server/dashboard-queries";
 
 interface CohortRow {
   id: number;
@@ -18,6 +19,7 @@ interface CohortRow {
   status: string;
   studentCount: number;
   managerName: string;
+  risk: number | null;
 }
 
 export default async function AcademyPage() {
@@ -43,7 +45,15 @@ export default async function AcademyPage() {
     status: c.status,
     studentCount: c.enrollments.length,
     managerName: c.staff.map((s) => s.user.name).join(", ") || "미배정",
+    risk: null,
   }));
+  // 반별 위험 인원 (현재 단위기간 기준, 실패한 반은 "—")
+  await Promise.all(
+    rows.map(async (r) => {
+      const s = await getCohortSummary(r.id).catch(() => null);
+      r.risk = s ? s.danger : null;
+    })
+  );
 
   const activeCount = cohorts.filter((c) => c.status === CohortStatus.ACTIVE).length;
   const studentTotal = rows.reduce((sum, r) => sum + r.studentCount, 0);
@@ -60,6 +70,11 @@ export default async function AcademyPage() {
     { header: "강의실", cell: (r) => r.room ?? "미정" },
     { header: "훈련 기간", cell: (r) => <span className="tabular-nums">{r.period}</span> },
     { header: "재적", align: "right", cell: (r) => <span className="tabular-nums">{r.studentCount}명</span> },
+    {
+      header: "위험",
+      align: "right",
+      cell: (r) => (r.risk === null ? "—" : <span className={r.risk > 0 ? "font-semibold text-status-danger-fg tabular-nums" : "tabular-nums"}>{r.risk}명</span>),
+    },
     { header: "담당 매니저", accessorKey: "managerName" },
     { header: "상태", cell: (r) => <StatusBadge domain="cohortStatus" value={r.status} /> },
     {

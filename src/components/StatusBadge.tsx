@@ -1,7 +1,7 @@
 import { CheckCircle2, AlertTriangle, AlertCircle, Clock, MinusCircle, type LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-export type StatusDomain = "attendance" | "ticket" | "submission" | "userStatus" | "cohortStatus";
+export type StatusDomain = "attendance" | "attendanceEvent" | "enrollment" | "ticket" | "submission" | "userStatus" | "cohortStatus";
 type Tone = "success" | "warning" | "danger" | "info" | "neutral";
 
 // theme.md §1 도메인 상태 → 색 매핑
@@ -11,6 +11,13 @@ const STATUS_MAP: Record<StatusDomain, Record<string, { tone: Tone; label: strin
     WARN: { tone: "warning", label: "주의" },
     DANGER: { tone: "danger", label: "위험" },
     NA: { tone: "neutral", label: "계산 불가" },
+  },
+  attendanceEvent: {
+    ABSENT: { tone: "danger", label: "결석" },
+    LATE: { tone: "warning", label: "지각" },
+    EARLY_LEAVE: { tone: "warning", label: "조퇴" },
+    OUT: { tone: "neutral", label: "외출" },
+    EXCUSED: { tone: "info", label: "공결" },
   },
   ticket: {
     PENDING: { tone: "neutral", label: "대기" },
@@ -24,6 +31,12 @@ const STATUS_MAP: Record<StatusDomain, Record<string, { tone: Tone; label: strin
     SUBMITTED: { tone: "success", label: "제출" },
     LATE: { tone: "warning", label: "지각 제출" },
     RETURNED: { tone: "info", label: "반환" },
+    NONE: { tone: "neutral", label: "미제출" },
+  },
+  enrollment: {
+    ENROLLED: { tone: "success", label: "재적" },
+    DROPPED: { tone: "danger", label: "이탈" },
+    COMPLETED: { tone: "info", label: "수료" },
   },
   userStatus: {
     ACTIVE: { tone: "success", label: "활성" },
@@ -54,11 +67,13 @@ const TONE_ICONS: Record<Tone, LucideIcon> = {
 export interface StatusBadgeProps {
   domain: StatusDomain;
   value: string;
+  /** 기본 라벨 대신 표시할 문구 (예: "공결·병결") */
+  label?: string;
   className?: string;
 }
 
 /** 상태 표시는 항상 이것으로: 색 + 아이콘 + 라벨. */
-export function StatusBadge({ domain, value, className }: StatusBadgeProps) {
+export function StatusBadge({ domain, value, label, className }: StatusBadgeProps) {
   const config = STATUS_MAP[domain]?.[value] ?? { tone: "neutral" as const, label: value };
   const Icon = TONE_ICONS[config.tone];
   const tone = TONE_CLASSES[config.tone];
@@ -72,7 +87,7 @@ export function StatusBadge({ domain, value, className }: StatusBadgeProps) {
       )}
     >
       <Icon className={cn("size-3.5 shrink-0", tone.icon)} aria-hidden />
-      {config.label}
+      {label ?? config.label}
     </span>
   );
 }

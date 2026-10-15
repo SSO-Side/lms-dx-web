@@ -18,20 +18,20 @@ export function academyNav(): NavItem[] {
   return ACADEMY_NAV;
 }
 
-/** ia.md §2 역할별 메뉴. 아직 없는 모듈 화면은 available: false. */
+/** ia.md §2 역할별 메뉴. */
 export function cohortNav(role: Role, cohortId: number): NavItem[] {
   const c = `/app/c/${cohortId}`;
   const home: NavItem = { label: "홈", href: c, icon: "home", exact: true };
-  const attendance: NavItem = { label: "출결", href: `${c}/attendance`, icon: "attendance", available: false };
-  const tickets: NavItem = { label: "티켓", href: `${c}/tickets`, icon: "tickets", available: false };
-  const members: NavItem = { label: "명부", href: `${c}/members`, icon: "members", available: false };
-  const settings: NavItem = { label: "반 설정", href: `${c}/settings`, icon: "settings", available: false };
+  const attendance: NavItem = { label: "출결", href: `${c}/attendance`, icon: "attendance" };
+  const tickets: NavItem = { label: "티켓", href: `${c}/tickets`, icon: "tickets" };
+  const members: NavItem = { label: "명부", href: `${c}/members`, icon: "members" };
+  const settings: NavItem = { label: "반 설정", href: `${c}/settings`, icon: "settings" };
 
   switch (role) {
     case Role.STUDENT:
-      return [home, attendance, tickets, { label: "자료·과제", href: `${c}/curriculum`, icon: "curriculum", available: false }];
+      return [home, attendance, tickets, { label: "자료·과제", href: `${c}/curriculum`, icon: "curriculum" }];
     case Role.INSTRUCTOR:
-      return [home, { label: "수업·자료", href: `${c}/curriculum`, icon: "curriculum", available: false }, attendance, tickets];
+      return [home, { label: "수업·자료", href: `${c}/curriculum`, icon: "curriculum" }, attendance, tickets];
     case Role.MANAGER:
       return [home, attendance, tickets, members, settings];
     case Role.ACADEMY_ADMIN:

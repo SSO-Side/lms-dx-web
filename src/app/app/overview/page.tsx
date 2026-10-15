@@ -9,6 +9,7 @@ import { Widget } from "@/components/Widget";
 import { AppShell } from "@/components/shell/AppShell";
 import { PageHeader } from "@/components/shell/PageHeader";
 import { ROLE_LABELS } from "@/components/shell/nav";
+import { getCohortSummary, type CohortSummary } from "@/server/dashboard-queries";
 
 const cohortSelect = { id: true, name: true, room: true, startDate: true, endDate: true, status: true } as const;
 
@@ -28,6 +29,13 @@ export default async function OverviewPage() {
             select: { cohort: { select: cohortSelect } },
           })
         ).map((s) => s.cohort);
+
+  // 반별 요약 (위젯 단위 오류 격리)
+  const summaries = new Map<number, CohortSummary | null>(
+    await Promise.all(
+      cohorts.map(async (c) => [c.id, await getCohortSummary(c.id).catch(() => null)] as const)
+    )
+  );
 
   return (
     <AppShell
@@ -54,6 +62,7 @@ export default async function OverviewPage() {
                   <p className="mt-1 text-sm text-neutral-500 tabular-nums">
                     {c.room ?? "강의실 미정"} · {formatDate(c.startDate)} ~ {formatDate(c.endDate)}
                   </p>
+                  <CohortSummaryLine summary={summaries.get(c.id) ?? null} />
                 </div>
                 <ChevronRight className="size-5 shrink-0 text-neutral-400 group-hover:text-primary-500" aria-hidden />
               </Link>
@@ -62,5 +71,23 @@ export default async function OverviewPage() {
         </ul>
       )}
     </AppShell>
+  );
+}
+
+function CohortSummaryLine({ summary }: { summary: CohortSummary | null }) {
+  if (!summary) return <p className="mt-2 text-xs text-status-danger-fg">요약을 불러오지 못했습니다.</p>;
+  return (
+    <div className="mt-2 flex flex-wrap items-center gap-1.5 text-xs">
+      <StatusBadge domain="attendance" value="DANGER" label={`위험 ${summary.danger}`} />
+      <StatusBadge domain="attendance" value="WARN" label={`주의 ${summary.warn}`} />
+      <StatusBadge domain="ticket" value="PENDING" label={`대기 티켓 ${summary.pendingTickets}`} />
+      {summary.todayIsTraining && (
+        <StatusBadge
+          domain="attendance"
+          value={summary.todayClosed ? "NORMAL" : "WARN"}
+          label={summary.todayClosed ? "오늘 출결 확인" : "오늘 출결 미확인"}
+        />
+      )}
+    </div>
   );
 }
