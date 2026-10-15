@@ -72,6 +72,7 @@ export default async function AccountsPage({ params }: AccountsPageProps) {
   return (
     <>
       <PageHeader
+        back={{ href: "/app/academy", label: "학원 홈" }}
         title="계정 관리"
         description={`${cohort.name} · 명부 CSV로 계정을 발급하고 비밀번호와 계정 상태를 관리합니다.`}
         actions={

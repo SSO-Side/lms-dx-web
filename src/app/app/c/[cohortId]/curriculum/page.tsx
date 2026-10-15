@@ -27,6 +27,7 @@ export default async function CurriculumPage({ params, searchParams }: Props) {
   return (
     <>
       <PageHeader
+        back={{ href: `/app/c/${ctx.cohortId}`, label: "반 홈" }}
         title={isStudent ? "자료·과제" : "수업·자료"}
         description={isStudent ? "주차를 고르면 수업별 자료와 과제가 보입니다." : "주차 → 수업 순서로 자료와 과제를 등록합니다."}
       />

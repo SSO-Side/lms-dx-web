@@ -23,7 +23,7 @@ export default async function NewCohortPage() {
 
   return (
     <div className="mx-auto max-w-2xl">
-      <PageHeader title="반 개설" description="과정 정보, 일정, 단위기간, 담당자를 등록합니다. 개설 후 명부 등록 화면으로 이동합니다." />
+      <PageHeader back={{ href: "/app/academy", label: "학원 홈" }} title="반 개설" description="과정 정보, 일정, 단위기간, 담당자를 등록합니다. 개설 후 명부 등록 화면으로 이동합니다." />
       <div className="rounded-xl border border-neutral-200 bg-card p-5">
         <NewCohortForm staffOptions={staffOptions} />
       </div>

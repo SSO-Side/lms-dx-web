@@ -26,7 +26,7 @@ export default async function SettingsPage({ params }: { params: Promise<{ cohor
 
   return (
     <>
-      <PageHeader title="반 설정" description={canEdit ? "변경 사항은 저장 전에 확인합니다." : "읽기 전용입니다. 변경은 학원 관리자에게 요청해 주세요."} />
+      <PageHeader back={{ href: `/app/c/${ctx.cohortId}`, label: "반 홈" }} title="반 설정" description={canEdit ? "변경 사항은 저장 전에 확인합니다." : "읽기 전용입니다. 변경은 학원 관리자에게 요청해 주세요."} />
       <SettingsForms
         cohortId={ctx.cohortId}
         canEdit={canEdit}

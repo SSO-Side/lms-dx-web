@@ -49,6 +49,7 @@ export default async function AttendancePage({ params, searchParams }: Props) {
   const header = (
     <PageHeader
       title="출결"
+      back={{ href: `/app/c/${ctx.cohortId}`, label: "반 홈" }}
       description={canWrite ? "예외만 입력하면 잔여 허용 결석일이 자동으로 계산됩니다." : "담당 반의 출결 현황 (열람 전용)"}
     />
   );
@@ -143,7 +144,7 @@ async function StudentView({ cohortId, studentId, periodParam }: { cohortId: num
 
   return (
     <div className="mx-auto max-w-2xl">
-      <PageHeader title="내 출결" description="입력·수정은 담당 매니저가 합니다. 이상이 있으면 티켓으로 문의해 주세요." />
+      <PageHeader back={{ href: `/app/c/${cohortId}`, label: "반 홈" }} title="내 출결" description="입력·수정은 담당 매니저가 합니다. 이상이 있으면 티켓으로 문의해 주세요." />
       <AttendanceBanner lastClosedDate={base.lastClosedDate} unclosedDates={[]} />
       <div className="space-y-4">
         <AttendanceSummaryWidget

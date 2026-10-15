@@ -53,8 +53,17 @@ export default async function CohortHomePage({ params }: CohortHomePageProps) {
   if (!cohort) return <AccessDenied />;
 
   const period = `${formatDate(cohort.startDate)} ~ ${formatDate(cohort.endDate)}`;
+  // 상위 화면: 학원 관리자는 학원 홈, 여러 반을 맡은 교사는 담당 반 목록
+  const back =
+    ctx.role === Role.ACADEMY_ADMIN || ctx.role === Role.ADMIN
+      ? { href: "/app/academy", label: "학원 홈" }
+      : (ctx.role === Role.INSTRUCTOR || ctx.role === Role.MANAGER) &&
+          (await db.cohortStaff.count({ where: { userId: ctx.user.id } })) > 1
+        ? { href: "/app/overview", label: "담당 반" }
+        : undefined;
   const header = (
     <PageHeader
+      back={back}
       title={cohort.name}
       description={[cohort.trainingType, cohort.room ?? "강의실 미정", period].filter(Boolean).join(" · ")}
       actions={<StatusBadge domain="cohortStatus" value={cohort.status} />}

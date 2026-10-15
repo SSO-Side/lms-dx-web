@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ShieldAlert } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";
+import { HistoryBackButton } from "./HistoryBackButton";
 
 /** 권한 없는 접근은 존재 여부를 알리지 않고 같은 화면을 보여 준다 (ia.md §4). */
 export function AccessDenied() {
@@ -13,6 +14,7 @@ export function AccessDenied() {
         <Link href="/app" className={buttonVariants({ variant: "outline", className: "mt-5 w-full" })}>
           내 홈으로 이동
         </Link>
+        <HistoryBackButton className="mt-2 w-full" />
       </div>
     </main>
   );
