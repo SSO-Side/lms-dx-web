@@ -38,6 +38,8 @@ interface MemberItem {
   status: string;
 }
 
+type SkippedRow = { line: number; name: string; loginId: string; reason: string };
+
 type Pending = { kind: "reset" | "deactivate"; member: MemberItem } | null;
 
 function downloadCsv(content: string, filename: string) {
@@ -59,7 +61,7 @@ export function AccountsManager({ cohortId, initialMembers }: { cohortId: number
   const [step, setStep] = useState<"upload" | "preview" | "issued">("upload");
   const [csvText, setCsvText] = useState("");
   const [rows, setRows] = useState<ParsedAccountRow[]>([]);
-  const [issued, setIssued] = useState<{ csv: string; count: number } | null>(null);
+  const [issued, setIssued] = useState<{ csv: string; count: number; skipped: SkippedRow[] } | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState<Pending>(null);
@@ -104,7 +106,7 @@ export function AccountsManager({ cohortId, initialMembers }: { cohortId: number
       return;
     }
     if ("csvContent" in res && res.csvContent) {
-      setIssued({ csv: res.csvContent, count: res.issuedCount ?? 0 });
+      setIssued({ csv: res.csvContent, count: res.issuedCount ?? 0, skipped: res.skipped ?? [] });
       setStep("issued");
     }
   };
@@ -124,6 +126,8 @@ export function AccountsManager({ cohortId, initialMembers }: { cohortId: number
       const res = await run(() => deactivateAccountAction(cohortId, member.id));
       if (res && "success" in res && res.success) {
         setMembers((prev) => prev.map((m) => (m.id === member.id ? { ...m, status: "INACTIVE" } : m)));
+      } else if (res && "error" in res && res.error) {
+        setError(res.error);
       }
     }
   };
@@ -157,6 +161,13 @@ export function AccountsManager({ cohortId, initialMembers }: { cohortId: number
           </span>
         ),
     },
+  ];
+
+  const skippedColumns: Column<SkippedRow>[] = [
+    { header: "행", align: "right", cell: (r) => <span className="tabular-nums text-neutral-500">{r.line}</span> },
+    { header: "이름", accessorKey: "name" },
+    { header: "로그인 ID", accessorKey: "loginId" },
+    { header: "사유", accessorKey: "reason" },
   ];
 
   const memberColumns: Column<MemberItem>[] = [
@@ -241,6 +252,14 @@ export function AccountsManager({ cohortId, initialMembers }: { cohortId: number
         {step === "issued" && issued && (
           <div className="space-y-3">
             <Alert tone="success">{issued.count}명의 계정을 발급했습니다.</Alert>
+            {issued.skipped.length > 0 && (
+              <div className="space-y-2">
+                <Alert tone="warning">
+                  {issued.skipped.length}행은 발급하지 않고 건너뛰었습니다. 로그인 ID를 바꿔 다시 올려 주세요.
+                </Alert>
+                <DataTable columns={skippedColumns} data={issued.skipped} getRowKey={(r) => r.line} />
+              </div>
+            )}
             <Alert tone="warning">
               임시 비밀번호는 서버에 남지 않아 이 화면을 벗어나면 다시 볼 수 없습니다. 지금 내려받아 전달해 주세요.
             </Alert>

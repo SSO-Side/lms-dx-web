@@ -6,6 +6,7 @@ import { Role, StaffRole, EnrollmentStatus, ActiveStatus } from "@prisma/client"
 import { db } from "@/lib/db";
 import { requireAuthUser } from "@/lib/auth/session";
 import { requireCohortAccess } from "@/lib/access/requireCohortAccess";
+import { canManageCohortAccountPure } from "@/lib/access/checker";
 import { parseRosterCSV, type ParsedAccountRow } from "@/lib/csv";
 import { z } from "zod";
 import { isYmd, ymdToDate } from "@/lib/dates";
@@ -148,6 +149,7 @@ export async function bulkIssueAccountsAction(cohortId: number, validRows: Parse
     role: Role;
     tempPassword: string;
   }> = [];
+  const skipped: Array<{ line: number; name: string; loginId: string; reason: string }> = [];
 
   for (const row of validRows) {
     const existing = await db.user.findUnique({
@@ -155,7 +157,9 @@ export async function bulkIssueAccountsAction(cohortId: number, validRows: Parse
     });
 
     if (existing) {
-      continue; // 이미 존재하는 ID는 건너뜀
+      // 기존 계정은 덮어쓰지 않고 건너뛴 행으로 알린다.
+      skipped.push({ line: row.line, name: row.name, loginId: row.loginId, reason: "이미 사용 중인 로그인 ID" });
+      continue;
     }
 
     const tempPassword = generateTempPassword(10);
@@ -218,25 +222,55 @@ export async function bulkIssueAccountsAction(cohortId: number, validRows: Parse
     success: true,
     issuedCount: results.length,
     csvContent,
+    skipped,
   };
 }
 
+/**
+ * 계정 관리 대상이 ctx.cohortId의 재적 수강생·배정 교직원이고 같은 학원 소속인지 확인한다.
+ * 다른 반·다른 학원 사용자나 관리자 계정이면 null을 돌려준다.
+ */
+async function findManageableTarget(cohortId: number, targetUserId: number) {
+  const [cohort, target] = await Promise.all([
+    db.cohort.findUnique({ where: { id: cohortId }, select: { id: true, academyId: true } }),
+    db.user.findUnique({
+      where: { id: targetUserId },
+      select: {
+        id: true,
+        role: true,
+        academyId: true,
+        enrollments: { where: { cohortId, status: EnrollmentStatus.ENROLLED }, select: { id: true } },
+        staffAssignments: { where: { cohortId }, select: { id: true } },
+      },
+    }),
+  ]);
+  if (!cohort || !target) return null;
+
+  const allowed = canManageCohortAccountPure(
+    {
+      role: target.role,
+      academyId: target.academyId,
+      enrolledInCohort: target.enrollments.length > 0,
+      staffInCohort: target.staffAssignments.length > 0,
+    },
+    cohort
+  );
+  return allowed ? target : null;
+}
+
 export async function resetPasswordAction(cohortId: number, targetUserId: number) {
-  await requireCohortAccess(cohortId, "account:manage");
+  const ctx = await requireCohortAccess(cohortId, "account:manage");
 
-  const targetUser = await db.user.findUnique({
-    where: { id: targetUserId },
-  });
-
+  const targetUser = await findManageableTarget(ctx.cohortId, targetUserId);
   if (!targetUser) {
-    return { error: "대상 사용자를 찾을 수 없습니다." };
+    return { error: "이 반에서 관리할 수 있는 계정이 아닙니다." };
   }
 
   const tempPassword = generateTempPassword(10);
   const passwordHash = await bcrypt.hash(tempPassword, 10);
 
   await db.user.update({
-    where: { id: targetUserId },
+    where: { id: targetUser.id },
     data: {
       passwordHash,
       mustChangePassword: true,
@@ -247,16 +281,21 @@ export async function resetPasswordAction(cohortId: number, targetUserId: number
 }
 
 export async function deactivateAccountAction(cohortId: number, targetUserId: number) {
-  await requireCohortAccess(cohortId, "account:manage");
+  const ctx = await requireCohortAccess(cohortId, "account:manage");
+
+  const targetUser = await findManageableTarget(ctx.cohortId, targetUserId);
+  if (!targetUser) {
+    return { error: "이 반에서 관리할 수 있는 계정이 아닙니다." };
+  }
 
   await db.user.update({
-    where: { id: targetUserId },
+    where: { id: targetUser.id },
     data: { status: ActiveStatus.INACTIVE },
   });
 
   // 해당 계정의 활성 세션 모두 삭제
   await db.authSession.deleteMany({
-    where: { userId: targetUserId },
+    where: { userId: targetUser.id },
   });
 
   return { success: true };
