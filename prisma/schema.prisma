@@ -1,0 +1,475 @@
+// lms_kdt — 스키마 v0 (M0 반·계정, M1 자료·과제, M2 티켓·결석계, M3 출결)
+// M5(팀 프로젝트), M7(서류), M8(면접), M10(마켓)은 해당 모듈 작업 때 추가한다.
+// 규칙: 반에 속한 모델은 모두 cohortId를 가지며, 모든 조회에서 cohortId로 제한한다.
+// 날짜만 의미 있는 값은 @db.Date (조회·비교는 YYYY-MM-DD 문자열로 다룬다).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider          = "mysql"
+  url               = env("DATABASE_URL")
+  shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
+}
+
+// ───────── enums ─────────
+
+enum Role {
+  STUDENT
+  INSTRUCTOR
+  MANAGER
+  ACADEMY_ADMIN
+  ADMIN
+}
+
+enum ActiveStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum CohortStatus {
+  ACTIVE
+  ENDED
+}
+
+enum StaffRole {
+  MANAGER
+  INSTRUCTOR
+}
+
+enum EnrollmentStatus {
+  ENROLLED
+  DROPPED
+  COMPLETED
+}
+
+enum MaterialType {
+  DOC
+  FILE
+  REPO
+  GUIDE
+}
+
+enum SubmissionStatus {
+  SUBMITTED
+  LATE
+  RETURNED
+}
+
+enum TicketType {
+  ABSENCE
+  COUNSELING
+  DOCUMENT
+  OTHER
+}
+
+enum TicketStatus {
+  PENDING
+  IN_REVIEW
+  APPROVED
+  REJECTED
+  NEEDS_REVISION
+  CANCELED
+}
+
+enum AbsenceReason {
+  SICK
+  LEAVE
+  OTHER
+}
+
+enum AttendanceType {
+  ABSENT
+  LATE
+  EARLY_LEAVE
+  OUT
+}
+
+enum ExcusedType {
+  SICK
+  LEAVE
+}
+
+enum LogAction {
+  CREATE
+  UPDATE
+  DELETE
+}
+
+// ───────── M0: 학원·반·계정 ─────────
+
+model Academy {
+  id        Int          @id @default(autoincrement())
+  name      String       @db.VarChar(100)
+  status    ActiveStatus @default(ACTIVE)
+  createdAt DateTime     @default(now())
+
+  users   User[]
+  cohorts Cohort[]
+}
+
+model User {
+  id                 Int          @id @default(autoincrement())
+  academyId          Int? // ADMIN(개발팀)은 null
+  role               Role
+  loginId            String       @unique @db.VarChar(50) // 로그인 폼에 학원 선택이 없으므로 전체 유일
+  name               String       @db.VarChar(50)
+  email              String?      @db.VarChar(120)
+  phone              String?      @db.VarChar(30)
+  passwordHash       String       @db.VarChar(100)
+  mustChangePassword Boolean      @default(true)
+  status             ActiveStatus @default(ACTIVE)
+  lastLoginAt        DateTime?
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
+
+  academy Academy? @relation(fields: [academyId], references: [id])
+
+  authSessions       AuthSession[]
+  staffAssignments   CohortStaff[]
+  enrollments        Enrollment[]
+  lessonsTaught      Lesson[]
+  materialsCreated   Material[]
+  submissions        Submission[]
+  ticketsRequested   Ticket[]          @relation("TicketRequester")
+  ticketsAssigned    Ticket[]          @relation("TicketAssignee")
+  ticketEvents       TicketEvent[]
+  attendanceAsStudent AttendanceEvent[] @relation("AttendanceStudent")
+  attendanceRecorded AttendanceEvent[] @relation("AttendanceRecorder")
+  openingsAsStudent  AttendanceOpening[] @relation("OpeningStudent")
+  openingsRecorded   AttendanceOpening[] @relation("OpeningRecorder")
+  dayCloses          AttendanceDayClose[]
+  attendanceLogs     AttendanceEventLog[]
+
+  @@index([academyId, role])
+}
+
+// 서버 저장형 세션. id는 쿠키 토큰의 sha256 해시.
+model AuthSession {
+  id        String   @id @db.VarChar(64)
+  userId    Int
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+model Cohort {
+  id               Int          @id @default(autoincrement())
+  academyId        Int
+  name             String       @db.VarChar(200) // 과정명
+  trainingType     String?      @db.VarChar(100) // 훈련직종 (예: K-Digital Training)
+  room             String?      @db.VarChar(100) // 강의실
+  startDate        DateTime     @db.Date
+  endDate          DateTime     @db.Date
+  weeklySchedule   Json? // { "1": ["09:00","17:40"], ..., "5": ["09:00","16:40"] } (1=월 ~ 5=금)
+  holidays         Json? // ["2026-10-09", ...] 휴강일
+  status           CohortStatus @default(ACTIVE)
+  attendanceConfig Json? // docs/spec/attendance.md 의 Config 형식
+  featureFlags     Json?
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+
+  academy Academy @relation(fields: [academyId], references: [id])
+
+  staff             CohortStaff[]
+  enrollments       Enrollment[]
+  weeks             Week[]
+  lessons           Lesson[]
+  materials         Material[]
+  assignments       Assignment[]
+  submissions       Submission[]
+  tickets           Ticket[]
+  trainingDays      TrainingDay[]
+  attendancePeriods AttendancePeriod[]
+  attendanceEvents  AttendanceEvent[]
+  attendanceOpenings AttendanceOpening[]
+  attendanceDayCloses AttendanceDayClose[]
+
+  @@index([academyId, status])
+}
+
+model CohortStaff {
+  id        Int       @id @default(autoincrement())
+  cohortId  Int
+  userId    Int
+  staffRole StaffRole
+  title     String?   @db.VarChar(50) // 표시용 직함 (담임교사, 수업교사 …)
+  isPrimary Boolean   @default(false) // 반의 주담당 매니저
+
+  cohort Cohort @relation(fields: [cohortId], references: [id])
+  user   User   @relation(fields: [userId], references: [id])
+
+  @@unique([cohortId, userId])
+  @@index([userId])
+}
+
+model Enrollment {
+  id         Int              @id @default(autoincrement())
+  cohortId   Int
+  studentId  Int
+  status     EnrollmentStatus @default(ENROLLED)
+  enrolledAt DateTime         @default(now())
+
+  cohort  Cohort @relation(fields: [cohortId], references: [id])
+  student User   @relation(fields: [studentId], references: [id])
+
+  @@unique([cohortId, studentId])
+  @@index([studentId])
+}
+
+// ───────── M1: 커리큘럼·과제 ─────────
+
+model Week {
+  id       Int    @id @default(autoincrement())
+  cohortId Int
+  weekNo   Int
+  title    String @db.VarChar(200)
+
+  cohort  Cohort   @relation(fields: [cohortId], references: [id])
+  lessons Lesson[]
+
+  @@unique([cohortId, weekNo])
+}
+
+model Lesson {
+  id           Int      @id @default(autoincrement())
+  cohortId     Int
+  weekId       Int
+  date         DateTime @db.Date
+  title        String   @db.VarChar(200)
+  instructorId Int?
+
+  cohort     Cohort       @relation(fields: [cohortId], references: [id])
+  week       Week         @relation(fields: [weekId], references: [id])
+  instructor User?        @relation(fields: [instructorId], references: [id])
+  materials  Material[]
+  assignments Assignment[]
+
+  @@index([cohortId, date])
+}
+
+model Material {
+  id          Int          @id @default(autoincrement())
+  cohortId    Int
+  lessonId    Int
+  type        MaterialType
+  title       String       @db.VarChar(200)
+  url         String       @db.VarChar(1000)
+  tags        Json? // string[]
+  createdById Int
+  createdAt   DateTime     @default(now())
+
+  cohort    Cohort @relation(fields: [cohortId], references: [id])
+  lesson    Lesson @relation(fields: [lessonId], references: [id])
+  createdBy User   @relation(fields: [createdById], references: [id])
+
+  @@index([cohortId, lessonId])
+}
+
+model Assignment {
+  id          Int      @id @default(autoincrement())
+  cohortId    Int
+  lessonId    Int
+  title       String   @db.VarChar(200)
+  description String?  @db.Text
+  dueAt       DateTime
+
+  cohort      Cohort       @relation(fields: [cohortId], references: [id])
+  lesson      Lesson       @relation(fields: [lessonId], references: [id])
+  submissions Submission[]
+
+  @@index([cohortId, dueAt])
+}
+
+model Submission {
+  id           Int              @id @default(autoincrement())
+  cohortId     Int
+  assignmentId Int
+  studentId    Int
+  fileUrl      String?          @db.VarChar(1000)
+  linkUrl      String?          @db.VarChar(1000)
+  submittedAt  DateTime         @default(now())
+  status       SubmissionStatus @default(SUBMITTED)
+
+  cohort     Cohort     @relation(fields: [cohortId], references: [id])
+  assignment Assignment @relation(fields: [assignmentId], references: [id])
+  student    User       @relation(fields: [studentId], references: [id])
+
+  @@unique([assignmentId, studentId])
+  @@index([cohortId])
+}
+
+// ───────── M2: 티켓·결석계 ─────────
+
+model Ticket {
+  id          Int          @id @default(autoincrement())
+  cohortId    Int
+  type        TicketType
+  status      TicketStatus @default(PENDING)
+  requesterId Int
+  assigneeId  Int?
+  title       String       @db.VarChar(200)
+  body        String?      @db.Text
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  cohort    Cohort  @relation(fields: [cohortId], references: [id])
+  requester User    @relation("TicketRequester", fields: [requesterId], references: [id])
+  assignee  User?   @relation("TicketAssignee", fields: [assigneeId], references: [id])
+
+  attachments TicketAttachment[]
+  events      TicketEvent[]
+  absence     AbsenceDetail?
+
+  @@index([cohortId, status])
+  @@index([requesterId])
+  @@index([assigneeId])
+}
+
+model TicketAttachment {
+  id           Int      @id @default(autoincrement())
+  ticketId     Int
+  storagePath  String   @db.VarChar(500) // STORAGE_DIR 기준 상대 경로. 직접 URL 노출 금지
+  originalName String   @db.VarChar(255)
+  mimeType     String   @db.VarChar(100)
+  size         Int
+  createdAt    DateTime @default(now())
+
+  ticket Ticket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+
+  @@index([ticketId])
+}
+
+model TicketEvent {
+  id         Int           @id @default(autoincrement())
+  ticketId   Int
+  actorId    Int
+  fromStatus TicketStatus?
+  toStatus   TicketStatus
+  comment    String?       @db.Text
+  createdAt  DateTime      @default(now())
+
+  ticket Ticket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  actor  User   @relation(fields: [actorId], references: [id])
+
+  @@index([ticketId])
+}
+
+model AbsenceDetail {
+  id                       Int           @id @default(autoincrement())
+  ticketId                 Int           @unique
+  absentDate               DateTime      @db.Date
+  reasonType               AbsenceReason
+  linkedAttendanceEventId  Int?          @unique
+
+  ticket Ticket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+}
+
+// ───────── M3: 출결 (명부 카운팅) ─────────
+
+model TrainingDay {
+  id         Int      @id @default(autoincrement())
+  cohortId   Int
+  date       DateTime @db.Date
+  isTraining Boolean  @default(true)
+  note       String?  @db.VarChar(200)
+
+  cohort Cohort @relation(fields: [cohortId], references: [id])
+
+  @@unique([cohortId, date])
+}
+
+model AttendancePeriod {
+  id        Int      @id @default(autoincrement())
+  cohortId  Int
+  label     String   @db.VarChar(50)
+  startDate DateTime @db.Date
+  endDate   DateTime @db.Date
+
+  cohort   Cohort              @relation(fields: [cohortId], references: [id])
+  openings AttendanceOpening[]
+
+  @@index([cohortId, startDate])
+}
+
+// 일자별 예외 이벤트. 누계는 저장하지 않고 이 이벤트에서 집계한다.
+model AttendanceEvent {
+  id           Int            @id @default(autoincrement())
+  cohortId     Int
+  studentId    Int
+  date         DateTime       @db.Date
+  type         AttendanceType
+  excused      Boolean        @default(false)
+  excusedType  ExcusedType?
+  ticketId     Int?
+  note         String?        @db.VarChar(300)
+  recordedById Int
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+
+  cohort     Cohort @relation(fields: [cohortId], references: [id])
+  student    User   @relation("AttendanceStudent", fields: [studentId], references: [id])
+  recordedBy User   @relation("AttendanceRecorder", fields: [recordedById], references: [id])
+
+  @@unique([cohortId, studentId, date, type])
+  @@index([cohortId, date])
+}
+
+// 진행 중인 반의 초기 이관값 (시범 시작 시 1회)
+model AttendanceOpening {
+  id           Int      @id @default(autoincrement())
+  cohortId     Int
+  periodId     Int
+  studentId    Int
+  absent       Int      @default(0) // 공결 제외 결석
+  late         Int      @default(0)
+  earlyLeave   Int      @default(0)
+  out          Int      @default(0)
+  excusedUsed  Int      @default(0) // 병결·휴가 사용 횟수
+  asOfDate     DateTime @db.Date
+  recordedById Int
+  createdAt    DateTime @default(now())
+
+  cohort     Cohort           @relation(fields: [cohortId], references: [id])
+  period     AttendancePeriod @relation(fields: [periodId], references: [id])
+  student    User             @relation("OpeningStudent", fields: [studentId], references: [id])
+  recordedBy User             @relation("OpeningRecorder", fields: [recordedById], references: [id])
+
+  @@unique([periodId, studentId])
+  @@index([cohortId])
+}
+
+// 하루 출결 입력을 마쳤다는 확인. 최종 반영일 = 확인된 마지막 날짜.
+model AttendanceDayClose {
+  id       Int      @id @default(autoincrement())
+  cohortId Int
+  date     DateTime @db.Date
+  closedById Int
+  closedAt DateTime @default(now())
+
+  cohort   Cohort @relation(fields: [cohortId], references: [id])
+  closedBy User   @relation(fields: [closedById], references: [id])
+
+  @@unique([cohortId, date])
+}
+
+// 변경 이력. 이벤트가 삭제되어도 남도록 eventId에 FK를 두지 않는다.
+model AttendanceEventLog {
+  id        Int       @id @default(autoincrement())
+  cohortId  Int
+  eventId   Int
+  action    LogAction
+  actorId   Int
+  before    Json?
+  after     Json?
+  createdAt DateTime  @default(now())
+
+  actor User @relation(fields: [actorId], references: [id])
+
+  @@index([cohortId, eventId])
+}
