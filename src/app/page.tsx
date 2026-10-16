@@ -9,6 +9,7 @@ export default function Home() {
         <p className="text-sm font-medium text-primary-600">KDT 학원 반 단위 LMS</p>
         <h1 className="mt-2 text-3xl font-semibold text-neutral-900">lms_kdt</h1>
         <p className="mt-3 text-base text-neutral-600">출결·병결 신청·자료·과제를 반 단위로 한곳에서 관리합니다.</p>
+        <p className="mt-1 text-sm text-neutral-500">마켓플레이스에서는 로그인 없이 수강생 팀 프로젝트를 둘러보고 문의할 수 있습니다.</p>
 
         <div className="mt-8 flex flex-col gap-3">
           <Link href="/login" className={buttonVariants({ size: "lg", className: "w-full" })}>
@@ -18,7 +19,6 @@ export default function Home() {
           <Link href="/market" className={buttonVariants({ variant: "outline", size: "lg", className: "w-full" })}>
             <Store aria-hidden />
             마켓플레이스
-            <span className="rounded-full bg-neutral-100 px-2 py-0.5 text-xs font-medium text-neutral-600">준비 중</span>
           </Link>
         </div>
       </div>

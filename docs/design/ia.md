@@ -8,7 +8,7 @@
 | :-- | :-- | :-- | :-- |
 | 공개 | `/` | 랜딩: [로그인(LMS)] / [마켓플레이스] 두 갈래 | 누구나 |
 | | `/login` | 로그인. 이미 로그인 상태면 `/app`으로 | 누구나 |
-| | `/market`, `/market/[slug]` | 마켓플레이스(공개). 구현 전에는 "준비 중" 페이지 | 누구나 |
+| | `/market`, `/market/[slug]` | 마켓플레이스(공개, 로그인 없음): 공개 승인된 쇼케이스 목록·상세·기업 문의 폼. 기본 noindex(`MARKET_INDEXABLE=true`로 해제), 슬러그는 난수 12자 | 누구나 |
 | 인증 | `/app` | 역할별 홈으로 리다이렉트 | 로그인 |
 | | `/app/password` | 비밀번호 변경. `mustChangePassword`이면 모든 `/app/*`이 여기로 강제 이동 | 로그인 |
 | | `/app/overview` | 여러 반을 맡은 교사·매니저의 반 목록·요약 | INSTRUCTOR, MANAGER |
@@ -17,7 +17,8 @@
 | | `/app/c/[cohortId]/tickets` | 티켓·병결 신청 (역할별: 처리 목록 / 내 티켓과 신청) | 반 접근 가능자 |
 | | `/app/c/[cohortId]/curriculum` | 주차·수업·자료·과제 | 반 접근 가능자 |
 | | `/app/c/[cohortId]/resume` | 서류 (역할별: 내 서류·작성 가이드 / 첨삭 목록 / 상태 현황) | 반 접근 가능자 |
-| | `/app/c/[cohortId]/team` | 팀 프로젝트 (역할별: 내 팀·단계 가이드 / 팀 목록·팀 만들기·상세 드로어 / 현황 열람) | 반 접근 가능자 |
+| | `/app/c/[cohortId]/team` | 팀 프로젝트 (역할별: 내 팀·단계 가이드 / 팀 목록·팀 만들기·상세 드로어 / 현황 열람). `?tab=showcase`: 쇼케이스(수강생 초안·신청·동의 / 강사 검토 / 매니저·슈퍼어드민 공개 승인) | 반 접근 가능자 |
+| | `/app/c/[cohortId]/leads` | 기업 문의(마켓플레이스 리드) 표·드로어 | MANAGER, ACADEMY_ADMIN |
 | | `/app/c/[cohortId]/members` | 명부(수강생·교사 목록, 상태). 계정 발급은 슈퍼어드민 화면에서 | MANAGER, ACADEMY_ADMIN |
 | | `/app/c/[cohortId]/settings` | 반 설정: 훈련 일정·휴강일, 단위기간, 출결 규칙(`attendanceConfig`), 기능 사용 여부 | MANAGER(읽기), ACADEMY_ADMIN(수정) |
 | 학원 | `/app/academy` | 학원 홈: 반 목록과 반별 요약 | ACADEMY_ADMIN |
@@ -25,6 +26,7 @@
 | | `/app/academy/cohorts/[cohortId]/accounts` | 명부 CSV 업로드·계정 일괄 발급·임시 비밀번호 1회 다운로드·재설정·비활성화 | ACADEMY_ADMIN |
 | 시스템 | `/admin` | 학원 생성, 슈퍼어드민 발급 (개발팀 전용) | ADMIN |
 
+쇼케이스 이미지: LMS 안에서는 `/api/c/[cohortId]/showcases/[id]/images/[cover|architecture]`(같은 반 팀원·강사·매니저만), 공개 영역은 `/api/market/[slug]/images/[kind]`(PUBLISHED만).
 서류 PDF는 `/api/c/[cohortId]/documents/versions/[versionId]`(본인·같은 반 강사만, 권한 확인 후 서버 전달)로만 연다.
 후속 모듈이 추가하는 경로(지금은 만들지 않음): `/app/c/[cohortId]/chat`(챗봇), `/resume` 안의 면접 질문(M8).
 
@@ -35,7 +37,7 @@
 | :-- | :-- | :-- |
 | STUDENT | 홈 · 출결 · 티켓 · 자료·과제 · 내 서류 · 팀 프로젝트 | 모바일 하단 탭바(앞 4개 + `더보기` 드로어, 내 서류·팀 프로젝트는 더보기 안) / 데스크톱 좌측 사이드바(전부 노출) |
 | INSTRUCTOR | 홈 · 수업·자료 · 출결 · 티켓 · 서류·프로젝트 | 좌측 사이드바. `서류·프로젝트`는 `/resume`·`/team` 두 화면을 묶고 화면 상단 전환(서류 / 팀 프로젝트)으로 오간다 |
-| MANAGER | 홈 · 출결 · 티켓 · 명부 · 서류·프로젝트 | 좌측 사이드바. 반 설정은 명부 화면 우상단 `[반 설정]` 버튼, 서류·프로젝트는 강사와 같은 상단 전환 |
+| MANAGER | 홈 · 출결 · 티켓 · 명부 · 서류·프로젝트 | 좌측 사이드바. 반 설정은 명부 화면 우상단 `[반 설정]` 버튼, 서류·프로젝트는 강사와 같은 상단 전환에 `기업 문의`가 하나 더 붙는다(lead:read 역할만, 메뉴 5개 유지) |
 | ACADEMY_ADMIN | 학원 홈 · (반 선택 시) MANAGER 메뉴 + 계정 관리 | 좌측 사이드바 |
 
 - 수강생 하단 탭은 최대 4개 + `더보기`. 5번째 이후 메뉴는 더보기(하단 드로어)에 둔다.

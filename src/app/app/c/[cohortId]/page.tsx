@@ -27,6 +27,9 @@ import { listMyDocuments, getCohortDocumentStatus } from "@/server/document-quer
 import { MyDocumentsWidget, DocumentStatusWidget } from "@/components/widgets/DocumentWidgets";
 import { getMyTeam, getTeamStatusSummary } from "@/server/team-queries";
 import { MyTeamProjectWidget, TeamStatusWidget } from "@/components/widgets/TeamWidgets";
+import { NewLeadsWidget } from "@/components/widgets/LeadWidget";
+import { listLeads, countNewLeads } from "@/server/lead-queries";
+import { hasActionPermission } from "@/lib/access/permissions";
 
 interface CohortHomePageProps {
   params: Promise<{ cohortId: string }>;
@@ -169,12 +172,14 @@ export default async function CohortHomePage({ params }: CohortHomePageProps) {
   }
 
   // MANAGER, ACADEMY_ADMIN, ADMIN
-  const [summary, tickets, counts, docs, teams] = await Promise.all([
+  const canReadLeads = hasActionPermission(ctx.role, "lead:read");
+  const [summary, tickets, counts, docs, teams, leads] = await Promise.all([
     safe(base ? getCohortSummary(id, base) : Promise.reject(new Error("no base"))),
     pendingTickets,
     safe(db.enrollment.groupBy({ by: ["status"], where: { cohortId: id }, _count: { _all: true } })),
     docStatus,
     teamStatus,
+    safe(canReadLeads ? Promise.all([listLeads(id, { take: 3, now }), countNewLeads(id, now)]) : Promise.resolve(null)),
   ]);
   const countOf = (s: EnrollmentStatus) => (counts.ok ? counts.data.find((e) => e.status === s)?._count._all ?? 0 : 0);
 
@@ -216,6 +221,12 @@ export default async function CohortHomePage({ params }: CohortHomePageProps) {
         )}
         {docWidget(docs, false)}
         {teamWidget(teams)}
+        {canReadLeads &&
+          (leads.ok && leads.data ? (
+            <NewLeadsWidget cohortId={id} leads={leads.data[0]} newCount={leads.data[1]} />
+          ) : (
+            <Widget title="신규 문의" error={LOAD_ERROR} />
+          ))}
       </div>
     </>
   );

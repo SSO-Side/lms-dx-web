@@ -1,10 +1,14 @@
 /**
  * 가상 데이터 시드. 실제 수강생·교사 정보는 넣지 않는다.
  * 실행: ALLOW_SEED=true SEED_PASSWORD=... npx prisma db seed
- * 개발 DB에서만 실행한다. 이미 시드된 DB에서는 빠진 모듈 데이터(M7 서류, M5 팀 프로젝트)만 보충한다.
+ * 개발 DB에서만 실행한다. 이미 시드된 DB에서는 빠진 모듈 데이터(M7 서류, M5 팀 프로젝트, M10 쇼케이스)만 보충한다.
  */
 import { PrismaClient, Role, StaffRole, AttendanceType, ExcusedType } from "@prisma/client";
 import bcrypt from "bcryptjs";
+import crypto from "crypto";
+import path from "path";
+import zlib from "zlib";
+import { promises as fs } from "fs";
 
 const prisma = new PrismaClient();
 
@@ -47,6 +51,7 @@ async function main() {
     console.log("이미 시드되어 있어 기본 데이터는 건너뜁니다.");
     await seedDocuments();
     await seedTeams();
+    await seedShowcases();
     return;
   }
   const passwordHash = await bcrypt.hash(pw, 10);
@@ -177,6 +182,7 @@ async function main() {
 
   await seedDocuments();
   await seedTeams();
+  await seedShowcases();
   console.log(`시드 완료: 학원 1, 반 2 (A=${cohortA.id}, B=${cohortB.id}), 수강생 ${studentsA.length + studentsB.length}명, 단위기간 ${periods.length}개`);
 }
 
@@ -391,6 +397,189 @@ async function seedTeams() {
     }
   }
   console.log(`팀 시드: ${specs.length}팀 (반 ${cohortId})`);
+}
+
+// ── M10 쇼케이스·기업 문의 (반 A). 이미지는 저작권 문제가 없도록 여기서 단색 PNG를 직접 만든다.
+const CRC_TABLE = Array.from({ length: 256 }, (_, n) => {
+  let c = n;
+  for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
+  return c >>> 0;
+});
+function crc32(buf: Buffer) {
+  let c = 0xffffffff;
+  for (const b of buf) c = CRC_TABLE[(c ^ b) & 0xff] ^ (c >>> 8);
+  return (c ^ 0xffffffff) >>> 0;
+}
+function pngChunk(type: string, data: Buffer) {
+  const len = Buffer.alloc(4);
+  len.writeUInt32BE(data.length);
+  const td = Buffer.concat([Buffer.from(type, "latin1"), data]);
+  const crc = Buffer.alloc(4);
+  crc.writeUInt32BE(crc32(td));
+  return Buffer.concat([len, td, crc]);
+}
+/** 단색 배경 + 가운데 띠 하나인 PNG (RGB, 640×360) */
+function solidPng([r, g, b]: number[], [br, bg, bb]: number[], w = 640, h = 360) {
+  const ihdr = Buffer.alloc(13);
+  ihdr.writeUInt32BE(w, 0);
+  ihdr.writeUInt32BE(h, 4);
+  ihdr[8] = 8; // bit depth
+  ihdr[9] = 2; // RGB
+  const rows: Buffer[] = [];
+  for (let y = 0; y < h; y++) {
+    const row = Buffer.alloc(1 + w * 3);
+    const band = y > h * 0.42 && y < h * 0.58;
+    for (let x = 0; x < w; x++) {
+      const inBand = band && x > w * 0.15 && x < w * 0.85;
+      row[1 + x * 3] = inBand ? br : r;
+      row[2 + x * 3] = inBand ? bg : g;
+      row[3 + x * 3] = inBand ? bb : b;
+    }
+    rows.push(row);
+  }
+  return Buffer.concat([
+    Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
+    pngChunk("IHDR", ihdr),
+    pngChunk("IDAT", zlib.deflateSync(Buffer.concat(rows))),
+    pngChunk("IEND", Buffer.alloc(0)),
+  ]);
+}
+
+async function seedShowcases() {
+  if ((await prisma.showcase.count()) > 0) {
+    console.log("쇼케이스 데이터가 이미 있어 건너뜁니다.");
+    return;
+  }
+  const inst = await prisma.user.findUnique({ where: { loginId: "inst_a" } });
+  const mgr = await prisma.user.findUnique({ where: { loginId: "mgr_a" } });
+  const teams = await prisma.team.findMany({
+    where: { name: { in: ["1팀 냉장고털이", "2팀 스터디메이트", "3팀 동네책방"] } },
+    include: { members: { select: { userId: true } }, project: true },
+  });
+  if (!inst || !mgr || teams.length === 0) return;
+  const byName = (n: string) => teams.find((t) => t.name === n);
+
+  const root = path.resolve(process.cwd(), process.env.STORAGE_DIR || ".storage");
+  const writeImage = async (name: string, bg: number[], band: number[]) => {
+    const rel = `seed/${name}.png`;
+    await fs.mkdir(path.join(root, "seed"), { recursive: true });
+    await fs.writeFile(path.join(root, rel), solidPng(bg, band));
+    return rel;
+  };
+  const slug = () => Array.from(crypto.randomBytes(12), (b) => "abcdefghjkmnpqrstuvwxyz23456789"[b % 31]).join("");
+  const at = (ymd: string, hm = "10:00") => new Date(`${ymd}T${hm}:00+09:00`);
+  const daysAgo = (n: number) => new Date(Date.now() - n * 24 * 60 * 60 * 1000);
+
+  type Spec = {
+    team: string;
+    status: "PUBLISHED" | "IN_REVIEW";
+    problem: string;
+    metrics: Array<{ label: string; value: string }>;
+    colors: [number[], number[]];
+    consentAll: boolean;
+    reviewed: boolean;
+    publishedOn?: string;
+  };
+  const specs: Spec[] = [
+    {
+      team: "1팀 냉장고털이",
+      status: "PUBLISHED",
+      problem: "자취생은 냉장고에 남은 재료로 무엇을 만들 수 있는지 몰라 재료를 버리게 된다. 재료를 입력하면 바로 만들 수 있는 레시피와 부족한 재료를 알려 준다.",
+      metrics: [
+        { label: "레시피 목록 API 응답", value: "2.1초 → 0.4초" },
+        { label: "추천 API p95", value: "0.6초" },
+        { label: "사용자 테스트 만족도", value: "4.3 / 5 (12명)" },
+      ],
+      colors: [[63, 88, 212], [232, 236, 252]],
+      consentAll: true,
+      reviewed: true,
+      publishedOn: "2026-10-14",
+    },
+    {
+      team: "2팀 스터디메이트",
+      status: "PUBLISHED",
+      problem: "온라인 스터디의 출석과 과제 인증이 메신저에 흩어져 누가 참여했는지 알기 어렵다. 인증과 출석률을 한 화면에 모은다.",
+      metrics: [
+        { label: "인증 업로드 성공률", value: "99.2%" },
+        { label: "주간 출석률 확인 시간", value: "5분 → 10초" },
+      ],
+      colors: [[22, 128, 96], [220, 245, 236]],
+      consentAll: true,
+      reviewed: true,
+      publishedOn: "2026-10-15",
+    },
+    {
+      team: "3팀 동네책방",
+      status: "IN_REVIEW",
+      problem: "동네 독립서점은 재고를 온라인에 공개하지 않아, 찾는 책이 근처에 있어도 알기 어렵다. 지도에서 서점별 재고를 검색한다.",
+      metrics: [{ label: "등록 서점(시범)", value: "5곳" }],
+      colors: [[180, 96, 24], [252, 238, 220]],
+      consentAll: false,
+      reviewed: false,
+    },
+  ];
+
+  for (const sp of specs) {
+    const team = byName(sp.team);
+    if (!team?.project) continue;
+    const cover = await writeImage(`showcase-${team.id}-cover`, sp.colors[0], sp.colors[1]);
+    const arch = await writeImage(`showcase-${team.id}-architecture`, sp.colors[1], sp.colors[0]);
+    const published = sp.publishedOn ? at(sp.publishedOn, "16:00") : null;
+    const sc = await prisma.showcase.create({
+      data: {
+        projectId: team.project.id,
+        cohortId: team.cohortId,
+        slug: slug(),
+        status: sp.status,
+        problem: sp.problem,
+        metrics: sp.metrics,
+        demoUrl: team.project.deployUrl,
+        repoUrl: team.project.repoUrl,
+        coverImagePath: cover,
+        architectureImagePath: arch,
+        instructorReviewedBy: sp.reviewed ? inst.id : null,
+        instructorReviewedAt: sp.reviewed && published ? at(sp.publishedOn!, "11:00") : null,
+        approvedBy: published ? mgr.id : null,
+        approvedAt: published,
+        publishedAt: published,
+      },
+    });
+    // 전원 동의(공개) 또는 팀장만 동의(심사 중)
+    const consenting = sp.consentAll ? team.members : team.members.filter((m) => m.userId === team.leaderId);
+    for (const m of consenting) {
+      await prisma.showcaseConsent.create({ data: { showcaseId: sc.id, userId: m.userId, consentedAt: published ?? daysAgo(1) } });
+    }
+  }
+
+  const first = await prisma.showcase.findFirst({ where: { status: "PUBLISHED" }, orderBy: { publishedAt: "asc" } });
+  const second = await prisma.showcase.findFirst({ where: { status: "PUBLISHED" }, orderBy: { publishedAt: "desc" } });
+  if (first && second) {
+    await prisma.inboundLead.createMany({
+      data: [
+        {
+          showcaseId: first.id,
+          cohortId: first.cohortId,
+          type: "COFFEE_CHAT",
+          company: "가상푸드테크(주)",
+          contactName: "가상 채용담당",
+          contact: "recruit@example.com",
+          message: "레시피 추천 프로젝트의 성능 개선 과정이 인상적입니다. 백엔드 신입 채용 관련해 팀원분과 30분 정도 이야기 나누고 싶습니다.",
+          createdAt: daysAgo(1),
+        },
+        {
+          showcaseId: second.id,
+          cohortId: second.cohortId,
+          type: "POC",
+          company: "가상에듀랩",
+          contactName: "가상 기획팀장",
+          contact: "010-0000-0000",
+          message: "사내 스터디 인증에 써 보고 싶습니다. 2주 정도 PoC가 가능한지 문의드립니다.",
+          createdAt: daysAgo(3),
+        },
+      ],
+    });
+  }
+  console.log(`쇼케이스 시드: ${specs.length}건, 기업 문의 2건`);
 }
 
 main()

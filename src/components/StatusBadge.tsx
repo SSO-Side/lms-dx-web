@@ -1,7 +1,7 @@
 import { CheckCircle2, AlertTriangle, AlertCircle, Clock, MinusCircle, type LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-export type StatusDomain = "attendance" | "attendanceEvent" | "enrollment" | "ticket" | "submission" | "userStatus" | "cohortStatus" | "document" | "teamStage" | "teamPace";
+export type StatusDomain = "attendance" | "attendanceEvent" | "enrollment" | "ticket" | "submission" | "userStatus" | "cohortStatus" | "document" | "teamStage" | "teamPace" | "showcase" | "lead";
 type Tone = "success" | "warning" | "danger" | "info" | "neutral";
 
 // theme.md §1 도메인 상태 → 색 매핑
@@ -62,6 +62,18 @@ const STATUS_MAP: Record<StatusDomain, Record<string, { tone: Tone; label: strin
   teamPace: {
     ON_TRACK: { tone: "success", label: "정상" },
     BEHIND: { tone: "warning", label: "지연" },
+  },
+  showcase: {
+    NONE: { tone: "neutral", label: "미작성" },
+    DRAFT: { tone: "neutral", label: "초안·비공개" },
+    IN_REVIEW: { tone: "info", label: "공개 심사 중" },
+    PUBLISHED: { tone: "success", label: "공개 중" },
+    UNPUBLISHED: { tone: "warning", label: "비공개 전환" },
+  },
+  lead: {
+    COFFEE_CHAT: { tone: "info", label: "채용 커피챗" },
+    POC: { tone: "success", label: "도입·PoC" },
+    NEW: { tone: "warning", label: "신규" },
   },
 };
 

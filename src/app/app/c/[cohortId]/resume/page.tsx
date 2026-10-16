@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Role, type DocumentStatus } from "@prisma/client";
 import { requireAuthUser } from "@/lib/auth/session";
 import { tryCohortAccess } from "@/lib/access/pageAccess";
+import { hasActionPermission } from "@/lib/access/permissions";
 import { db } from "@/lib/db";
 import { cn } from "@/lib/utils";
 import { DOCUMENT_STATUSES, DOCUMENT_STATUS_LABELS } from "@/lib/documents/labels";
@@ -84,7 +85,7 @@ export default async function ResumePage({ params, searchParams }: Props) {
     const total = counts.DRAFT + counts.IN_REVIEW + counts.DONE;
     return (
       <>
-        <SectionSwitch items={careerSections(ctx.cohortId)} current="resume" />
+        <SectionSwitch items={careerSections(ctx.cohortId, hasActionPermission(ctx.role, "lead:read"))} current="resume" />
         <PageHeader
           back={{ href: `/app/c/${ctx.cohortId}`, label: "반 홈" }}
           title="서류 첨삭"
@@ -122,7 +123,7 @@ export default async function ResumePage({ params, searchParams }: Props) {
 
   return (
     <>
-      <SectionSwitch items={careerSections(ctx.cohortId)} current="resume" />
+      <SectionSwitch items={careerSections(ctx.cohortId, hasActionPermission(ctx.role, "lead:read"))} current="resume" />
       <PageHeader
         back={{ href: `/app/c/${ctx.cohortId}`, label: "반 홈" }}
         title="서류 현황"

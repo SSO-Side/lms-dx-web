@@ -11,6 +11,7 @@ import {
   type UserCohortMembership,
 } from "@/lib/access/checker";
 import { hasActionPermission } from "@/lib/access/permissions";
+import { toPublicShowcase, type PublicShowcaseSource } from "@/lib/showcase/public";
 
 describe("반 간 접근 차단 테스트 (permissions.md §3)", () => {
   const cohortA: CohortAccessInfo = { id: 1, academyId: 10 };
@@ -68,6 +69,30 @@ describe("반 간 접근 차단 테스트 (permissions.md §3)", () => {
     mustChangePassword: false,
     academyId: 10,
   };
+
+  /** M10 공개 DTO 입력 (반 A 팀: s01 팀장, s02 팀원) */
+  const showcaseSrc = (o: Partial<PublicShowcaseSource>): PublicShowcaseSource => ({
+    slug: "abcdefghjkmn",
+    status: "PUBLISHED",
+    problem: "문제 정의",
+    metrics: [{ label: "응답", value: "0.4초" }],
+    demoUrl: null,
+    repoUrl: null,
+    hasCover: false,
+    hasArchitecture: false,
+    publishedAt: null,
+    projectTitle: "가상 프로젝트",
+    projectSummary: null,
+    techStack: ["Next.js"],
+    teamName: "1팀",
+    courseName: "가상 과정",
+    members: [
+      { userId: s01.id, name: "가상 수강생01", role: "팀장" },
+      { userId: s02.id, name: "가상 수강생02", role: "프론트엔드" },
+    ],
+    consentedUserIds: [s01.id, s02.id],
+    ...o,
+  });
 
   const testCases = [
     {
@@ -221,6 +246,23 @@ describe("반 간 접근 차단 테스트 (permissions.md §3)", () => {
         canAccessCohortPure(mgrA, cohortA, mgrAMembership) &&
         hasActionPermission(mgrA.role, "team:feedback") &&
         canViewTeamProjectPure({ id: mgrA.id, role: mgrA.role }, cohortA.id, { cohortId: cohortB.id, memberIds: [] }),
+      expected: false,
+    },
+    // M10 공개 영역: 반 권한의 예외이므로 PUBLISHED 조건과 공개 DTO로만 막는다
+    {
+      actorName: "외부 방문자(비로그인)",
+      desc: "공개 심사 중(IN_REVIEW)·비공개 전환(UNPUBLISHED) 쇼케이스 상세 열람",
+      fn: () =>
+        toPublicShowcase(showcaseSrc({ status: "IN_REVIEW" })) !== null || toPublicShowcase(showcaseSrc({ status: "UNPUBLISHED" })) !== null,
+      expected: false,
+    },
+    {
+      actorName: "외부 방문자(비로그인)",
+      desc: "공개 쇼케이스에서 동의하지 않은 팀원(s02)의 이름·내부 ID 노출",
+      fn: () => {
+        const json = JSON.stringify(toPublicShowcase(showcaseSrc({ status: "PUBLISHED", consentedUserIds: [s01.id] })));
+        return json.includes("가상 수강생02") || json.includes("userId") || json.includes(String(s02.id));
+      },
       expected: false,
     },
   ];

@@ -114,6 +114,18 @@ enum TeamStatus {
   CONFIRMED
 }
 
+enum ShowcaseStatus {
+  DRAFT
+  IN_REVIEW
+  PUBLISHED
+  UNPUBLISHED
+}
+
+enum LeadType {
+  COFFEE_CHAT
+  POC
+}
+
 // ───────── M0: 학원·반·계정 ─────────
 
 model Academy {
@@ -164,6 +176,9 @@ model User {
   teamMemberships     TeamMember[]
   projectFeedbacks    ProjectFeedback[]
   projectLogs         ProjectLog[]
+  showcasesReviewed   Showcase[]           @relation("ShowcaseReviewer")
+  showcasesApproved   Showcase[]           @relation("ShowcaseApprover")
+  showcaseConsents    ShowcaseConsent[]
 
   @@index([academyId, role])
 }
@@ -221,6 +236,8 @@ model Cohort {
   projectMilestones   ProjectMilestone[]
   projectFeedbacks    ProjectFeedback[]
   projectLogs         ProjectLog[]
+  showcases           Showcase[]
+  inboundLeads        InboundLead[]
 
   @@index([academyId, status])
 }
@@ -622,6 +639,7 @@ model TeamProject {
   milestones ProjectMilestone[]
   feedbacks  ProjectFeedback[]
   logs       ProjectLog[]
+  showcase   Showcase?
 
   @@index([cohortId])
 }
@@ -679,4 +697,70 @@ model ProjectLog {
 
   @@unique([projectId, userId, weekOf]) // 개인 주간 1건 (다시 쓰면 수정)
   @@index([cohortId])
+}
+
+// ───────── M10: 마켓플레이스(쇼케이스)·기업 문의 ─────────
+// 공개 라우트는 status=PUBLISHED 인 항목의 화이트리스트 필드만 내보낸다 (src/lib/showcase/public.ts).
+
+model Showcase {
+  id                    Int            @id @default(autoincrement())
+  projectId             Int            @unique
+  cohortId              Int
+  slug                  String         @unique @db.VarChar(40) // 추측하기 어려운 난수 슬러그
+  status                ShowcaseStatus @default(DRAFT)
+  problem               String?        @db.Text
+  architectureImagePath String?        @db.VarChar(500) // STORAGE_DIR 기준 상대 경로. 서버 라우트로만 제공
+  coverImagePath        String?        @db.VarChar(500)
+  metrics               Json // [{ label, value }]
+  demoUrl               String?        @db.VarChar(500)
+  repoUrl               String?        @db.VarChar(500)
+  instructorReviewedBy  Int?
+  instructorReviewedAt  DateTime?
+  approvedBy            Int?
+  approvedAt            DateTime?
+  publishedAt           DateTime?
+  reviewNote            String?        @db.Text // 강사·매니저 반려 사유
+  createdAt             DateTime       @default(now())
+  updatedAt             DateTime       @updatedAt
+
+  project  TeamProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  cohort   Cohort      @relation(fields: [cohortId], references: [id])
+  reviewer User?       @relation("ShowcaseReviewer", fields: [instructorReviewedBy], references: [id])
+  approver User?       @relation("ShowcaseApprover", fields: [approvedBy], references: [id])
+
+  consents ShowcaseConsent[]
+  leads    InboundLead[]
+
+  @@index([cohortId, status])
+  @@index([status, publishedAt])
+}
+
+model ShowcaseConsent {
+  id          Int      @id @default(autoincrement())
+  showcaseId  Int
+  userId      Int
+  consentedAt DateTime @default(now())
+
+  showcase Showcase @relation(fields: [showcaseId], references: [id], onDelete: Cascade)
+  user     User     @relation(fields: [userId], references: [id])
+
+  @@unique([showcaseId, userId])
+}
+
+model InboundLead {
+  id          Int      @id @default(autoincrement())
+  showcaseId  Int
+  cohortId    Int // 쇼케이스에서 서버가 채운다 (폼 값 아님)
+  type        LeadType
+  company     String   @db.VarChar(100)
+  contactName String   @db.VarChar(50)
+  contact     String   @db.VarChar(100)
+  message     String   @db.Text
+  createdAt   DateTime @default(now())
+
+  showcase Showcase @relation(fields: [showcaseId], references: [id], onDelete: Cascade)
+  cohort   Cohort   @relation(fields: [cohortId], references: [id])
+
+  @@index([cohortId, createdAt])
+  @@index([showcaseId])
 }

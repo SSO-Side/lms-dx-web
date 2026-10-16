@@ -126,3 +126,11 @@ export function canViewTeamProjectPure(actor: { id: number; role: Role }, ctxCoh
   if (actor.role === Role.STUDENT) return team.memberIds.includes(actor.id);
   return true;
 }
+
+/**
+ * 쇼케이스 이미지(미공개 포함) LMS 내 열람 가능 여부. 반 접근 확인 뒤의 리소스 단위 검사.
+ * 같은 반의 팀원·강사·매니저·슈퍼어드민만. 다른 팀 수강생과 다른 반은 거부. 공개 라우트는 이 함수가 아니라 PUBLISHED 조건만 쓴다.
+ */
+export function canViewShowcaseInternalPure(actor: { id: number; role: Role }, ctxCohortId: number, team: TeamProjectAccessInfo): boolean {
+  return canViewTeamProjectPure(actor, ctxCohortId, team);
+}

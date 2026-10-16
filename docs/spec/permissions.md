@@ -39,12 +39,13 @@
 | `team:feedback` (M5 팀 프로젝트 열람) | 본인 팀 | O | O | O | O |
 | `team:manage` (M5 팀 생성·피드백·단계 승인·마일스톤 체크) | X | O (같은 반) | X | X | O |
 | `team:write` (M5 본인 팀 기획안·체크·URL·주간 로그) | 본인 팀 | X | X | X | O |
-| `showcase:apply·review·approve` (M10 작업 때 구현) | 신청 | 검토 | 승인 | 승인 | O |
+| `showcase:apply·review·approve` (M10) | 신청(본인 팀) | 검토(같은 반) | 승인 | 승인 | O |
 | `lead:read` (M10) | X | X | O | O | O |
 | `account:manage` (계정 발급·반 개설·명부) | X | X | X | O | O |
 
 - 지금 단계(M0~M3, M11)에서 구현하는 액션은 `material`~`attendance`, `chat`, `account`까지다. 나머지 행은 키와 값만 데이터에 두고 기능은 해당 모듈 작업 때 붙인다.
 - M5: 팀 수정은 `canEditTeamProjectPure`(본인 팀·같은 반), 열람은 `canViewTeamProjectPure`(수강생은 본인 팀, 교직원은 반 전체)로 리소스 단위 검사한다. 매니저·슈퍼어드민은 열람만.
+- M10: 쇼케이스 상태 전이는 `src/lib/showcase/transitions.ts` 전이표가 단일 기준. 공개 승인은 팀원 전원 동의 + 강사 검토가 있을 때만. 공개 영역(`/market`, `/api/market/*`, 리드 접수)은 반 권한의 예외로, PUBLISHED + 공개 DTO(`src/lib/showcase/public.ts`)로만 노출한다.
 - M7: 강사 "배정된 수강생" 개념이 없어 "같은 반 수강생"으로 단순화했다. 서류 파일은 본인(`resume:own`)과 같은 반 강사(`resume:review`)만 열람한다.
 - "본인만", "배정된 수강생", "상태만" 같은 조건부 값은 `requireCohortAccess` 뒤에 **리소스 단위 검사**(`ctx.user.id === ticket.requesterId` 등)로 처리한다.
 - 계정 발급 대상 범위: ACADEMY_ADMIN은 **자기 학원** 안의 STUDENT·INSTRUCTOR·MANAGER 계정만 만들 수 있다. ACADEMY_ADMIN 계정과 학원 생성은 ADMIN만.

@@ -15,6 +15,9 @@ import { getMyTeam, getTeamSchedule, getTeamStatusSummary, listTeamCandidates } 
 import { StudentTeam } from "./student-team";
 import { TeamBoard } from "./team-board";
 import { TeamGuide } from "./guide";
+import { StudentShowcase } from "./student-showcase";
+import { ShowcaseBoard } from "./showcase-board";
+import { getTeamShowcase, listCohortShowcases } from "@/server/showcase-queries";
 
 interface Props {
   params: Promise<{ cohortId: string }>;
@@ -88,8 +91,9 @@ export default async function TeamPage({ params, searchParams }: Props) {
     const ctx = await tryCohortAccess(cohortId, "team:write");
     if (!ctx) return <AccessDenied />;
     const base = `/app/c/${ctx.cohortId}/team`;
-    const tab = sp.tab === "guide" ? "guide" : "mine";
+    const tab = sp.tab === "guide" ? "guide" : sp.tab === "showcase" ? "showcase" : "mine";
     const [team, schedule] = await Promise.all([getMyTeam(ctx.cohortId, ctx.user.id, today), getTeamSchedule(ctx.cohortId, today)]);
+    const showcase = tab === "showcase" && team ? await getTeamShowcase(ctx.cohortId, { teamId: team.id }) : null;
     return (
       <div className="mx-auto max-w-3xl">
         <PageHeader
@@ -102,11 +106,14 @@ export default async function TeamPage({ params, searchParams }: Props) {
           items={[
             { key: "mine", label: "내 팀", href: base },
             { key: "guide", label: "단계 가이드", href: `${base}?tab=guide` },
+            { key: "showcase", label: "쇼케이스", href: `${base}?tab=showcase` },
           ]}
         />
         {tab === "guide" ? (
           <TeamGuide targets={schedule.targets} current={team?.project.stage} />
-        ) : team ? (
+        ) : tab === "showcase" && showcase ? (
+          <StudentShowcase cohortId={ctx.cohortId} detail={showcase} userId={ctx.user.id} />
+        ) : team && tab === "mine" ? (
           <StudentTeam cohortId={ctx.cohortId} team={team} userId={ctx.user.id} today={today} />
         ) : (
           <div className="rounded-xl border border-neutral-200 bg-card px-4 py-10 text-center">
@@ -125,6 +132,42 @@ export default async function TeamPage({ params, searchParams }: Props) {
   const ctx = await tryCohortAccess(cohortId, "team:feedback");
   if (!ctx) return <AccessDenied />;
   const canManage = hasActionPermission(ctx.role, "team:manage");
+  const base = `/app/c/${ctx.cohortId}/team`;
+  const staffTab = sp.tab === "showcase" ? "showcase" : "teams";
+  const sectionNav = (
+    <>
+      <SectionSwitch items={careerSections(ctx.cohortId, hasActionPermission(ctx.role, "lead:read"))} current="team" />
+      <PageHeader
+        back={{ href: `/app/c/${ctx.cohortId}`, label: "반 홈" }}
+        title={canManage ? "팀 프로젝트" : "팀 프로젝트 현황"}
+        description={
+          staffTab === "showcase"
+            ? ctx.role === Role.INSTRUCTOR
+              ? "팀이 공개 신청한 쇼케이스를 검토합니다. 검토 완료 뒤 학원 담당자가 공개를 승인합니다."
+              : "강사 검토와 팀원 전원 동의가 끝난 쇼케이스를 마켓플레이스에 공개 승인합니다."
+            : canManage
+              ? "팀을 만들고, 행을 눌러 기획안·마일스톤·주간 로그를 확인하고 피드백과 단계 승인을 합니다."
+              : "팀별 진행 단계와 지연 여부입니다. 행을 누르면 상세를 볼 수 있습니다(열람 전용)."
+        }
+      />
+      <Tabs
+        current={staffTab}
+        items={[
+          { key: "teams", label: "팀", href: base },
+          { key: "showcase", label: "쇼케이스", href: `${base}?tab=showcase` },
+        ]}
+      />
+    </>
+  );
+  if (staffTab === "showcase") {
+    const rows = await listCohortShowcases(ctx.cohortId);
+    return (
+      <>
+        {sectionNav}
+        <ShowcaseBoard cohortId={ctx.cohortId} role={ctx.role} rows={rows} />
+      </>
+    );
+  }
   const [summary, candidates] = await Promise.all([
     getTeamStatusSummary(ctx.cohortId, today),
     canManage ? listTeamCandidates(ctx.cohortId) : Promise.resolve([]),
@@ -132,16 +175,7 @@ export default async function TeamPage({ params, searchParams }: Props) {
 
   return (
     <>
-      <SectionSwitch items={careerSections(ctx.cohortId)} current="team" />
-      <PageHeader
-        back={{ href: `/app/c/${ctx.cohortId}`, label: "반 홈" }}
-        title={canManage ? "팀 프로젝트" : "팀 프로젝트 현황"}
-        description={
-          canManage
-            ? "팀을 만들고, 행을 눌러 기획안·마일스톤·주간 로그를 확인하고 피드백과 단계 승인을 합니다."
-            : "팀별 진행 단계와 지연 여부입니다. 행을 누르면 상세를 볼 수 있습니다(열람 전용)."
-        }
-      />
+      {sectionNav}
       <div className="space-y-4">
         <TeamSummary
           byStage={summary.byStage}
