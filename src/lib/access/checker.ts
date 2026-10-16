@@ -101,3 +101,28 @@ export function canViewDocumentFilePure(
   if (actor.role === Role.STUDENT) return doc.ownerId === actor.id;
   return actor.role === Role.INSTRUCTOR;
 }
+
+export interface TeamProjectAccessInfo {
+  /** 팀이 속한 반 */
+  cohortId: number;
+  memberIds: number[];
+}
+
+/**
+ * 팀 프로젝트 수정(기획안·체크·URL·주간 로그) 가능 여부. requireCohortAccess(team:write) 통과 뒤의 리소스 단위 검사.
+ * 수강생은 본인이 속한 팀만, ADMIN은 전체. 다른 반 팀은 항상 거부.
+ */
+export function canEditTeamProjectPure(actor: { id: number; role: Role }, ctxCohortId: number, team: TeamProjectAccessInfo): boolean {
+  if (team.cohortId !== ctxCohortId) return false;
+  if (actor.role === Role.ADMIN) return true;
+  return actor.role === Role.STUDENT && team.memberIds.includes(actor.id);
+}
+
+/**
+ * 팀 프로젝트 상세 열람 가능 여부. 같은 반 교직원(강사·매니저·슈퍼어드민)은 반 전체, 수강생은 본인 팀만.
+ */
+export function canViewTeamProjectPure(actor: { id: number; role: Role }, ctxCohortId: number, team: TeamProjectAccessInfo): boolean {
+  if (team.cohortId !== ctxCohortId) return false;
+  if (actor.role === Role.STUDENT) return team.memberIds.includes(actor.id);
+  return true;
+}

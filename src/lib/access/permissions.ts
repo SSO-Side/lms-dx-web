@@ -20,6 +20,8 @@ export type Action =
   | "resume:readOthers"
   | "resume:review"
   | "team:feedback"
+  | "team:manage"
+  | "team:write"
   | "showcase:apply"
   | "showcase:review"
   | "showcase:approve"
@@ -159,6 +161,22 @@ export const ROLE_PERMISSIONS: Record<Action, Record<Role, boolean>> = {
     INSTRUCTOR: true,
     MANAGER: true, // 열람
     ACADEMY_ADMIN: true, // 열람
+    ADMIN: true,
+  },
+  // M5: 팀 생성·피드백 작성·단계 승인
+  "team:manage": {
+    STUDENT: false,
+    INSTRUCTOR: true,
+    MANAGER: false,
+    ACADEMY_ADMIN: false,
+    ADMIN: true,
+  },
+  // M5: 본인 팀 기획안·체크·URL·주간 로그 (본인 팀 여부는 리소스 단위 검사)
+  "team:write": {
+    STUDENT: true,
+    INSTRUCTOR: false,
+    MANAGER: false,
+    ACADEMY_ADMIN: false,
     ADMIN: true,
   },
   "showcase:apply": {

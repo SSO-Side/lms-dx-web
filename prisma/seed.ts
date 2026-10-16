@@ -1,7 +1,7 @@
 /**
  * 가상 데이터 시드. 실제 수강생·교사 정보는 넣지 않는다.
  * 실행: ALLOW_SEED=true SEED_PASSWORD=... npx prisma db seed
- * 개발 DB에서만 실행한다. 이미 시드된 DB에서는 빠진 모듈 데이터(M7 서류)만 보충한다.
+ * 개발 DB에서만 실행한다. 이미 시드된 DB에서는 빠진 모듈 데이터(M7 서류, M5 팀 프로젝트)만 보충한다.
  */
 import { PrismaClient, Role, StaffRole, AttendanceType, ExcusedType } from "@prisma/client";
 import bcrypt from "bcryptjs";
@@ -46,6 +46,7 @@ async function main() {
   if (await prisma.academy.findFirst({ where: { name: "가상학원" } })) {
     console.log("이미 시드되어 있어 기본 데이터는 건너뜁니다.");
     await seedDocuments();
+    await seedTeams();
     return;
   }
   const passwordHash = await bcrypt.hash(pw, 10);
@@ -175,6 +176,7 @@ async function main() {
   });
 
   await seedDocuments();
+  await seedTeams();
   console.log(`시드 완료: 학원 1, 반 2 (A=${cohortA.id}, B=${cohortB.id}), 수강생 ${studentsA.length + studentsB.length}명, 단위기간 ${periods.length}개`);
 }
 
@@ -241,6 +243,154 @@ async function seedDocuments() {
     await prisma.document.update({ where: { id: doc.id }, data: { currentVersionId, updatedAt: at(last) } });
   }
   console.log(`서류 시드: ${specs.length}건 (반 ${cohortId})`);
+}
+
+// ── M5 팀 프로젝트 (반 A). 3팀: 목표보다 앞선 팀, 목표대로인 팀, 지연 팀 (가상 프로젝트)
+async function seedTeams() {
+  if ((await prisma.team.count()) > 0) {
+    console.log("팀 데이터가 이미 있어 건너뜁니다.");
+    return;
+  }
+  const inst = await prisma.user.findUnique({ where: { loginId: "inst_a" } });
+  const staff = inst && (await prisma.cohortStaff.findFirst({ where: { userId: inst.id }, select: { cohortId: true } }));
+  if (!inst || !staff) return;
+  const cohortId = staff.cohortId;
+  const at = (ymd: string, hm = "18:00") => new Date(`${ymd}T${hm}:00+09:00`);
+  const user = (loginId: string) => prisma.user.findUniqueOrThrow({ where: { loginId } });
+
+  // 단계별 체크포인트 키 (src/lib/team/guide.ts 와 같은 값)
+  const STAGE_KEYS: Record<number, string[]> = {
+    1: ["s1_problem", "s1_features", "s1_stack", "s1_repo"],
+    2: ["s2_core", "s2_deploy", "s2_readme"],
+    3: ["s3_metric", "s3_trouble"],
+    4: ["s4_resume", "s4_showcase"],
+  };
+
+  type Spec = {
+    name: string;
+    leader: string;
+    members: Array<[string, string]>; // [loginId, 역할]
+    title: string;
+    summary: string;
+    problem: string;
+    features: string[];
+    stack: string[];
+    repoUrl?: string;
+    deployUrl?: string;
+    stage: number;
+    doneKeys: string[]; // 현재 단계에서 완료한 체크포인트 + 완료 체크리스트
+    logs: Array<{ user: string; week: string; progress: string; blocker?: string; resolution?: string; metric?: string }>;
+    feedbacks: Array<{ stage: number; date: string; comment: string }>;
+  };
+  const specs: Spec[] = [
+    {
+      name: "1팀 냉장고털이",
+      leader: "s01",
+      members: [["s01", "팀장·백엔드"], ["s02", "프론트엔드"], ["s03", "데이터·추천"]],
+      title: "냉장고 재료 기반 레시피 추천 서비스",
+      summary: "자취생이 냉장고에 남은 재료를 입력하면 만들 수 있는 레시피를 추천하고, 부족한 재료를 장보기 목록으로 정리해 주는 웹 서비스입니다.",
+      problem: "자취생은 남은 재료로 만들 수 있는 메뉴를 고르기 어려워 재료를 버리게 된다.",
+      features: ["재료 입력·자동완성", "보유 재료 일치율 기반 레시피 추천", "부족 재료 장보기 목록"],
+      stack: ["Next.js", "Spring Boot", "MySQL", "Docker"],
+      repoUrl: "https://example.com/repo/fridge-recipe",
+      deployUrl: "https://example.com/demo/fridge-recipe",
+      stage: 3,
+      doneKeys: ["s3_metric", "c_explain", "c_roles", "c_demo", "c_readme"],
+      logs: [
+        { user: "s01", week: "2026-10-05", progress: "레시피 검색 API 페이지네이션 적용", blocker: "목록 조회가 2초 이상 걸림", resolution: "재료-레시피 조인 인덱스 추가 → 실행 계획 확인", metric: "목록 API 응답 2.1초 → 0.4초" },
+        { user: "s02", week: "2026-10-05", progress: "재료 입력 자동완성 UI 구현" },
+        { user: "s01", week: "2026-10-12", progress: "추천 결과 캐시 적용", metric: "추천 API p95 0.6초" },
+        { user: "s03", week: "2026-10-12", progress: "일치율 계산 로직 테스트 작성", blocker: "단위가 다른 재료(g, 개) 비교", resolution: "재료별 기본 단위 표를 두고 환산" },
+      ],
+      feedbacks: [
+        { stage: 2, date: "2026-09-25", comment: "배포 URL과 README 확인했습니다. 3단계로 진행하세요." },
+        { stage: 3, date: "2026-10-13", comment: "응답 시간 개선 수치가 좋습니다. 트러블슈팅 기록을 원인 → 해결 → 결과 형식으로 2건 이상 남겨 주세요." },
+      ],
+    },
+    {
+      name: "2팀 스터디메이트",
+      leader: "s04",
+      members: [["s04", "팀장·풀스택"], ["s05", "프론트엔드"], ["s06", "백엔드"]],
+      title: "온라인 스터디 출석·과제 인증 앱",
+      summary: "스터디원이 매일 공부 인증을 올리고 출석률을 확인하는 모바일 우선 웹 앱입니다.",
+      problem: "온라인 스터디는 출석과 과제 인증이 메신저에 흩어져 누가 참여했는지 알기 어렵다.",
+      features: ["스터디 개설·초대 링크", "일일 공부 인증 업로드", "주간 출석률 대시보드"],
+      stack: ["React", "Node.js", "PostgreSQL"],
+      repoUrl: "https://example.com/repo/study-mate",
+      stage: 2,
+      doneKeys: ["s2_core", "c_explain"],
+      logs: [
+        { user: "s04", week: "2026-10-12", progress: "인증 업로드 API와 이미지 저장 구현", blocker: "배포 환경에서 이미지 경로 깨짐", resolution: "아직 해결 중" },
+        { user: "s05", week: "2026-10-12", progress: "출석률 대시보드 화면 초안" },
+      ],
+      feedbacks: [{ stage: 2, date: "2026-10-08", comment: "핵심 기능은 동작합니다. 이번 주 안에 배포 URL과 README 초안을 등록해 주세요." }],
+    },
+    {
+      name: "3팀 동네책방",
+      leader: "s07",
+      members: [["s07", "팀장·백엔드"], ["s08", "프론트엔드"]],
+      title: "동네 독립서점 재고 검색 지도",
+      summary: "",
+      problem: "",
+      features: [],
+      stack: [],
+      stage: 1,
+      doneKeys: ["s1_problem"],
+      logs: [{ user: "s07", week: "2026-09-28", progress: "주제 후보 3개 조사, 독립서점 지도로 결정" }],
+      feedbacks: [{ stage: 1, date: "2026-10-06", comment: "반 일정상 지금은 MVP 단계여야 합니다. 핵심 기능 3개와 스택을 이번 주에 정하고 면담을 잡읍시다." }],
+    },
+  ];
+
+  for (const sp of specs) {
+    const leader = await user(sp.leader);
+    const team = await prisma.team.create({ data: { cohortId, name: sp.name, leaderId: leader.id, status: "CONFIRMED", createdAt: at("2026-09-01", "10:00") } });
+    for (const [loginId, role] of sp.members) {
+      const u = await user(loginId);
+      await prisma.teamMember.create({ data: { teamId: team.id, cohortId, userId: u.id, role, joinedAt: at("2026-09-01", "10:00") } });
+    }
+    const roles = await Promise.all(sp.members.map(async ([loginId, part]) => ({ name: (await user(loginId)).name, part })));
+    const project = await prisma.teamProject.create({
+      data: {
+        teamId: team.id,
+        cohortId,
+        title: sp.title,
+        summary: sp.summary || null,
+        plan: { problem: sp.problem, features: sp.features, roles: sp.problem ? roles : [] },
+        techStack: sp.stack,
+        repoUrl: sp.repoUrl ?? null,
+        deployUrl: sp.deployUrl ?? null,
+        stage: sp.stage,
+        stageUpdatedAt: at("2026-09-25", "10:00"),
+      },
+    });
+    // 이전 단계 체크포인트는 모두 완료(현황 등록), 현재 단계·완료 체크리스트는 doneKeys만
+    const keys = [...Object.entries(STAGE_KEYS).filter(([st]) => Number(st) < sp.stage).flatMap(([st, ks]) => ks.map((k) => [Number(st), k] as const))];
+    for (const k of sp.doneKeys) keys.push([k.startsWith("c_") ? 0 : sp.stage, k] as const);
+    await prisma.projectMilestone.createMany({
+      data: keys.map(([stage, checkKey]) => ({ projectId: project.id, cohortId, stage, checkKey, done: true, doneAt: at("2026-10-10"), doneById: leader.id })),
+    });
+    for (const l of sp.logs) {
+      const u = await user(l.user);
+      await prisma.projectLog.create({
+        data: {
+          projectId: project.id,
+          cohortId,
+          userId: u.id,
+          weekOf: toDate(l.week),
+          progress: l.progress,
+          blocker: l.blocker ?? null,
+          resolution: l.resolution ?? null,
+          metric: l.metric ?? null,
+          createdAt: at(addDays(l.week, 4)),
+          updatedAt: at(addDays(l.week, 4)),
+        },
+      });
+    }
+    for (const f of sp.feedbacks) {
+      await prisma.projectFeedback.create({ data: { projectId: project.id, cohortId, instructorId: inst.id, stage: f.stage, comment: f.comment, createdAt: at(f.date, "16:00") } });
+    }
+  }
+  console.log(`팀 시드: ${specs.length}팀 (반 ${cohortId})`);
 }
 
 main()

@@ -4,6 +4,8 @@ import {
   canAccessCohortPure,
   canManageCohortAccountPure,
   canViewDocumentFilePure,
+  canEditTeamProjectPure,
+  canViewTeamProjectPure,
   type UserAccessInfo,
   type CohortAccessInfo,
   type UserCohortMembership,
@@ -200,6 +202,25 @@ describe("반 간 접근 차단 테스트 (permissions.md §3)", () => {
         canAccessCohortPure(mgrA, cohortA, mgrAMembership) &&
         hasActionPermission(mgrA.role, "resume:review") &&
         canViewDocumentFilePure({ id: mgrA.id, role: mgrA.role }, cohortA.id, { cohortId: cohortA.id, ownerId: s01.id }),
+      expected: false,
+    },
+    // M5 팀 프로젝트 (반 접근 → team 권한 → 리소스 단위 검사)
+    {
+      actorName: "s01",
+      desc: "같은 반 다른 팀(s02의 팀) 프로젝트 수정",
+      fn: () =>
+        canAccessCohortPure(s01, cohortA, s01Membership) &&
+        hasActionPermission(s01.role, "team:write") &&
+        canEditTeamProjectPure({ id: s01.id, role: s01.role }, cohortA.id, { cohortId: cohortA.id, memberIds: [s02.id] }),
+      expected: false,
+    },
+    {
+      actorName: "mgr_a",
+      desc: "URL은 반 A, 대상 팀은 반 B인 팀 프로젝트 열람",
+      fn: () =>
+        canAccessCohortPure(mgrA, cohortA, mgrAMembership) &&
+        hasActionPermission(mgrA.role, "team:feedback") &&
+        canViewTeamProjectPure({ id: mgrA.id, role: mgrA.role }, cohortA.id, { cohortId: cohortB.id, memberIds: [] }),
       expected: false,
     },
   ];

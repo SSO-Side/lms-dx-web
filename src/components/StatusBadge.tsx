@@ -1,7 +1,7 @@
 import { CheckCircle2, AlertTriangle, AlertCircle, Clock, MinusCircle, type LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-export type StatusDomain = "attendance" | "attendanceEvent" | "enrollment" | "ticket" | "submission" | "userStatus" | "cohortStatus" | "document";
+export type StatusDomain = "attendance" | "attendanceEvent" | "enrollment" | "ticket" | "submission" | "userStatus" | "cohortStatus" | "document" | "teamStage" | "teamPace";
 type Tone = "success" | "warning" | "danger" | "info" | "neutral";
 
 // theme.md §1 도메인 상태 → 색 매핑
@@ -51,6 +51,17 @@ const STATUS_MAP: Record<StatusDomain, Record<string, { tone: Tone; label: strin
     DRAFT: { tone: "warning", label: "초안" },
     IN_REVIEW: { tone: "info", label: "첨삭 중" },
     DONE: { tone: "success", label: "완성" },
+  },
+  // M5 팀 프로젝트: 단계(라벨에 단계 번호) · 목표 대비 진행
+  teamStage: {
+    "1": { tone: "neutral", label: "1 착수" },
+    "2": { tone: "info", label: "2 MVP" },
+    "3": { tone: "info", label: "3 고도화" },
+    "4": { tone: "success", label: "4 서류 반영" },
+  },
+  teamPace: {
+    ON_TRACK: { tone: "success", label: "정상" },
+    BEHIND: { tone: "warning", label: "지연" },
   },
 };
 

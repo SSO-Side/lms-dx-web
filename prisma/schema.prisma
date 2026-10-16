@@ -109,6 +109,11 @@ enum DocumentStatus {
   DONE
 }
 
+enum TeamStatus {
+  RECRUITING
+  CONFIRMED
+}
+
 // ───────── M0: 학원·반·계정 ─────────
 
 model Academy {
@@ -155,6 +160,10 @@ model User {
   attendanceLogs      AttendanceEventLog[]
   documents           Document[]
   documentReviews     DocumentReviewNote[]
+  teamsLed            Team[]               @relation("TeamLeader")
+  teamMemberships     TeamMember[]
+  projectFeedbacks    ProjectFeedback[]
+  projectLogs         ProjectLog[]
 
   @@index([academyId, role])
 }
@@ -206,6 +215,12 @@ model Cohort {
   documents           Document[]
   documentVersions    DocumentVersion[]
   documentReviewNotes DocumentReviewNote[]
+  teams               Team[]
+  teamMembers         TeamMember[]
+  teamProjects        TeamProject[]
+  projectMilestones   ProjectMilestone[]
+  projectFeedbacks    ProjectFeedback[]
+  projectLogs         ProjectLog[]
 
   @@index([academyId, status])
 }
@@ -545,5 +560,123 @@ model DocumentReviewNote {
   reviewer User     @relation(fields: [reviewerId], references: [id])
 
   @@index([documentId])
+  @@index([cohortId])
+}
+
+// ───────── M5: 팀 프로젝트 빌딩·가이드 ─────────
+// 단계(1 착수 · 2 MVP · 3 고도화 · 4 서류 반영)와 체크포인트 키는 src/lib/team/guide.ts 상수가 기준이다.
+
+model Team {
+  id        Int        @id @default(autoincrement())
+  cohortId  Int
+  name      String     @db.VarChar(100)
+  leaderId  Int
+  status    TeamStatus @default(CONFIRMED)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  cohort Cohort @relation(fields: [cohortId], references: [id])
+  leader User   @relation("TeamLeader", fields: [leaderId], references: [id])
+
+  members TeamMember[]
+  project TeamProject?
+
+  @@unique([cohortId, name])
+  @@index([cohortId])
+}
+
+model TeamMember {
+  id       Int      @id @default(autoincrement())
+  teamId   Int
+  cohortId Int
+  userId   Int
+  role     String?  @db.VarChar(50) // 역할 표시 (예: 백엔드, 프론트엔드)
+  joinedAt DateTime @default(now())
+
+  team   Team   @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  cohort Cohort @relation(fields: [cohortId], references: [id])
+  user   User   @relation(fields: [userId], references: [id])
+
+  @@unique([cohortId, userId]) // 한 반에서 한 팀에만 소속
+  @@index([teamId])
+}
+
+model TeamProject {
+  id             Int       @id @default(autoincrement())
+  teamId         Int       @unique
+  cohortId       Int
+  title          String    @db.VarChar(200)
+  summary        String?   @db.Text
+  plan           Json? // { problem, features: string[], roles: [{ name, part }] }
+  repoUrl        String?   @db.VarChar(500)
+  deployUrl      String?   @db.VarChar(500)
+  techStack      Json // string[]
+  stage          Int       @default(1) // 1~4
+  stageUpdatedAt DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  team   Team   @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  cohort Cohort @relation(fields: [cohortId], references: [id])
+
+  milestones ProjectMilestone[]
+  feedbacks  ProjectFeedback[]
+  logs       ProjectLog[]
+
+  @@index([cohortId])
+}
+
+model ProjectMilestone {
+  id        Int       @id @default(autoincrement())
+  projectId Int
+  cohortId  Int
+  stage     Int // 0 = 완료 체크리스트, 1~4 = 단계 체크포인트
+  checkKey  String    @db.VarChar(50)
+  done      Boolean   @default(false)
+  doneAt    DateTime?
+  doneById  Int?
+
+  project TeamProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  cohort  Cohort      @relation(fields: [cohortId], references: [id])
+
+  @@unique([projectId, checkKey])
+  @@index([cohortId])
+}
+
+model ProjectFeedback {
+  id           Int      @id @default(autoincrement())
+  projectId    Int
+  cohortId     Int
+  instructorId Int
+  stage        Int
+  comment      String   @db.Text
+  createdAt    DateTime @default(now())
+
+  project    TeamProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  cohort     Cohort      @relation(fields: [cohortId], references: [id])
+  instructor User        @relation(fields: [instructorId], references: [id])
+
+  @@index([projectId])
+  @@index([cohortId])
+}
+
+model ProjectLog {
+  id         Int      @id @default(autoincrement())
+  projectId  Int
+  cohortId   Int
+  userId     Int
+  weekOf     DateTime @db.Date // 그 주 월요일
+  progress   String   @db.Text
+  blocker    String?  @db.Text
+  resolution String?  @db.Text
+  metric     String?  @db.VarChar(200)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  project TeamProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  cohort  Cohort      @relation(fields: [cohortId], references: [id])
+  user    User        @relation(fields: [userId], references: [id])
+
+  @@unique([projectId, userId, weekOf]) // 개인 주간 1건 (다시 쓰면 수정)
   @@index([cohortId])
 }

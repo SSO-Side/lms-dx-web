@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import { DOCUMENT_STATUSES, DOCUMENT_STATUS_LABELS } from "@/lib/documents/labels";
 import { AccessDenied } from "@/components/shell/AccessDenied";
 import { PageHeader } from "@/components/shell/PageHeader";
+import { SectionSwitch, careerSections } from "@/components/shell/SectionSwitch";
 import { Alert } from "@/components/ui/alert";
 import {
   listMyDocuments,
@@ -83,6 +84,7 @@ export default async function ResumePage({ params, searchParams }: Props) {
     const total = counts.DRAFT + counts.IN_REVIEW + counts.DONE;
     return (
       <>
+        <SectionSwitch items={careerSections(ctx.cohortId)} current="resume" />
         <PageHeader
           back={{ href: `/app/c/${ctx.cohortId}`, label: "반 홈" }}
           title="서류 첨삭"
@@ -120,6 +122,7 @@ export default async function ResumePage({ params, searchParams }: Props) {
 
   return (
     <>
+      <SectionSwitch items={careerSections(ctx.cohortId)} current="resume" />
       <PageHeader
         back={{ href: `/app/c/${ctx.cohortId}`, label: "반 홈" }}
         title="서류 현황"

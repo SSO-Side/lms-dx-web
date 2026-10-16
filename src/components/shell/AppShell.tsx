@@ -21,6 +21,8 @@ import {
   LogOut,
   FileText,
   Ellipsis,
+  UsersRound,
+  Briefcase,
   type LucideIcon,
 } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetBody } from "@/components/ui/sheet";
@@ -39,6 +41,8 @@ const ICONS = {
   overview: LayoutGrid,
   newCohort: PlusCircle,
   documents: FileText,
+  team: UsersRound,
+  career: Briefcase,
 } satisfies Record<string, LucideIcon>;
 
 export type NavIcon = keyof typeof ICONS;
@@ -51,6 +55,8 @@ export interface NavItem {
   available?: boolean;
   /** true면 경로가 정확히 같을 때만 활성 */
   exact?: boolean;
+  /** 한 메뉴에 묶인 다른 화면 경로 (예: 서류·프로젝트 = /resume + /team) */
+  alsoMatch?: string[];
 }
 
 export interface AppShellProps {
@@ -66,7 +72,8 @@ export interface AppShellProps {
 }
 
 function isActive(pathname: string, item: NavItem) {
-  return item.exact ? pathname === item.href : pathname === item.href || pathname.startsWith(`${item.href}/`);
+  if (item.exact) return pathname === item.href;
+  return [item.href, ...(item.alsoMatch ?? [])].some((href) => pathname === href || pathname.startsWith(`${href}/`));
 }
 
 export function AppShell({
