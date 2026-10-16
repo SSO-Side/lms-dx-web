@@ -34,13 +34,15 @@
 | `chat:ask` | O | O | O | O | O |
 | `chatDoc:manage` | X | X | O | O | O |
 | `resume:own` | O | X | X | X | O |
-| `resume:readOthers` (M7, M8 작업 때 구현) | X | 배정된 수강생 | 상태만 | 상태만 | O |
+| `resume:readOthers` (M7 서류 현황) | X | 같은 반 수강생 | 상태만 | 상태만 | O |
+| `resume:review` (M7 파일 열람·코멘트·상태 변경) | X | O (같은 반) | X | X | O |
 | `team:feedback` (M5 작업 때 구현) | 열람 | O | 열람 | 열람 | O |
 | `showcase:apply·review·approve` (M10 작업 때 구현) | 신청 | 검토 | 승인 | 승인 | O |
 | `lead:read` (M10) | X | X | O | O | O |
 | `account:manage` (계정 발급·반 개설·명부) | X | X | X | O | O |
 
 - 지금 단계(M0~M3, M11)에서 구현하는 액션은 `material`~`attendance`, `chat`, `account`까지다. 나머지 행은 키와 값만 데이터에 두고 기능은 해당 모듈 작업 때 붙인다.
+- M7: 강사 "배정된 수강생" 개념이 없어 "같은 반 수강생"으로 단순화했다. 서류 파일은 본인(`resume:own`)과 같은 반 강사(`resume:review`)만 열람한다.
 - "본인만", "배정된 수강생", "상태만" 같은 조건부 값은 `requireCohortAccess` 뒤에 **리소스 단위 검사**(`ctx.user.id === ticket.requesterId` 등)로 처리한다.
 - 계정 발급 대상 범위: ACADEMY_ADMIN은 **자기 학원** 안의 STUDENT·INSTRUCTOR·MANAGER 계정만 만들 수 있다. ACADEMY_ADMIN 계정과 학원 생성은 ADMIN만.
 

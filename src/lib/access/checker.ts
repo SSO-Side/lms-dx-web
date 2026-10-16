@@ -80,3 +80,24 @@ export function canManageCohortAccountPure(target: ManagedAccountInfo, cohort: C
   }
   return target.staffInCohort;
 }
+
+export interface DocumentFileAccessInfo {
+  /** 서류가 속한 반 */
+  cohortId: number;
+  ownerId: number;
+}
+
+/**
+ * 서류 파일(PDF) 열람 가능 여부. 반 접근 확인(requireCohortAccess)을 통과한 뒤의 리소스 단위 검사.
+ * 본인 서류이거나, 같은 반의 강사(resume:review)만 허용한다. 매니저·슈퍼어드민은 상태만 보고 파일은 열람하지 못한다.
+ */
+export function canViewDocumentFilePure(
+  actor: { id: number; role: Role },
+  ctxCohortId: number,
+  doc: DocumentFileAccessInfo
+): boolean {
+  if (doc.cohortId !== ctxCohortId) return false;
+  if (actor.role === Role.ADMIN) return true;
+  if (actor.role === Role.STUDENT) return doc.ownerId === actor.id;
+  return actor.role === Role.INSTRUCTOR;
+}

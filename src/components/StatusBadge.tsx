@@ -1,7 +1,7 @@
 import { CheckCircle2, AlertTriangle, AlertCircle, Clock, MinusCircle, type LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-export type StatusDomain = "attendance" | "attendanceEvent" | "enrollment" | "ticket" | "submission" | "userStatus" | "cohortStatus";
+export type StatusDomain = "attendance" | "attendanceEvent" | "enrollment" | "ticket" | "submission" | "userStatus" | "cohortStatus" | "document";
 type Tone = "success" | "warning" | "danger" | "info" | "neutral";
 
 // theme.md §1 도메인 상태 → 색 매핑
@@ -45,6 +45,12 @@ const STATUS_MAP: Record<StatusDomain, Record<string, { tone: Tone; label: strin
   cohortStatus: {
     ACTIVE: { tone: "info", label: "진행 중" },
     ENDED: { tone: "neutral", label: "종료" },
+  },
+  document: {
+    NONE: { tone: "neutral", label: "미등록" },
+    DRAFT: { tone: "warning", label: "초안" },
+    IN_REVIEW: { tone: "info", label: "첨삭 중" },
+    DONE: { tone: "success", label: "완성" },
   },
 };
 

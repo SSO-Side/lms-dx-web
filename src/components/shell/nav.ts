@@ -25,15 +25,17 @@ export function cohortNav(role: Role, cohortId: number): NavItem[] {
   const attendance: NavItem = { label: "출결", href: `${c}/attendance`, icon: "attendance" };
   const tickets: NavItem = { label: "티켓", href: `${c}/tickets`, icon: "tickets" };
   const members: NavItem = { label: "명부", href: `${c}/members`, icon: "members" };
-  const settings: NavItem = { label: "반 설정", href: `${c}/settings`, icon: "settings" };
+  const documents: NavItem = { label: "서류", href: `${c}/resume`, icon: "documents" };
 
   switch (role) {
     case Role.STUDENT:
-      return [home, attendance, tickets, { label: "자료·과제", href: `${c}/curriculum`, icon: "curriculum" }];
+      // 모바일 하단 탭은 앞 4개 + 더보기 (AppShell)
+      return [home, attendance, tickets, { label: "자료·과제", href: `${c}/curriculum`, icon: "curriculum" }, { ...documents, label: "내 서류" }];
     case Role.INSTRUCTOR:
-      return [home, { label: "수업·자료", href: `${c}/curriculum`, icon: "curriculum" }, attendance, tickets];
+      return [home, { label: "수업·자료", href: `${c}/curriculum`, icon: "curriculum" }, attendance, tickets, documents];
     case Role.MANAGER:
-      return [home, attendance, tickets, members, settings];
+      // 메뉴 5개 이내: 반 설정은 명부 화면 우상단 버튼으로 진입
+      return [home, attendance, tickets, members, documents];
     case Role.ACADEMY_ADMIN:
     case Role.ADMIN:
       return [
@@ -42,7 +44,7 @@ export function cohortNav(role: Role, cohortId: number): NavItem[] {
         attendance,
         tickets,
         members,
-        settings,
+        documents,
         { label: "계정 관리", href: `/app/academy/cohorts/${cohortId}/accounts`, icon: "accounts" },
       ];
   }

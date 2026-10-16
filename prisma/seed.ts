@@ -1,7 +1,7 @@
 /**
  * 가상 데이터 시드. 실제 수강생·교사 정보는 넣지 않는다.
  * 실행: ALLOW_SEED=true SEED_PASSWORD=... npx prisma db seed
- * 개발 DB에서만 실행한다. 이미 시드된 DB에서는 아무것도 하지 않는다.
+ * 개발 DB에서만 실행한다. 이미 시드된 DB에서는 빠진 모듈 데이터(M7 서류)만 보충한다.
  */
 import { PrismaClient, Role, StaffRole, AttendanceType, ExcusedType } from "@prisma/client";
 import bcrypt from "bcryptjs";
@@ -44,7 +44,8 @@ async function main() {
   if (!pw || pw.length < 8) throw new Error("SEED_PASSWORD(8자 이상)가 필요합니다.");
 
   if (await prisma.academy.findFirst({ where: { name: "가상학원" } })) {
-    console.log("이미 시드되어 있어 건너뜁니다.");
+    console.log("이미 시드되어 있어 기본 데이터는 건너뜁니다.");
+    await seedDocuments();
     return;
   }
   const passwordHash = await bcrypt.hash(pw, 10);
@@ -173,7 +174,73 @@ async function main() {
     data: { cohortId: cohortA.id, lessonId: lesson.id, title: "예시 과제", dueAt: new Date("2026-07-27T14:59:00Z") },
   });
 
+  await seedDocuments();
   console.log(`시드 완료: 학원 1, 반 2 (A=${cohortA.id}, B=${cohortB.id}), 수강생 ${studentsA.length + studentsB.length}명, 단위기간 ${periods.length}개`);
+}
+
+// ── M7 서류 (반 A). PDF는 만들지 않고 모든 버전이 샘플 경로 1개를 공유한다.
+// STORAGE_DIR/seed/sample-resume.pdf 에 가상 PDF를 직접 두면 열람되고, 없으면 "파일을 찾을 수 없습니다"로 표시된다.
+const SAMPLE_PDF = "seed/sample-resume.pdf";
+
+async function seedDocuments() {
+  if ((await prisma.document.count()) > 0) {
+    console.log("서류 데이터가 이미 있어 건너뜁니다.");
+    return;
+  }
+  const inst = await prisma.user.findUnique({ where: { loginId: "inst_a" } });
+  const staff = inst && (await prisma.cohortStaff.findFirst({ where: { userId: inst.id }, select: { cohortId: true } }));
+  if (!inst || !staff) return;
+  const cohortId = staff.cohortId;
+  const student = (loginId: string) => prisma.user.findUniqueOrThrow({ where: { loginId } });
+  const at = (ymd: string, hm = "10:00") => new Date(`${ymd}T${hm}:00+09:00`);
+
+  type Spec = {
+    owner: string;
+    type: "RESUME" | "COVER_LETTER" | "PORTFOLIO";
+    title: string;
+    status: "DRAFT" | "IN_REVIEW" | "DONE";
+    versions: string[]; // 버전별 업로드 일자 (빈 배열이면 파일 없는 초안)
+    notes?: string[];
+  };
+  const specs: Spec[] = [
+    { owner: "s01", type: "RESUME", title: "백엔드 개발자 지원 이력서", status: "DONE", versions: ["2026-10-05", "2026-10-12"], notes: ["프로젝트 결과가 수치로 잘 정리됐습니다. 이대로 제출해도 좋습니다."] },
+    { owner: "s01", type: "COVER_LETTER", title: "자기소개서 (공통 문항)", status: "IN_REVIEW", versions: ["2026-10-14"] },
+    { owner: "s02", type: "RESUME", title: "웹 서비스 개발 이력서", status: "IN_REVIEW", versions: ["2026-10-10", "2026-10-15"] },
+    { owner: "s03", type: "RESUME", title: "데이터 분석 직무 이력서", status: "DRAFT", versions: ["2026-10-08"], notes: ["팀 프로젝트에서 본인이 맡은 역할을 STAR의 A(행동) 중심으로 다시 써 주세요."] },
+    { owner: "s04", type: "RESUME", title: "이력서 초안", status: "DRAFT", versions: [] },
+    { owner: "s05", type: "PORTFOLIO", title: "팀 프로젝트 포트폴리오", status: "DONE", versions: ["2026-10-11"] },
+    { owner: "s05", type: "RESUME", title: "프론트엔드 개발자 이력서", status: "IN_REVIEW", versions: ["2026-10-13"] },
+  ];
+
+  for (const sp of specs) {
+    const owner = await student(sp.owner);
+    const last = sp.versions[sp.versions.length - 1] ?? "2026-10-15";
+    const doc = await prisma.document.create({
+      data: { cohortId, ownerId: owner.id, type: sp.type, title: sp.title, status: sp.status, createdAt: at(sp.versions[0] ?? last), updatedAt: at(last) },
+    });
+    let currentVersionId: number | null = null;
+    for (const [i, ymd] of sp.versions.entries()) {
+      const v = await prisma.documentVersion.create({
+        data: {
+          documentId: doc.id,
+          cohortId,
+          versionNo: i + 1,
+          fileName: `${sp.owner}_${sp.title.replace(/\s+/g, "_")}_v${i + 1}.pdf`,
+          storagePath: SAMPLE_PDF,
+          size: 180_000 + i * 12_000,
+          aiConsentAt: at(ymd),
+          createdAt: at(ymd),
+        },
+      });
+      currentVersionId = v.id;
+    }
+    for (const comment of sp.notes ?? []) {
+      await prisma.documentReviewNote.create({ data: { documentId: doc.id, cohortId, reviewerId: inst.id, comment, createdAt: at(last, "15:00") } });
+    }
+    // updatedAt은 @updatedAt이라 마지막 갱신에서 날짜를 다시 지정한다
+    await prisma.document.update({ where: { id: doc.id }, data: { currentVersionId, updatedAt: at(last) } });
+  }
+  console.log(`서류 시드: ${specs.length}건 (반 ${cohortId})`);
 }
 
 main()

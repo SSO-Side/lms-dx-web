@@ -23,6 +23,8 @@ import { getAttendanceBase, computePeriodAttendance } from "@/server/attendance-
 import { listTickets } from "@/server/ticket-queries";
 import { getTodayLessons, getDueAssignments, getRecentSubmissions } from "@/server/curriculum-queries";
 import { getCohortSummary, trainingProgress } from "@/server/dashboard-queries";
+import { listMyDocuments, getCohortDocumentStatus } from "@/server/document-queries";
+import { MyDocumentsWidget, DocumentStatusWidget } from "@/components/widgets/DocumentWidgets";
 
 interface CohortHomePageProps {
   params: Promise<{ cohortId: string }>;
@@ -75,11 +77,12 @@ export default async function CohortHomePage({ params }: CohortHomePageProps) {
   const now = new Date();
 
   if (ctx.role === Role.STUDENT) {
-    const [mine, tickets, due, lessons] = await Promise.all([
+    const [mine, tickets, due, lessons, docs] = await Promise.all([
       safe(base?.currentPeriod ? computePeriodAttendance(id, base, base.currentPeriod, ctx.user.id) : Promise.resolve([])),
       safe(listTickets(id, { requesterId: ctx.user.id, statuses: ["PENDING", "IN_REVIEW", "NEEDS_REVISION"], take: 3 })),
       safe(getDueAssignments(id, ctx.user.id, now)),
       safe(getTodayLessons(id, today)),
+      safe(listMyDocuments(id, ctx.user.id)),
     ]);
     return (
       <>
@@ -111,19 +114,28 @@ export default async function CohortHomePage({ params }: CohortHomePageProps) {
           )}
           {due.ok ? <AssignmentDueWidget cohortId={id} items={due.data} now={now} /> : <Widget title="마감 임박 과제" error={LOAD_ERROR} />}
           {lessons.ok ? <TodayLessonWidget cohortId={id} lessons={lessons.data} /> : <Widget title="오늘 수업" error={LOAD_ERROR} />}
+          {docs.ok ? <MyDocumentsWidget cohortId={id} documents={docs.data} /> : <Widget title="내 서류" error={LOAD_ERROR} />}
         </div>
       </>
     );
   }
 
   const pendingTickets = safe(listTickets(id, { statuses: ["PENDING", "IN_REVIEW"], take: 5 }));
+  const docStatus = safe(getCohortDocumentStatus(id));
+  const docWidget = (r: Awaited<typeof docStatus>, forInstructor: boolean) =>
+    r.ok ? (
+      <DocumentStatusWidget cohortId={id} stages={r.data.stages} total={r.data.rows.length} forInstructor={forInstructor} />
+    ) : (
+      <Widget title="서류 현황" error={LOAD_ERROR} />
+    );
 
   if (ctx.role === Role.INSTRUCTOR) {
-    const [rows, tickets, subs, lessons] = await Promise.all([
+    const [rows, tickets, subs, lessons, docs] = await Promise.all([
       safe(base?.currentPeriod ? computePeriodAttendance(id, base, base.currentPeriod) : Promise.resolve([])),
       pendingTickets,
       safe(getRecentSubmissions(id)),
       safe(getTodayLessons(id, today)),
+      docStatus,
     ]);
     return (
       <>
@@ -141,16 +153,18 @@ export default async function CohortHomePage({ params }: CohortHomePageProps) {
           )}
           {subs.ok ? <SubmissionFeedWidget cohortId={id} items={subs.data} /> : <Widget title="최근 과제 제출" error={LOAD_ERROR} />}
           {lessons.ok ? <TodayLessonWidget cohortId={id} title="오늘 수업·자료" lessons={lessons.data} /> : <Widget title="오늘 수업·자료" error={LOAD_ERROR} />}
+          {docWidget(docs, true)}
         </div>
       </>
     );
   }
 
   // MANAGER, ACADEMY_ADMIN, ADMIN
-  const [summary, tickets, counts] = await Promise.all([
+  const [summary, tickets, counts, docs] = await Promise.all([
     safe(base ? getCohortSummary(id, base) : Promise.reject(new Error("no base"))),
     pendingTickets,
     safe(db.enrollment.groupBy({ by: ["status"], where: { cohortId: id }, _count: { _all: true } })),
+    docStatus,
   ]);
   const countOf = (s: EnrollmentStatus) => (counts.ok ? counts.data.find((e) => e.status === s)?._count._all ?? 0 : 0);
 
@@ -190,6 +204,7 @@ export default async function CohortHomePage({ params }: CohortHomePageProps) {
         ) : (
           <Widget title="반 현황" error={LOAD_ERROR} />
         )}
+        {docWidget(docs, false)}
       </div>
     </>
   );

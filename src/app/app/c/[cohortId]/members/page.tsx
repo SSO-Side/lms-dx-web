@@ -1,3 +1,6 @@
+import Link from "next/link";
+import { Settings } from "lucide-react";
+import { buttonVariants } from "@/components/ui/button";
 import { tryCohortAccess } from "@/lib/access/pageAccess";
 import { db } from "@/lib/db";
 import { formatDateTime } from "@/lib/dates";
@@ -57,6 +60,11 @@ export default async function MembersPage({ params }: { params: Promise<{ cohort
         back={{ href: `/app/c/${ctx.cohortId}`, label: "반 홈" }}
         title="명부"
         description={`수강생 ${enrolled}명 재적 · 교사 ${staff.length}명. 계정 발급·재설정은 학원 관리자의 계정 관리 화면에서 합니다.`}
+        actions={
+          <Link href={`/app/c/${ctx.cohortId}/settings`} className={buttonVariants({ variant: "outline", size: "sm" })}>
+            <Settings aria-hidden /> 반 설정
+          </Link>
+        }
       />
       <MemberTable cohortId={ctx.cohortId} rows={rows} />
     </>

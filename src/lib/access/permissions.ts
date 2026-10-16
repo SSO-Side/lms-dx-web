@@ -18,6 +18,7 @@ export type Action =
   | "chatDoc:manage"
   | "resume:own"
   | "resume:readOthers"
+  | "resume:review"
   | "team:feedback"
   | "showcase:apply"
   | "showcase:review"
@@ -140,9 +141,17 @@ export const ROLE_PERMISSIONS: Record<Action, Record<Role, boolean>> = {
   },
   "resume:readOthers": {
     STUDENT: false,
-    INSTRUCTOR: true, // 배정된 수강생
+    INSTRUCTOR: true, // 같은 반 수강생 (배정 개념 도입 전 단순화)
     MANAGER: true, // 상태만
     ACADEMY_ADMIN: true, // 상태만
+    ADMIN: true,
+  },
+  // 서류 파일 열람·코멘트·상태 변경 (매니저·슈퍼어드민은 상태만 보므로 X)
+  "resume:review": {
+    STUDENT: false,
+    INSTRUCTOR: true,
+    MANAGER: false,
+    ACADEMY_ADMIN: false,
     ADMIN: true,
   },
   "team:feedback": {

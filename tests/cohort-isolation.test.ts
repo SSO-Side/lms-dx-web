@@ -3,6 +3,7 @@ import { Role } from "@prisma/client";
 import {
   canAccessCohortPure,
   canManageCohortAccountPure,
+  canViewDocumentFilePure,
   type UserAccessInfo,
   type CohortAccessInfo,
   type UserCohortMembership,
@@ -167,6 +168,38 @@ describe("반 간 접근 차단 테스트 (permissions.md §3)", () => {
       actorName: "acad_admin",
       desc: "반 A 경로로 학원 관리자 계정 재설정",
       fn: () => canManageCohortAccountPure({ role: acadAdmin.role, academyId: 10, enrolledInCohort: false, staffInCohort: true }, cohortA),
+      expected: false,
+    },
+    // M7 서류 파일 열람 (반 접근 → resume:review 권한 → 리소스 단위 검사)
+    {
+      actorName: "inst_b(반 B 강사)",
+      desc: "반 A 수강생 s01의 서류 열람",
+      fn: () => {
+        const instB: UserAccessInfo = { ...instA, id: 103 };
+        const instBMembership: UserCohortMembership = { enrolledCohortIds: [], staffCohortIds: [2] };
+        return (
+          canAccessCohortPure(instB, cohortA, instBMembership) &&
+          canViewDocumentFilePure({ id: instB.id, role: instB.role }, cohortA.id, { cohortId: cohortA.id, ownerId: s01.id })
+        );
+      },
+      expected: false,
+    },
+    {
+      actorName: "s01",
+      desc: "같은 반 s02의 서류 열람",
+      fn: () =>
+        canAccessCohortPure(s01, cohortA, s01Membership) &&
+        hasActionPermission(s01.role, "resume:own") &&
+        canViewDocumentFilePure({ id: s01.id, role: s01.role }, cohortA.id, { cohortId: cohortA.id, ownerId: s02.id }),
+      expected: false,
+    },
+    {
+      actorName: "mgr_a",
+      desc: "반 A 수강생 서류 파일 열람 (상태만 허용)",
+      fn: () =>
+        canAccessCohortPure(mgrA, cohortA, mgrAMembership) &&
+        hasActionPermission(mgrA.role, "resume:review") &&
+        canViewDocumentFilePure({ id: mgrA.id, role: mgrA.role }, cohortA.id, { cohortId: cohortA.id, ownerId: s01.id }),
       expected: false,
     },
   ];

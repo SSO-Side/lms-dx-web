@@ -19,8 +19,11 @@ import {
   Check,
   KeyRound,
   LogOut,
+  FileText,
+  Ellipsis,
   type LucideIcon,
 } from "lucide-react";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetBody } from "@/components/ui/sheet";
 import { logoutAction } from "@/server/auth";
 import { cn } from "@/lib/utils";
 
@@ -35,6 +38,7 @@ const ICONS = {
   accounts: UserCog,
   overview: LayoutGrid,
   newCohort: PlusCircle,
+  documents: FileText,
 } satisfies Record<string, LucideIcon>;
 
 export type NavIcon = keyof typeof ICONS;
@@ -152,46 +156,101 @@ export function AppShell({
         </main>
       </div>
 
-      {/* 수강생 모바일 하단 탭바 (터치 영역 44px 이상) */}
-      {studentMode && (
-        <nav
-          aria-label="주 메뉴"
-          className="fixed inset-x-0 bottom-0 z-30 grid border-t border-neutral-200 bg-card pb-[env(safe-area-inset-bottom)] lg:hidden"
-          style={{ gridTemplateColumns: `repeat(${nav.length}, minmax(0, 1fr))` }}
-        >
-          {nav.map((item) => {
-            const active = isActive(pathname, item);
-            const Icon = ICONS[item.icon];
-            const content = (
-              <>
-                <Icon className="size-5" aria-hidden />
-                <span className="text-xs">{item.label}</span>
-              </>
-            );
-            if (item.available === false) {
-              return (
-                <span key={item.href} className="flex h-16 flex-col items-center justify-center gap-1 text-neutral-400" aria-disabled>
-                  {content}
-                </span>
-              );
-            }
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                aria-current={active ? "page" : undefined}
-                className={cn(
-                  "flex h-16 flex-col items-center justify-center gap-1",
-                  active ? "font-medium text-primary-600" : "text-neutral-600"
-                )}
-              >
-                {content}
-              </Link>
-            );
-          })}
-        </nav>
-      )}
+      {/* 수강생 모바일 하단 탭바 (터치 영역 44px 이상). 5개 이상이면 앞 4개 + 더보기 드로어 */}
+      {studentMode && <StudentTabBar nav={nav} pathname={pathname} />}
     </div>
+  );
+}
+
+const TAB_LIMIT = 4;
+
+function StudentTabBar({ nav, pathname }: { nav: NavItem[]; pathname: string }) {
+  const [moreOpen, setMoreOpen] = React.useState(false);
+  const tabs = nav.length > TAB_LIMIT ? nav.slice(0, TAB_LIMIT) : nav;
+  const more = nav.slice(tabs.length);
+  const moreActive = more.some((item) => isActive(pathname, item));
+  const cols = tabs.length + (more.length > 0 ? 1 : 0);
+
+  return (
+    <>
+      <nav
+        aria-label="주 메뉴"
+        className="fixed inset-x-0 bottom-0 z-30 grid border-t border-neutral-200 bg-card pb-[env(safe-area-inset-bottom)] lg:hidden"
+        style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}
+      >
+        {tabs.map((item) => {
+          const active = isActive(pathname, item);
+          const Icon = ICONS[item.icon];
+          const content = (
+            <>
+              <Icon className="size-5" aria-hidden />
+              <span className="text-xs">{item.label}</span>
+            </>
+          );
+          if (item.available === false) {
+            return (
+              <span key={item.href} className="flex h-16 flex-col items-center justify-center gap-1 text-neutral-400" aria-disabled>
+                {content}
+              </span>
+            );
+          }
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              aria-current={active ? "page" : undefined}
+              className={cn("flex h-16 flex-col items-center justify-center gap-1", active ? "font-medium text-primary-600" : "text-neutral-600")}
+            >
+              {content}
+            </Link>
+          );
+        })}
+        {more.length > 0 && (
+          <button
+            type="button"
+            onClick={() => setMoreOpen(true)}
+            aria-haspopup="dialog"
+            className={cn("flex h-16 flex-col items-center justify-center gap-1", moreActive ? "font-medium text-primary-600" : "text-neutral-600")}
+          >
+            <Ellipsis className="size-5" aria-hidden />
+            <span className="text-xs">더보기</span>
+          </button>
+        )}
+      </nav>
+      {more.length > 0 && (
+        <Sheet open={moreOpen} onOpenChange={setMoreOpen}>
+          <SheetContent className="h-auto md:h-full">
+            <SheetHeader>
+              <SheetTitle>더보기</SheetTitle>
+            </SheetHeader>
+            <SheetBody className="pb-8">
+              <ul className="space-y-1">
+                {more.map((item) => {
+                  const Icon = ICONS[item.icon];
+                  const active = isActive(pathname, item);
+                  return (
+                    <li key={item.href}>
+                      <Link
+                        href={item.href}
+                        onClick={() => setMoreOpen(false)}
+                        aria-current={active ? "page" : undefined}
+                        className={cn(
+                          "flex min-h-12 items-center gap-3 rounded-lg px-3 text-base",
+                          active ? "bg-primary-50 font-medium text-primary-700" : "text-neutral-800 hover:bg-neutral-50"
+                        )}
+                      >
+                        <Icon className="size-5" aria-hidden />
+                        {item.label}
+                      </Link>
+                    </li>
+                  );
+                })}
+              </ul>
+            </SheetBody>
+          </SheetContent>
+        </Sheet>
+      )}
+    </>
   );
 }
 

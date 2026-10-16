@@ -1,5 +1,5 @@
 // lms_kdt — 스키마 v0 (M0 반·계정, M1 자료·과제, M2 티켓·결석계, M3 출결)
-// M5(팀 프로젝트), M7(서류), M8(면접), M10(마켓)은 해당 모듈 작업 때 추가한다.
+// M7(서류) 추가. M5(팀 프로젝트), M8(면접), M10(마켓)은 해당 모듈 작업 때 추가한다.
 // 규칙: 반에 속한 모델은 모두 cohortId를 가지며, 모든 조회에서 cohortId로 제한한다.
 // 날짜만 의미 있는 값은 @db.Date (조회·비교는 YYYY-MM-DD 문자열로 다룬다).
 
@@ -97,6 +97,18 @@ enum LogAction {
   DELETE
 }
 
+enum DocumentType {
+  RESUME
+  COVER_LETTER
+  PORTFOLIO
+}
+
+enum DocumentStatus {
+  DRAFT
+  IN_REVIEW
+  DONE
+}
+
 // ───────── M0: 학원·반·계정 ─────────
 
 model Academy {
@@ -126,21 +138,23 @@ model User {
 
   academy Academy? @relation(fields: [academyId], references: [id])
 
-  authSessions       AuthSession[]
-  staffAssignments   CohortStaff[]
-  enrollments        Enrollment[]
-  lessonsTaught      Lesson[]
-  materialsCreated   Material[]
-  submissions        Submission[]
-  ticketsRequested   Ticket[]          @relation("TicketRequester")
-  ticketsAssigned    Ticket[]          @relation("TicketAssignee")
-  ticketEvents       TicketEvent[]
-  attendanceAsStudent AttendanceEvent[] @relation("AttendanceStudent")
-  attendanceRecorded AttendanceEvent[] @relation("AttendanceRecorder")
-  openingsAsStudent  AttendanceOpening[] @relation("OpeningStudent")
-  openingsRecorded   AttendanceOpening[] @relation("OpeningRecorder")
-  dayCloses          AttendanceDayClose[]
-  attendanceLogs     AttendanceEventLog[]
+  authSessions        AuthSession[]
+  staffAssignments    CohortStaff[]
+  enrollments         Enrollment[]
+  lessonsTaught       Lesson[]
+  materialsCreated    Material[]
+  submissions         Submission[]
+  ticketsRequested    Ticket[]             @relation("TicketRequester")
+  ticketsAssigned     Ticket[]             @relation("TicketAssignee")
+  ticketEvents        TicketEvent[]
+  attendanceAsStudent AttendanceEvent[]    @relation("AttendanceStudent")
+  attendanceRecorded  AttendanceEvent[]    @relation("AttendanceRecorder")
+  openingsAsStudent   AttendanceOpening[]  @relation("OpeningStudent")
+  openingsRecorded    AttendanceOpening[]  @relation("OpeningRecorder")
+  dayCloses           AttendanceDayClose[]
+  attendanceLogs      AttendanceEventLog[]
+  documents           Document[]
+  documentReviews     DocumentReviewNote[]
 
   @@index([academyId, role])
 }
@@ -176,19 +190,22 @@ model Cohort {
 
   academy Academy @relation(fields: [academyId], references: [id])
 
-  staff             CohortStaff[]
-  enrollments       Enrollment[]
-  weeks             Week[]
-  lessons           Lesson[]
-  materials         Material[]
-  assignments       Assignment[]
-  submissions       Submission[]
-  tickets           Ticket[]
-  trainingDays      TrainingDay[]
-  attendancePeriods AttendancePeriod[]
-  attendanceEvents  AttendanceEvent[]
-  attendanceOpenings AttendanceOpening[]
+  staff               CohortStaff[]
+  enrollments         Enrollment[]
+  weeks               Week[]
+  lessons             Lesson[]
+  materials           Material[]
+  assignments         Assignment[]
+  submissions         Submission[]
+  tickets             Ticket[]
+  trainingDays        TrainingDay[]
+  attendancePeriods   AttendancePeriod[]
+  attendanceEvents    AttendanceEvent[]
+  attendanceOpenings  AttendanceOpening[]
   attendanceDayCloses AttendanceDayClose[]
+  documents           Document[]
+  documentVersions    DocumentVersion[]
+  documentReviewNotes DocumentReviewNote[]
 
   @@index([academyId, status])
 }
@@ -244,10 +261,10 @@ model Lesson {
   title        String   @db.VarChar(200)
   instructorId Int?
 
-  cohort     Cohort       @relation(fields: [cohortId], references: [id])
-  week       Week         @relation(fields: [weekId], references: [id])
-  instructor User?        @relation(fields: [instructorId], references: [id])
-  materials  Material[]
+  cohort      Cohort       @relation(fields: [cohortId], references: [id])
+  week        Week         @relation(fields: [weekId], references: [id])
+  instructor  User?        @relation(fields: [instructorId], references: [id])
+  materials   Material[]
   assignments Assignment[]
 
   @@index([cohortId, date])
@@ -318,9 +335,9 @@ model Ticket {
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
 
-  cohort    Cohort  @relation(fields: [cohortId], references: [id])
-  requester User    @relation("TicketRequester", fields: [requesterId], references: [id])
-  assignee  User?   @relation("TicketAssignee", fields: [assigneeId], references: [id])
+  cohort    Cohort @relation(fields: [cohortId], references: [id])
+  requester User   @relation("TicketRequester", fields: [requesterId], references: [id])
+  assignee  User?  @relation("TicketAssignee", fields: [assigneeId], references: [id])
 
   attachments TicketAttachment[]
   events      TicketEvent[]
@@ -361,11 +378,11 @@ model TicketEvent {
 }
 
 model AbsenceDetail {
-  id                       Int           @id @default(autoincrement())
-  ticketId                 Int           @unique
-  absentDate               DateTime      @db.Date
-  reasonType               AbsenceReason
-  linkedAttendanceEventId  Int?          @unique
+  id                      Int           @id @default(autoincrement())
+  ticketId                Int           @unique
+  absentDate              DateTime      @db.Date
+  reasonType              AbsenceReason
+  linkedAttendanceEventId Int?          @unique
 
   ticket Ticket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
 }
@@ -446,11 +463,11 @@ model AttendanceOpening {
 
 // 하루 출결 입력을 마쳤다는 확인. 최종 반영일 = 확인된 마지막 날짜.
 model AttendanceDayClose {
-  id       Int      @id @default(autoincrement())
-  cohortId Int
-  date     DateTime @db.Date
+  id         Int      @id @default(autoincrement())
+  cohortId   Int
+  date       DateTime @db.Date
   closedById Int
-  closedAt DateTime @default(now())
+  closedAt   DateTime @default(now())
 
   cohort   Cohort @relation(fields: [cohortId], references: [id])
   closedBy User   @relation(fields: [closedById], references: [id])
@@ -472,4 +489,61 @@ model AttendanceEventLog {
   actor User @relation(fields: [actorId], references: [id])
 
   @@index([cohortId, eventId])
+}
+
+// ───────── M7: 이력서·자소서 수합 ─────────
+
+model Document {
+  id               Int            @id @default(autoincrement())
+  cohortId         Int
+  ownerId          Int
+  type             DocumentType
+  title            String         @db.VarChar(200)
+  currentVersionId Int? // 최신 DocumentVersion.id (순환 FK를 피하려고 관계 없이 둔다)
+  status           DocumentStatus @default(DRAFT)
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+
+  cohort Cohort @relation(fields: [cohortId], references: [id])
+  owner  User   @relation(fields: [ownerId], references: [id])
+
+  versions    DocumentVersion[]
+  reviewNotes DocumentReviewNote[]
+
+  @@index([cohortId, status])
+  @@index([ownerId])
+}
+
+model DocumentVersion {
+  id          Int       @id @default(autoincrement())
+  documentId  Int
+  cohortId    Int
+  versionNo   Int
+  fileName    String    @db.VarChar(255)
+  storagePath String    @db.VarChar(500) // STORAGE_DIR 기준 상대 경로. 직접 URL 노출 금지
+  size        Int
+  aiConsentAt DateTime? // AI 면접 질문 생성 활용 동의 시각
+  createdAt   DateTime  @default(now())
+
+  document Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  cohort   Cohort   @relation(fields: [cohortId], references: [id])
+
+  @@unique([documentId, versionNo])
+  @@index([cohortId])
+}
+
+model DocumentReviewNote {
+  id         Int      @id @default(autoincrement())
+  documentId Int
+  cohortId   Int
+  reviewerId Int
+  comment    String   @db.Text
+  createdAt  DateTime @default(now())
+
+  document Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  cohort   Cohort   @relation(fields: [cohortId], references: [id])
+  reviewer User     @relation(fields: [reviewerId], references: [id])
+
+  @@index([documentId])
+  @@index([cohortId])
 }
