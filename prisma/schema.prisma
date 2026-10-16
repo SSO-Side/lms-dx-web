@@ -308,7 +308,13 @@ model Material {
   lessonId    Int
   type        MaterialType
   title       String       @db.VarChar(200)
-  url         String       @db.VarChar(1000)
+  /// 링크 자료. 파일 자료면 null
+  url         String?      @db.VarChar(1000)
+  /// 파일 자료: 저장소 키(src/lib/storage) · 원본 파일명 · 전달 MIME · 바이트
+  filePath    String?      @db.VarChar(500)
+  fileName    String?      @db.VarChar(255)
+  fileMime    String?      @db.VarChar(120)
+  fileSize    Int?
   tags        Json? // string[]
   createdById Int
   createdAt   DateTime     @default(now())
@@ -340,8 +346,13 @@ model Submission {
   cohortId     Int
   assignmentId Int
   studentId    Int
-  fileUrl      String?          @db.VarChar(1000)
+  fileUrl      String?          @db.VarChar(1000) // 미사용(초기 스키마). 파일 제출은 filePath
   linkUrl      String?          @db.VarChar(1000)
+  /// 제출 파일: 저장소 키 · 원본 파일명 · 전달 MIME · 바이트
+  filePath     String?          @db.VarChar(500)
+  fileName     String?          @db.VarChar(255)
+  fileMime     String?          @db.VarChar(120)
+  fileSize     Int?
   submittedAt  DateTime         @default(now())
   status       SubmissionStatus @default(SUBMITTED)
 

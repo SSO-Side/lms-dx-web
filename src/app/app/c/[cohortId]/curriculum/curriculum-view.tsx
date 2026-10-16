@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { BookOpen, ExternalLink, FileText, FolderGit2, Link2, Plus, Trash2, Compass, ClipboardList } from "lucide-react";
+import { BookOpen, Download, ExternalLink, FileText, FolderGit2, Paperclip, Plus, Trash2, Compass, ClipboardList } from "lucide-react";
 import type { MaterialType } from "@prisma/client";
 import {
   createWeekAction,
@@ -17,6 +17,7 @@ import {
 } from "@/server/curriculum";
 import type { AssignmentItem, LessonItem, WeekItem } from "@/server/curriculum-queries";
 import { formatYmdWithDow } from "@/lib/dates";
+import { COURSE_FILE_ACCEPT, COURSE_FILE_HINT } from "@/lib/storage/validators";
 import { cn } from "@/lib/utils";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Button } from "@/components/ui/button";
@@ -27,7 +28,11 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetBo
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 
 const MATERIAL_LABELS: Record<MaterialType, string> = { DOC: "문서", FILE: "파일", REPO: "저장소", GUIDE: "가이드" };
-const MATERIAL_ICONS = { DOC: FileText, FILE: Link2, REPO: FolderGit2, GUIDE: Compass } as const;
+const MATERIAL_ICONS = { DOC: FileText, FILE: Paperclip, REPO: FolderGit2, GUIDE: Compass } as const;
+const fileInputCls =
+  "block w-full text-sm text-neutral-600 file:mr-3 file:h-11 file:rounded-md file:border-0 file:bg-primary-50 file:px-4 file:text-sm file:font-medium file:text-primary-700";
+const fileHref = (cohortId: number, kind: "materials" | "submissions", id: number) => `/api/c/${cohortId}/${kind}/${id}/file`;
+const formatSize = (bytes: number) => (bytes >= 1024 * 1024 ? `${(bytes / 1024 / 1024).toFixed(1)}MB` : `${Math.max(1, Math.round(bytes / 1024))}KB`);
 const selectCls = "h-10 w-full rounded-md border border-neutral-300 bg-card px-3 text-sm text-neutral-900";
 
 type Panel =
@@ -172,10 +177,11 @@ export function CurriculumView({
                 <ul className="space-y-1">
                   {l.materials.map((m) => {
                     const Icon = MATERIAL_ICONS[m.type];
+                    const TrailIcon = m.file ? Download : ExternalLink;
                     return (
                       <li key={m.id} className="flex items-center gap-2">
                         <a
-                          href={m.url}
+                          href={m.file ? fileHref(cohortId, "materials", m.id) : (m.url ?? "#")}
                           target="_blank"
                           rel="noreferrer noopener"
                           className="flex min-h-11 min-w-0 flex-1 items-center gap-2 rounded-md px-2 hover:bg-neutral-50"
@@ -188,7 +194,8 @@ export function CurriculumView({
                               {t}
                             </span>
                           ))}
-                          <ExternalLink className="ml-auto size-3.5 shrink-0 text-neutral-400" aria-hidden />
+                          {m.file && <span className="shrink-0 text-xs text-neutral-500 tabular-nums">{formatSize(m.file.size)}</span>}
+                          <TrailIcon className="ml-auto size-3.5 shrink-0 text-neutral-400" aria-hidden />
                         </a>
                         {canWrite && (
                           <Button
@@ -255,6 +262,7 @@ function Panels({ cohortId, panel, onClose, enrolledCount }: { cohortId: number;
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+  const [materialSource, setMaterialSource] = useState<"link" | "file">("link");
 
   const run = (fn: () => Promise<{ ok: boolean; error?: string }>) => {
     setError(null);
@@ -346,20 +354,11 @@ function Panels({ cohortId, panel, onClose, enrolledCount }: { cohortId: number;
           {panel?.kind === "material" && (
             <form
               className="flex h-full flex-col"
-              action={(fd) =>
-                run(() =>
-                  createMaterialAction(cohortId, {
-                    lessonId: panel.lesson.id,
-                    type: fd.get("type") as MaterialType,
-                    title: fd.get("title") as string,
-                    url: fd.get("url") as string,
-                    tags: ((fd.get("tags") as string) || "")
-                      .split(",")
-                      .map((t) => t.trim())
-                      .filter(Boolean),
-                  })
-                )
-              }
+              action={(fd) => {
+                fd.set("lessonId", String(panel.lesson.id));
+                fd.set("source", materialSource);
+                run(() => createMaterialAction(cohortId, fd));
+              }}
             >
               <SheetHeader>
                 <SheetTitle>자료 추가</SheetTitle>
@@ -368,17 +367,41 @@ function Panels({ cohortId, panel, onClose, enrolledCount }: { cohortId: number;
                 </SheetDescription>
               </SheetHeader>
               <SheetBody className="space-y-4">
-                <div className="space-y-1.5">
-                  <Label htmlFor="m-url">링크</Label>
-                  <Input id="m-url" name="url" type="url" required placeholder="https://" autoFocus />
-                  <p className="text-xs text-neutral-500">파일은 드라이브 등에 올린 뒤 링크로 등록합니다.</p>
+                <div role="radiogroup" aria-label="자료 방식" className="grid grid-cols-2 gap-1 rounded-lg bg-neutral-100 p-1">
+                  {(["link", "file"] as const).map((src) => (
+                    <button
+                      key={src}
+                      type="button"
+                      role="radio"
+                      aria-checked={materialSource === src}
+                      onClick={() => setMaterialSource(src)}
+                      className={cn(
+                        "h-9 rounded-md text-sm font-medium",
+                        materialSource === src ? "bg-card text-neutral-900 shadow-sm" : "text-neutral-600 hover:text-neutral-900"
+                      )}
+                    >
+                      {src === "link" ? "링크" : "파일 올리기"}
+                    </button>
+                  ))}
                 </div>
+                {materialSource === "link" ? (
+                  <div className="space-y-1.5">
+                    <Label htmlFor="m-url">링크</Label>
+                    <Input id="m-url" name="url" type="url" required placeholder="https://" autoFocus />
+                  </div>
+                ) : (
+                  <div className="space-y-1.5">
+                    <Label htmlFor="m-file">파일</Label>
+                    <input id="m-file" name="file" type="file" required accept={COURSE_FILE_ACCEPT} className={fileInputCls} />
+                    <p className="text-xs text-neutral-500">{COURSE_FILE_HINT}</p>
+                  </div>
+                )}
                 <div className="space-y-1.5">
                   <Label htmlFor="m-title">제목</Label>
                   <Input id="m-title" name="title" required maxLength={200} />
                 </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1.5">
+                <div className={cn("grid gap-3", materialSource === "link" && "grid-cols-2")}>
+                  <div className={cn("space-y-1.5", materialSource === "file" && "hidden")}>
                     <Label htmlFor="m-type">종류</Label>
                     <select id="m-type" name="type" defaultValue="DOC" className={selectCls}>
                       {(Object.keys(MATERIAL_LABELS) as MaterialType[]).map((t) => (
@@ -451,7 +474,10 @@ function Panels({ cohortId, panel, onClose, enrolledCount }: { cohortId: number;
           {panel?.kind === "submit" && (
             <form
               className="flex h-full flex-col"
-              action={(fd) => run(() => submitAssignmentAction(cohortId, { assignmentId: panel.assignment.id, linkUrl: fd.get("linkUrl") as string }))}
+              action={(fd) => {
+                fd.set("assignmentId", String(panel.assignment.id));
+                run(() => submitAssignmentAction(cohortId, fd));
+              }}
             >
               <SheetHeader>
                 <SheetTitle>{panel.assignment.title}</SheetTitle>
@@ -467,12 +493,30 @@ function Panels({ cohortId, panel, onClose, enrolledCount }: { cohortId: number;
                   </Alert>
                 )}
                 <div className="space-y-1.5">
-                  <Label htmlFor="s-link">제출 링크 (GitHub, 드라이브 등)</Label>
+                  <Label htmlFor="s-file">파일</Label>
+                  <input id="s-file" name="file" type="file" accept={COURSE_FILE_ACCEPT} className={fileInputCls} />
+                  <p className="text-xs text-neutral-500">{COURSE_FILE_HINT}</p>
+                  {panel.assignment.mySubmission?.fileName && (
+                    <p className="text-xs text-neutral-600">
+                      제출한 파일:{" "}
+                      <a
+                        href={fileHref(cohortId, "submissions", panel.assignment.mySubmission.id)}
+                        target="_blank"
+                        rel="noreferrer noopener"
+                        className="text-primary-500 hover:underline"
+                      >
+                        {panel.assignment.mySubmission.fileName}
+                      </a>{" "}
+                      · 새 파일을 고르지 않으면 그대로 둡니다.
+                    </p>
+                  )}
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="s-link">링크 (GitHub, 드라이브 등 · 선택)</Label>
                   <Input
                     id="s-link"
                     name="linkUrl"
                     type="url"
-                    required
                     className="h-12 text-base"
                     placeholder="https://"
                     defaultValue={panel.assignment.mySubmission?.linkUrl ?? ""}
@@ -533,7 +577,15 @@ function Panels({ cohortId, panel, onClose, enrolledCount }: { cohortId: number;
   );
 }
 
-type StatusRow = { studentId: number; name: string; loginId: string; status: "SUBMITTED" | "LATE" | "RETURNED" | null; linkUrl: string | null; submittedAt: string | null };
+type StatusRow = {
+  studentId: number;
+  name: string;
+  loginId: string;
+  status: "SUBMITTED" | "LATE" | "RETURNED" | null;
+  linkUrl: string | null;
+  file: { submissionId: number; name: string } | null;
+  submittedAt: string | null;
+};
 
 function SubmissionStatusSheet({
   cohortId,
@@ -586,6 +638,17 @@ function SubmissionStatusSheet({
                     {r.submittedAt && <p className="text-xs text-neutral-500 tabular-nums">{r.submittedAt}</p>}
                   </div>
                   <div className="flex shrink-0 items-center gap-2">
+                    {r.file && (
+                      <a
+                        href={fileHref(cohortId, "submissions", r.file.submissionId)}
+                        target="_blank"
+                        rel="noreferrer noopener"
+                        title={r.file.name}
+                        className="text-xs text-primary-500 hover:underline"
+                      >
+                        파일
+                      </a>
+                    )}
                     {r.linkUrl && (
                       <a href={r.linkUrl} target="_blank" rel="noreferrer noopener" className="text-xs text-primary-500 hover:underline">
                         링크 열기

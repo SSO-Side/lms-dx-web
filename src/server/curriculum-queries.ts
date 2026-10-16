@@ -4,7 +4,8 @@ import { dateToYmd, formatDateTime, ymdToDate } from "@/lib/dates";
 
 // 호출 측이 먼저 requireCohortAccess로 권한을 확인하고 ctx.cohortId만 넘긴다.
 
-export type MaterialItem = { id: number; type: MaterialType; title: string; url: string; tags: string[] };
+/** 링크 자료면 url, 파일 자료면 file (다운로드는 /api/c/[cohortId]/materials/[id]/file) */
+export type MaterialItem = { id: number; type: MaterialType; title: string; url: string | null; file: { name: string; size: number } | null; tags: string[] };
 export type AssignmentItem = {
   id: number;
   title: string;
@@ -12,7 +13,7 @@ export type AssignmentItem = {
   dueAt: string;
   dueAtIso: string;
   /** 수강생: 본인 제출 */
-  mySubmission: { status: SubmissionStatus; linkUrl: string | null; submittedAt: string } | null;
+  mySubmission: { id: number; status: SubmissionStatus; linkUrl: string | null; fileName: string | null; submittedAt: string } | null;
   /** 교사: 제출 수 */
   submittedCount: number;
 };
@@ -68,17 +69,28 @@ export async function getCurriculum(cohortId: number, viewer: { id: number; role
         type: m.type,
         title: m.title,
         url: m.url,
+        file: m.filePath ? { name: m.fileName ?? m.title, size: m.fileSize ?? 0 } : null,
         tags: Array.isArray(m.tags) ? (m.tags as unknown[]).filter((t): t is string => typeof t === "string") : [],
       })),
       assignments: l.assignments.map((a) => {
-        const mine = isStudent ? (a.submissions[0] as { status: SubmissionStatus; linkUrl: string | null; submittedAt: Date } | undefined) : undefined;
+        const mine = isStudent
+          ? (a.submissions[0] as { id: number; status: SubmissionStatus; linkUrl: string | null; filePath: string | null; fileName: string | null; submittedAt: Date } | undefined)
+          : undefined;
         return {
           id: a.id,
           title: a.title,
           description: a.description,
           dueAt: formatDateTime(a.dueAt),
           dueAtIso: a.dueAt.toISOString(),
-          mySubmission: mine ? { status: mine.status, linkUrl: mine.linkUrl, submittedAt: formatDateTime(mine.submittedAt) } : null,
+          mySubmission: mine
+            ? {
+                id: mine.id,
+                status: mine.status,
+                linkUrl: mine.linkUrl,
+                fileName: mine.filePath ? (mine.fileName ?? "제출 파일") : null,
+                submittedAt: formatDateTime(mine.submittedAt),
+              }
+            : null,
           submittedCount: isStudent ? 0 : a.submissions.length,
         };
       }),

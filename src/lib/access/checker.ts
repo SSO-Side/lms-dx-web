@@ -102,6 +102,26 @@ export function canViewDocumentFilePure(
   return actor.role === Role.INSTRUCTOR;
 }
 
+export interface SubmissionFileAccessInfo {
+  /** 제출물이 속한 반 */
+  cohortId: number;
+  studentId: number;
+}
+
+/**
+ * 과제 제출 파일 열람 가능 여부. 반 접근 확인(assignment:read)을 통과한 뒤의 리소스 단위 검사.
+ * 수강생은 본인 제출물만, 교직원은 같은 반 제출물을 연다 (제출 현황과 같은 범위).
+ */
+export function canViewSubmissionFilePure(
+  actor: { id: number; role: Role },
+  ctxCohortId: number,
+  sub: SubmissionFileAccessInfo
+): boolean {
+  if (sub.cohortId !== ctxCohortId) return false;
+  if (actor.role === Role.STUDENT) return sub.studentId === actor.id;
+  return true;
+}
+
 export interface TeamProjectAccessInfo {
   /** 팀이 속한 반 */
   cohortId: number;

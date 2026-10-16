@@ -5,6 +5,8 @@ const envSchema = z.object({
   SESSION_SECRET: z.string().min(1),
   TZ: z.string().default("Asia/Seoul"),
   STORAGE_DIR: z.string().default(".storage"),
+  STORAGE_DRIVER: z.enum(["local"]).default("local"),
+  STORAGE_ACCEL_PREFIX: z.string().optional(),
   USE_AI_MOCK: z
     .string()
     .default("true")

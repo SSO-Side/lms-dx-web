@@ -15,11 +15,10 @@
 - [ ] 챗봇·면접 질문 연동
 
 ## 현재 작업
-- M3·M2·M1·M11 완료 (2026-10-15), M7·M5·M10 완료 (2026-10-16)
+- M3·M2·M1·M11 완료 (2026-10-15), M7·M5·M10 완료 (2026-10-16), M1 후속(파일 업로드) 완료 (2026-10-17)
 
 ## 다음 할 일
 - 챗봇·면접 질문 연동 (외부 서비스 규격 확정 후)
-- 과제 파일 제출(storage 위), 자료 파일 업로드 — M1 후속
 - M5 후속: 팀원 참여 신청·팀장 승인, 팀 간 이동·팀 수정/해산, 알림, 단계 승인 되돌리기
 - M10 후속: 리드 이메일 알림, B2B 아웃바운드 패키징(학원 협의 후), 리드 읽음 표시, 레이트 리밋 DB/공유 저장소화, 검색 노출(SEO) 결정, 공개 이미지 재인코딩
 - M7 후속: 서류 파일 열람 접근 로그, 업로드 PDF 악성 내용 검사, 서류 삭제, 강사-수강생 배정 개념(도입 시 resume:review 범위 축소)
@@ -58,6 +57,8 @@
 - 2026-10-16: M10 리드 — 로그인 없는 서버 액션, zod 길이 제한 + 허니팟(website) + IP당 1시간 5건(기존 메모리 레이트 리밋에 횟수·기간 옵션 추가), cohortId는 쇼케이스에서 꺼냄, 메일 없음(문의 화면·홈 위젯), "신규" = 최근 7일
 - 2026-10-16: M10 메뉴 — 기업 문의는 "서류·프로젝트" 상단 전환의 세 번째 화면(lead:read 역할만)으로 두어 메뉴 5개 유지
 - 2026-10-17: 사람이 하는 일(환경 준비·화면 확인·배포·학원 협의)을 docs/user-tasks.md로 분리
+- 2026-10-17: M1 파일 — 저장소를 드라이버 구조로 분리(src/lib/storage: types·local·validators·serve, STORAGE_DRIVER=local), 공통 전달 fileResponse에 Nginx X-Accel-Redirect 선택 지원(STORAGE_ACCEL_PREFIX), 기존 파일 라우트 4개도 통일
+- 2026-10-17: M1 파일 — Material·Submission에 filePath·fileName·fileMime·fileSize(마이그레이션 m1_files, Material.url nullable), 허용 형식 PDF·오피스·한글·이미지·ZIP·텍스트 20MB(시그니처 검사), 다시 제출 시 새 파일만 교체·이전 파일 삭제, 제출 파일 열람은 본인·같은 반 교직원(canViewSubmissionFilePure)
 - 2026-10-16: M10 이미지 — png·jpg·webp 시그니처 검사 5MB, 공개 라우트는 PUBLISHED만, 응답에 nosniff·CSP default-src 'none'. 시드 이미지는 시드 코드가 단색 PNG를 직접 생성
 ## 막힘·확인 필요 (사람이 처리)
 > 절차·명령은 `docs/user-tasks.md`에 모아 두었다. 여기는 남은 항목만 한 줄씩.
@@ -66,4 +67,5 @@
 - 운영 서버의 STORAGE_DIR(증빙 저장 경로) 지정과 백업
 - [TBD] 팀 프로젝트 마일스톤의 학원 공식 권장 여부, 반 시작·종료일 확정(지연 판정 기준)
 - M10 운영 배포 전: Nginx가 X-Forwarded-For를 실제 클라이언트 IP로 덮어쓰게 설정(리드 요청 제한 위조 방지), 검색 노출 원할 때만 MARKET_INDEXABLE=true
+- M1 파일 업로드·다운로드를 로그인 후 브라우저에서 확인 (에이전트는 비로그인 403과 검증 함수만 확인)
 - M7 시드 확인용: STORAGE_DIR(기본 .storage)/seed/sample-resume.pdf 에 가상 PDF 1개 배치 후 서류 시드 실행

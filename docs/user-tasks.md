@@ -27,7 +27,9 @@ GRANT ALL PRIVILEGES ON lms_kdt_shadow.* TO 'lms_kdt'@'localhost';
 | `APP_BASE_URL` | 앱 기준 주소 (개발: `http://localhost:3333`) |
 | `SESSION_SECRET` | 충분히 긴 난수 |
 | `TZ` | `Asia/Seoul` |
-| `STORAGE_DIR` | 업로드 파일 저장 폴더. 비우면 `.storage`. 운영에서는 **웹 루트 밖** 경로 |
+| `STORAGE_DIR` | 업로드 파일 저장 폴더. 비우면 `.storage`. 운영에서는 **웹 루트 밖** 경로 (Docker는 볼륨 마운트 경로, 예: `/data/storage`) |
+| `STORAGE_DRIVER` | 저장소 드라이버. 비우면 `local`(지금은 이것만 있음). 오브젝트 저장소로 옮길 때 드라이버 추가 후 변경 |
+| `STORAGE_ACCEL_PREFIX` | 선택. 예: `/_files`. 넣으면 권한 확인 후 Nginx가 파일을 직접 전송(X-Accel-Redirect). 아래 Nginx `location`과 함께만 설정 |
 | `USE_AI_MOCK` | 개발 중에는 `true` |
 | `CHATBOT_API_URL` · `CHATBOT_SERVICE_TOKEN` · `INTERVIEW_API_URL` · `INTERVIEW_SERVICE_TOKEN` | AI 서비스 연동 때만 (`docs/ai-integration.md`) |
 | `ALLOW_SEED` · `SEED_PASSWORD` | 개발 DB에서만. `ALLOW_SEED=true`, 가상 계정 공통 비밀번호(8자 이상) |
@@ -70,15 +72,26 @@ npm run db:seed
 | DB | 운영 DB 생성·권한 (1-1과 같고 섀도 DB는 불필요), 스키마 반영은 `npx prisma migrate deploy`만. 시드는 운영에서 실행하지 않음 |
 | 앱 실행 | `npm run build` 후 pm2 또는 systemd로 `npm run start` (포트 3333) |
 | Nginx | 리버스 프록시 + TLS. 아래 설정 두 줄은 **필수** |
-| 파일 | `STORAGE_DIR`를 웹 루트 밖에 두고, 앱 계정만 읽기·쓰기 |
+| 파일 | `STORAGE_DIR`를 웹 루트 밖에 두고, 앱 계정만 읽기·쓰기. Docker면 named volume 또는 호스트 경로를 마운트해 컨테이너 교체 후에도 유지 |
 | 백업 | DB 일일 덤프 + `STORAGE_DIR` 폴더를 서버 밖에 보관, 복구 리허설 1회 |
 | 방화벽·도메인 | 3333 포트는 외부에 열지 않고 Nginx만 노출, 서브도메인 연결. 세션 쿠키는 host-only라 별도 설정 없음 |
 
 ```nginx
 # 기업 문의 요청 제한이 IP 기준이라, 클라이언트가 보낸 값을 덮어써야 위조를 막는다 ($proxy_add_x_forwarded_for 쓰지 않기)
 proxy_set_header X-Forwarded-For $remote_addr;
-# 업로드 한도: 서버 액션 32MB(next.config)와 맞춤 (증빙 3개·서류 PDF 10MB·이미지 5MB)
+# 업로드 한도: 서버 액션 32MB(next.config)와 맞춤 (증빙 3개·서류 PDF 10MB·이미지 5MB·자료/과제 20MB)
 client_max_body_size 32m;
+```
+
+**Docker + Nginx에서 파일 전달을 Nginx에 맡길 때(선택)**: 앱 컨테이너와 Nginx가 같은 저장 볼륨을 마운트하고(Nginx는 읽기 전용), `.env`에 `STORAGE_ACCEL_PREFIX=/_files`를 넣습니다. 앱이 권한을 확인한 뒤 Nginx가 내려주므로 큰 파일도 Node를 거치지 않습니다. 설정하지 않으면 앱이 직접 전송합니다(동작 동일).
+
+```nginx
+# 외부에서 직접 열 수 없고(internal), 앱 응답의 X-Accel-Redirect로만 접근
+location /_files/ {
+    internal;
+    alias /data/storage/;   # 앱의 STORAGE_DIR와 같은 볼륨
+    add_header X-Content-Type-Options nosniff always;
+}
 ```
 
 ## 4. 외부 서비스·키

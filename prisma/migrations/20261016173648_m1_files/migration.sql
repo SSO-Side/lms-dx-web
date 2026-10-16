@@ -1,0 +1,12 @@
+-- AlterTable
+ALTER TABLE `Material` ADD COLUMN `fileMime` VARCHAR(120) NULL,
+    ADD COLUMN `fileName` VARCHAR(255) NULL,
+    ADD COLUMN `filePath` VARCHAR(500) NULL,
+    ADD COLUMN `fileSize` INTEGER NULL,
+    MODIFY `url` VARCHAR(1000) NULL;
+
+-- AlterTable
+ALTER TABLE `Submission` ADD COLUMN `fileMime` VARCHAR(120) NULL,
+    ADD COLUMN `fileName` VARCHAR(255) NULL,
+    ADD COLUMN `filePath` VARCHAR(500) NULL,
+    ADD COLUMN `fileSize` INTEGER NULL;

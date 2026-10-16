@@ -4,6 +4,7 @@ import {
   canAccessCohortPure,
   canManageCohortAccountPure,
   canViewDocumentFilePure,
+  canViewSubmissionFilePure,
   canEditTeamProjectPure,
   canViewTeamProjectPure,
   type UserAccessInfo,
@@ -227,6 +228,37 @@ describe("반 간 접근 차단 테스트 (permissions.md §3)", () => {
         canAccessCohortPure(mgrA, cohortA, mgrAMembership) &&
         hasActionPermission(mgrA.role, "resume:review") &&
         canViewDocumentFilePure({ id: mgrA.id, role: mgrA.role }, cohortA.id, { cohortId: cohortA.id, ownerId: s01.id }),
+      expected: false,
+    },
+    // M1 과제 제출 파일 열람 (반 접근 → assignment:read → 리소스 단위 검사)
+    {
+      actorName: "s01",
+      desc: "같은 반 s02의 제출 파일 열람",
+      fn: () =>
+        canAccessCohortPure(s01, cohortA, s01Membership) &&
+        hasActionPermission(s01.role, "assignment:read") &&
+        canViewSubmissionFilePure({ id: s01.id, role: s01.role }, cohortA.id, { cohortId: cohortA.id, studentId: s02.id }),
+      expected: false,
+    },
+    {
+      actorName: "inst_a",
+      desc: "반 A 경로로 반 B 제출물 id를 넣어 열람",
+      fn: () =>
+        canAccessCohortPure(instA, cohortA, instAMembership) &&
+        canViewSubmissionFilePure({ id: instA.id, role: instA.role }, cohortA.id, { cohortId: cohortB.id, studentId: s02.id }),
+      expected: false,
+    },
+    {
+      actorName: "inst_b(반 B 강사)",
+      desc: "반 A 수강생 s01의 제출 파일 열람",
+      fn: () => {
+        const instB: UserAccessInfo = { ...instA, id: 103 };
+        const instBMembership: UserCohortMembership = { enrolledCohortIds: [], staffCohortIds: [2] };
+        return (
+          canAccessCohortPure(instB, cohortA, instBMembership) &&
+          canViewSubmissionFilePure({ id: instB.id, role: instB.role }, cohortA.id, { cohortId: cohortA.id, studentId: s01.id })
+        );
+      },
       expected: false,
     },
     // M5 팀 프로젝트 (반 접근 → team 권한 → 리소스 단위 검사)
