@@ -13,7 +13,7 @@ src/lib/                 db.ts, auth/, access/(권한·반 범위), storage/, ai
 src/lib/attendance/      출결 계산 순수 함수 (DB·Next 의존 금지)
 src/server/              서버 액션·쿼리 (Prisma 호출은 여기서만)
 prisma/                  schema.prisma, seed.ts, migrations/
-docs/                    spec/, design/, decisions/, PROGRESS.md, dev-guide.md
+docs/                    spec/, design/, decisions/, PROGRESS.md, dev-guide.md, ai-integration.md(AI 서비스 연동 규격)
 ```
 
 ## 2. DB·스키마
