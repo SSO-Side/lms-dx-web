@@ -8,7 +8,7 @@ export default function Home() {
       <div className="w-full max-w-md text-center">
         <p className="text-sm font-medium text-primary-600">KDT 학원 반 단위 LMS</p>
         <h1 className="mt-2 text-3xl font-semibold text-neutral-900">lms_kdt</h1>
-        <p className="mt-3 text-base text-neutral-600">출결·결석계·자료·과제를 반 단위로 한곳에서 관리합니다.</p>
+        <p className="mt-3 text-base text-neutral-600">출결·병결 신청·자료·과제를 반 단위로 한곳에서 관리합니다.</p>
 
         <div className="mt-8 flex flex-col gap-3">
           <Link href="/login" className={buttonVariants({ size: "lg", className: "w-full" })}>

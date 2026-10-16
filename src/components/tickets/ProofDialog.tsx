@@ -35,7 +35,7 @@ export function ProofDialog({ cohortId, ticketId, onClose }: { cohortId: number;
     <Dialog open={ticketId !== null} onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
-          <DialogTitle>증빙 · 결석계 #{ticketId}</DialogTitle>
+          <DialogTitle>증빙 서류 · 신청 #{ticketId}</DialogTitle>
           <DialogDescription>권한이 있는 사용자에게만 표시됩니다. 외부로 공유하지 마세요.</DialogDescription>
         </DialogHeader>
         {error && <Alert tone="danger">{error}</Alert>}

@@ -38,7 +38,7 @@ export default async function TicketsPage({ params, searchParams }: Props) {
     ]);
     return (
       <div className="mx-auto max-w-2xl">
-        <PageHeader back={{ href: `/app/c/${ctx.cohortId}`, label: "반 홈" }} title="티켓" description="결석계와 문의를 접수하고 처리 상태를 확인합니다." />
+        <PageHeader back={{ href: `/app/c/${ctx.cohortId}`, label: "반 홈" }} title="티켓" description="병결·휴가 신청과 문의를 접수하고 처리 상태를 확인합니다." />
         <StudentTickets
           cohortId={ctx.cohortId}
           tickets={tickets}
@@ -60,7 +60,7 @@ export default async function TicketsPage({ params, searchParams }: Props) {
 
   return (
     <>
-      <PageHeader back={{ href: `/app/c/${ctx.cohortId}`, label: "반 홈" }} title="티켓" description="결석계·상담·서류 요청을 처리합니다. 행을 누르면 상세와 처리 버튼이 열립니다." />
+      <PageHeader back={{ href: `/app/c/${ctx.cohortId}`, label: "반 홈" }} title="티켓" description="병결·휴가 신청과 상담·서류 요청을 처리합니다. 행을 누르면 상세와 처리 버튼이 열립니다." />
       <nav className="mb-4 flex gap-1 overflow-x-auto border-b border-neutral-200" aria-label="상태">
         {TABS.map((t) => (
           <Link

@@ -7,6 +7,7 @@ import {
   getStudentEventsAction,
   upsertEventAction,
   deleteEventAction,
+  bulkExcusedAbsenceAction,
   saveOpeningsAction,
 } from "@/server/attendance";
 import type { PeriodInfo, StudentAttendance, StudentEventRow } from "@/server/attendance-queries";
@@ -197,6 +198,9 @@ function StudentDrawer({
   const [proofTicket, setProofTicket] = useState<number | null>(null);
   const [pending, startTransition] = useTransition();
   const [formError, setFormError] = useState<string | null>(null);
+  const [bulkOpen, setBulkOpen] = useState(false);
+  const [bulk, setBulk] = useState<{ startDate: string; endDate: string; excusedType: "SICK" | "LEAVE"; note: string } | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
 
   const load = (studentId: number) => {
     setLoadError(null);
@@ -210,8 +214,30 @@ function StudentDrawer({
     setLoadedFor(student.studentId);
     setEvents(null);
     setEditing(null);
+    setBulkOpen(false);
+    setNotice(null);
     load(student.studentId);
   }
+
+  const runBulk = () => {
+    if (!student || !bulk) return;
+    setFormError(null);
+    startTransition(async () => {
+      const res = await bulkExcusedAbsenceAction(cohortId, {
+        studentId: student.studentId,
+        startDate: bulk.startDate,
+        endDate: bulk.endDate,
+        excusedType: bulk.excusedType,
+        note: bulk.note.trim() || null,
+      });
+      setBulk(null);
+      if (!res.ok) return setFormError(res.error);
+      setBulkOpen(false);
+      setNotice(`훈련일 ${res.count}일을 ${EXCUSED_LABELS[bulk.excusedType]}(공결)로 처리했습니다.`);
+      load(student.studentId);
+      router.refresh();
+    });
+  };
 
   const submit = (form: FormData) => {
     if (!student || !editing) return;
@@ -368,16 +394,90 @@ function StudentDrawer({
               </div>
             </form>
           )}
+          {canWrite && bulkOpen && (
+            <form
+              className="space-y-3 rounded-lg border border-primary-200 bg-primary-50/40 p-3"
+              action={(fd) =>
+                setBulk({
+                  startDate: fd.get("startDate") as string,
+                  endDate: fd.get("endDate") as string,
+                  excusedType: fd.get("bulkType") === "LEAVE" ? "LEAVE" : "SICK",
+                  note: (fd.get("bulkNote") as string) ?? "",
+                })
+              }
+            >
+              <div>
+                <p className="text-sm font-medium text-neutral-900">기간 병결·휴가 일괄 처리</p>
+                <p className="text-xs text-neutral-500">입원 등 불가피한 연속 결석에만 씁니다. 증빙 서류를 확인한 뒤 처리하세요.</p>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label htmlFor="bk-start">시작일</Label>
+                  <Input id="bk-start" name="startDate" type="date" required />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="bk-end">종료일</Label>
+                  <Input id="bk-end" name="endDate" type="date" required />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label htmlFor="bk-type">구분</Label>
+                  <select id="bk-type" name="bulkType" className={cn(selectCls, "w-full")} defaultValue="SICK">
+                    <option value="SICK">병결</option>
+                    <option value="LEAVE">휴가</option>
+                  </select>
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="bk-note">비고</Label>
+                  <Input id="bk-note" name="bulkNote" maxLength={300} placeholder="예: 입원(진단서 확인)" />
+                </div>
+              </div>
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" size="sm" onClick={() => setBulkOpen(false)}>
+                  취소
+                </Button>
+                <Button type="submit" size="sm">
+                  다음
+                </Button>
+              </div>
+            </form>
+          )}
+          {notice && <Alert tone="success">{notice}</Alert>}
+          {formError && !editing && <Alert tone="danger">{formError}</Alert>}
           <p className="text-xs text-neutral-500">모든 추가·수정·삭제는 변경 이력에 기록됩니다.</p>
         </SheetBody>
         {canWrite && (
           <SheetFooter>
-            <Button onClick={() => setEditing({})} disabled={!!editing}>
+            <Button variant="outline" onClick={() => { setEditing(null); setNotice(null); setBulkOpen(true); }} disabled={bulkOpen}>
+              기간 병결·휴가
+            </Button>
+            <Button onClick={() => { setBulkOpen(false); setNotice(null); setEditing({}); }} disabled={!!editing}>
               <Plus /> 일자 기록 추가
             </Button>
           </SheetFooter>
         )}
       </SheetContent>
+
+      <Dialog open={bulk !== null} onOpenChange={(o) => !o && setBulk(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>기간 {bulk ? EXCUSED_LABELS[bulk.excusedType] : ""} 처리할까요?</DialogTitle>
+            <DialogDescription>
+              {bulk &&
+                `${student?.name} · ${bulk.startDate} ~ ${bulk.endDate} 안의 훈련일을 모두 공결 결석으로 기록합니다. 같은 날의 지각·조퇴·외출 기록은 지워지고 변경 이력에 남습니다.`}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setBulk(null)}>
+              취소
+            </Button>
+            <Button onClick={runBulk} disabled={pending}>
+              {pending ? "처리 중…" : "처리"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={deleting !== null} onOpenChange={(o) => !o && setDeleting(null)}>
         <DialogContent>

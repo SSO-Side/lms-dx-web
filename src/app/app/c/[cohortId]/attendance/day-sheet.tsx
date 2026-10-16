@@ -96,7 +96,7 @@ export function DaySheet({
     if (type === "PRESENT") types = [];
     else if (type === "ABSENT") {
       types = cur.types.includes("ABSENT") ? [] : ["ABSENT"];
-      // 승인된 결석계(병결·휴가)가 있으면 공결을 자동으로 채운다.
+      // 승인된 병결·휴가 신청이 있으면 공결을 자동으로 채운다.
       if (!cur.types.includes("ABSENT") && entry.approvedTicket && entry.approvedTicket.reasonType !== "OTHER") {
         excusedType = entry.approvedTicket.reasonType;
       }
@@ -197,7 +197,7 @@ export function DaySheet({
                     </div>
                     {isAbsent && (
                       <div className="flex flex-wrap items-center gap-2 text-xs text-neutral-600">
-                        <span>공결</span>
+                        <span title="병결·휴가는 수강생 신청 승인 시 자동 반영됩니다. 서류를 직접 받은 경우에만 지정하세요.">공결 (증빙 확인 후)</span>
                         {([null, "SICK", "LEAVE"] as const).map((x) => (
                           <label key={x ?? "none"} className="inline-flex items-center gap-1">
                             <input
@@ -212,7 +212,7 @@ export function DaySheet({
                         ))}
                         {entry.approvedTicket && (
                           <Link href={`/app/c/${cohortId}/tickets?ticket=${entry.approvedTicket.id}`} className="text-primary-500 hover:underline">
-                            결석계 #{entry.approvedTicket.id}
+                            신청 #{entry.approvedTicket.id}
                           </Link>
                         )}
                       </div>

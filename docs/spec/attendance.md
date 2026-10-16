@@ -86,6 +86,7 @@ computeAttendance(input: {
 ## 6. 이 함수 밖의 규칙 (서버 액션에서 처리, 별도 테스트 불필요)
 - 이벤트는 `(cohortId, studentId, date, type)`이 유일하다. 같은 키를 다시 기록하면 수정으로 처리하고 `AttendanceEventLog`에 남긴다.
 - 훈련일이 아닌 날짜(`isTraining=false` 또는 `TrainingDay` 없음)에는 이벤트를 만들 수 없다.
-- 결석계(ABSENCE 티켓)가 APPROVED가 되면 `AbsenceDetail.absentDate`에 `ABSENT(excused=true, excusedType=SICK|LEAVE)` 이벤트를 만들고 `ticketId`로 연결한다. 사유가 OTHER이면 공결로 처리하지 않는다.
+- 병결·휴가 신청(ABSENCE 티켓)이 APPROVED가 되면 `AbsenceDetail.absentDate`에 `ABSENT(excused=true, excusedType=SICK|LEAVE)` 이벤트를 만들고 `ticketId`로 연결한다. 사유가 OTHER(과거 데이터)이면 공결로 처리하지 않는다.
+- 매니저의 기간 일괄 공결 처리: 기간 안의 훈련일마다 `ABSENT(excused=true)`를 기록하고 같은 날 지각·조퇴·외출 기록은 지운다(이력 기록).
 - 출결 입력·수정은 MANAGER와 ACADEMY_ADMIN만 가능하며 INSTRUCTOR는 열람 전용이다.
 - 화면에는 항상 "참고용"과 **최종 반영일**(`AttendanceDayClose` 중 가장 늦은 날짜)을 표시하고, 단위기간 내 훈련일 중 확인되지 않은 날이 있으면 경고한다.

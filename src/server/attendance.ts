@@ -221,6 +221,77 @@ export async function deleteEventAction(cohortId: number, eventId: number): Prom
   });
 }
 
+const bulkExcusedSchema = z.object({
+  studentId: z.number().int(),
+  startDate: ymd,
+  endDate: ymd,
+  excusedType: z.enum(["SICK", "LEAVE"]),
+  note: z.string().trim().max(300).nullable(),
+});
+
+/**
+ * 기간 공결 일괄 처리 (입원 등 불가피한 연속 병결·휴가). 매니저가 증빙을 확인한 뒤 쓴다.
+ * 기간 안의 훈련일마다 공결 결석을 기록하고, 같은 날 지각·조퇴·외출 기록은 지운다. 모든 변경은 이력에 남긴다.
+ */
+export async function bulkExcusedAbsenceAction(
+  cohortId: number,
+  input: z.input<typeof bulkExcusedSchema>
+): Promise<{ ok: true; count: number } | { ok: false; error: string }> {
+  try {
+    const ctx = await requireCohortAccess(cohortId, "attendance:write");
+    const parsed = bulkExcusedSchema.safeParse(input);
+    if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "입력값 오류" };
+    const { studentId, startDate, endDate, excusedType, note } = parsed.data;
+    if (endDate < startDate) return { ok: false, error: "종료일은 시작일 이후여야 합니다." };
+
+    const [enrollment, days] = await Promise.all([
+      db.enrollment.findUnique({ where: { cohortId_studentId: { cohortId: ctx.cohortId, studentId } } }),
+      db.trainingDay.findMany({
+        where: { cohortId: ctx.cohortId, isTraining: true, date: { gte: ymdToDate(startDate), lte: ymdToDate(endDate) } },
+        orderBy: { date: "asc" },
+      }),
+    ]);
+    if (!enrollment || enrollment.status !== EnrollmentStatus.ENROLLED) return { ok: false, error: "이 반의 재적 수강생이 아닙니다." };
+    if (days.length === 0) return { ok: false, error: "기간 안에 훈련일이 없습니다." };
+    if (days.length > 60) return { ok: false, error: "한 번에 60 훈련일까지만 처리할 수 있습니다." };
+
+    const memo = note || `기간 ${EXCUSED_NOTE[excusedType]} ${startDate}~${endDate}`;
+    await db.$transaction(async (tx) => {
+      for (const day of days) {
+        const existing = await tx.attendanceEvent.findMany({ where: { cohortId: ctx.cohortId, studentId, date: day.date } });
+        for (const e of existing.filter((x) => x.type !== "ABSENT")) {
+          await tx.attendanceEvent.delete({ where: { id: e.id } });
+          await tx.attendanceEventLog.create({
+            data: { cohortId: ctx.cohortId, eventId: e.id, action: LogAction.DELETE, actorId: ctx.user.id, before: snapshot(e) },
+          });
+        }
+        const prev = existing.find((x) => x.type === "ABSENT");
+        const data = { excused: true, excusedType, note: memo, recordedById: ctx.user.id };
+        if (prev) {
+          const updated = await tx.attendanceEvent.update({ where: { id: prev.id }, data });
+          await tx.attendanceEventLog.create({
+            data: { cohortId: ctx.cohortId, eventId: prev.id, action: LogAction.UPDATE, actorId: ctx.user.id, before: snapshot(prev), after: snapshot(updated) },
+          });
+        } else {
+          const created = await tx.attendanceEvent.create({
+            data: { cohortId: ctx.cohortId, studentId, date: day.date, type: "ABSENT", ...data },
+          });
+          await tx.attendanceEventLog.create({
+            data: { cohortId: ctx.cohortId, eventId: created.id, action: LogAction.CREATE, actorId: ctx.user.id, after: snapshot(created) },
+          });
+        }
+      }
+    });
+    refresh(ctx.cohortId);
+    return { ok: true, count: days.length };
+  } catch (e) {
+    if (e instanceof AccessDeniedError) return { ok: false, error: "권한이 없습니다." };
+    throw e;
+  }
+}
+
+const EXCUSED_NOTE = { SICK: "병결", LEAVE: "휴가" } as const;
+
 const count = z.number().int().min(0).max(999);
 const openingSchema = z.object({
   periodId: z.number().int(),

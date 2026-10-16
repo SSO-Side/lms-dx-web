@@ -127,7 +127,7 @@ export type DayEntry = {
   name: string;
   loginId: string;
   events: { id: number; type: Ev["type"]; excused: boolean; excusedType: "SICK" | "LEAVE" | null; ticketId: number | null; note: string | null }[];
-  /** 해당 일자에 승인된 결석계 */
+  /** 해당 일자에 승인된 병결·휴가 신청 */
   approvedTicket: { id: number; reasonType: "SICK" | "LEAVE" | "OTHER" } | null;
 };
 

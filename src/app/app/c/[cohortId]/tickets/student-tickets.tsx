@@ -36,7 +36,7 @@ export function StudentTickets({
     <div className="space-y-4">
       <div className="grid grid-cols-2 gap-2">
         <Button size="lg" onClick={() => setSheet("absence")}>
-          <FilePlus2 /> 결석계 접수
+          <FilePlus2 /> 병결·휴가 신청
         </Button>
         <Button size="lg" variant="outline" onClick={() => setSheet("inquiry")}>
           <MessageSquarePlus /> 문의 등록
@@ -94,10 +94,10 @@ export function StudentTickets({
   );
 }
 
-const STEPS = ["일자", "사유", "증빙", "확인"] as const;
+const STEPS = ["일자", "구분", "증빙 서류", "확인"] as const;
 const ACCEPT = "image/jpeg,image/png,image/heic,image/heif,.heic,application/pdf";
 
-/** 결석계 접수: 하단 드로어 안의 단계형 폼 (ia.md §3) */
+/** 병결·휴가 신청: 하단 드로어 안의 단계형 폼 (하루 단위, 증빙 필수). 지각·조퇴·일반 결석은 매니저가 출결에서 체크한다. */
 function AbsenceSheet({
   cohortId,
   open,
@@ -114,7 +114,7 @@ function AbsenceSheet({
   const router = useRouter();
   const [step, setStep] = useState(0);
   const [date, setDate] = useState("");
-  const [reason, setReason] = useState<"SICK" | "LEAVE" | "OTHER" | "">("");
+  const [reason, setReason] = useState<"SICK" | "LEAVE" | "">("");
   const [body, setBody] = useState("");
   const [files, setFiles] = useState<File[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -132,8 +132,9 @@ function AbsenceSheet({
   const next = () => {
     setError(null);
     if (step === 0 && !trainingDates.includes(date)) return setError("훈련일을 선택해 주세요. 주말·휴강일은 접수할 수 없습니다.");
-    if (step === 1 && !reason) return setError("사유 유형을 선택해 주세요.");
+    if (step === 1 && !reason) return setError("병결 또는 휴가를 선택해 주세요.");
     if (step === 2) {
+      if (files.length === 0) return setError("증빙 서류를 1개 이상 첨부해 주세요.");
       if (files.length > 3) return setError("증빙은 최대 3개까지 첨부할 수 있습니다.");
       if (files.some((f) => f.size > 10 * 1024 * 1024)) return setError("파일당 10MB 이하만 첨부할 수 있습니다.");
     }
@@ -168,7 +169,7 @@ function AbsenceSheet({
     >
       <SheetContent>
         <SheetHeader>
-          <SheetTitle>결석계 접수</SheetTitle>
+          <SheetTitle>병결·휴가 신청</SheetTitle>
           <SheetDescription>
             {step + 1}/{STEPS.length} · {STEPS[step]}
           </SheetDescription>
@@ -181,7 +182,10 @@ function AbsenceSheet({
         <SheetBody className="space-y-4">
           {step === 0 && (
             <div className="space-y-1.5">
-              <Label htmlFor="ab-date">결석 일자</Label>
+              <Alert tone="info" className="mb-3">
+                서류가 있는 병결·휴가만 여기서 신청합니다. 지각·조퇴·당일 결석은 담당 매니저에게 연락하면 매니저가 출결에 체크합니다.
+              </Alert>
+              <Label htmlFor="ab-date">날짜 (하루 단위)</Label>
               <Input
                 id="ab-date"
                 type="date"
@@ -200,8 +204,8 @@ function AbsenceSheet({
           )}
           {step === 1 && (
             <fieldset className="space-y-2">
-              <legend className="mb-1 text-caption font-medium text-neutral-700">사유 유형</legend>
-              {(["SICK", "LEAVE", "OTHER"] as const).map((r) => (
+              <legend className="mb-1 text-caption font-medium text-neutral-700">구분</legend>
+              {(["SICK", "LEAVE"] as const).map((r) => (
                 <label
                   key={r}
                   className={cn(
@@ -210,10 +214,7 @@ function AbsenceSheet({
                   )}
                 >
                   <input type="radio" name="reason" className="size-4 accent-primary-500" checked={reason === r} onChange={() => setReason(r)} />
-                  <span>
-                    {ABSENCE_REASON_LABELS[r]}
-                    {r === "OTHER" && <span className="ml-1 text-xs text-neutral-500">(공결로 처리되지 않습니다)</span>}
-                  </span>
+                  <span>{ABSENCE_REASON_LABELS[r]}</span>
                 </label>
               ))}
               <div className="space-y-1.5 pt-2">
@@ -224,7 +225,7 @@ function AbsenceSheet({
           )}
           {step === 2 && (
             <div className="space-y-2">
-              <Label htmlFor="ab-files">증빙 사진·파일 (선택, 권장)</Label>
+              <Label htmlFor="ab-files">증빙 서류 (필수)</Label>
               <input
                 id="ab-files"
                 type="file"
@@ -249,8 +250,8 @@ function AbsenceSheet({
           {step === 3 && (
             <dl className="divide-y divide-neutral-200 rounded-lg border border-neutral-200 text-sm">
               {[
-                ["결석 일자", formatYmdWithDow(date)],
-                ["사유", reason ? ABSENCE_REASON_LABELS[reason] : ""],
+                ["날짜", formatYmdWithDow(date)],
+                ["구분", reason ? ABSENCE_REASON_LABELS[reason] : ""],
                 ["증빙", files.length ? `${files.length}개` : "없음"],
                 ["상세 내용", body || "없음"],
               ].map(([k, v]) => (

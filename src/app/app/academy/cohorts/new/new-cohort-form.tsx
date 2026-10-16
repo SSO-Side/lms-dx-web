@@ -244,7 +244,7 @@ export function NewCohortForm({ staffOptions }: { staffOptions: StaffOption[] })
 
       {step === 3 && (
         <div className="space-y-5">
-          <StaffGroup title="매니저" hint="주담당 매니저는 결석계·티켓을 자동으로 배정받습니다." options={managers} selected={staff} onToggle={toggleStaff} primaryId={primaryId} onPrimary={setPrimaryId} />
+          <StaffGroup title="매니저" hint="주담당 매니저는 병결·휴가 신청과 티켓을 자동으로 배정받습니다." options={managers} selected={staff} onToggle={toggleStaff} primaryId={primaryId} onPrimary={setPrimaryId} />
           <StaffGroup title="강사" options={instructors} selected={staff} onToggle={toggleStaff} />
           <dl className="divide-y divide-neutral-200 rounded-lg border border-neutral-200">
             {[

@@ -102,7 +102,7 @@ export default async function CohortHomePage({ params }: CohortHomePageProps) {
               moreHref={`/app/c/${id}/tickets`}
               action={
                 <Link href={`/app/c/${id}/tickets?new=absence`} className={buttonVariants({ size: "sm" })}>
-                  <FilePlus2 aria-hidden /> 결석계 접수
+                  <FilePlus2 aria-hidden /> 병결·휴가 신청
                 </Link>
               }
             />

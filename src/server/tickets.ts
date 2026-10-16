@@ -62,12 +62,13 @@ async function primaryManagerId(cohortId: number): Promise<number | null> {
 }
 
 const absenceSchema = z.object({
-  absentDate: z.string().refine(isYmd, "결석 일자를 선택해 주세요."),
-  reasonType: z.enum(["SICK", "LEAVE", "OTHER"], { message: "사유 유형을 선택해 주세요." }),
+  absentDate: z.string().refine(isYmd, "날짜를 선택해 주세요."),
+  // 수강생 신청은 서류가 필요한 병결·휴가만. 지각·조퇴·일반 결석은 매니저가 출결 화면에서 체크한다.
+  reasonType: z.enum(["SICK", "LEAVE"], { message: "병결 또는 휴가를 선택해 주세요." }),
   body: z.string().trim().max(2000).optional(),
 });
 
-/** 결석계 접수 (수강생) */
+/** 병결·휴가 신청 (수강생, 하루 단위, 증빙 서류 필수) */
 export async function createAbsenceAction(cohortId: number, formData: FormData): Promise<Result> {
   return wrap(async () => {
     const ctx = await requireCohortAccess(cohortId, "ticket:create");
@@ -94,12 +95,13 @@ export async function createAbsenceAction(cohortId: number, formData: FormData):
         select: { id: true },
       }),
     ]);
-    if (ctx.role !== "ADMIN" && enrollment?.status !== EnrollmentStatus.ENROLLED) return { ok: false, error: "이 반의 재적 수강생만 접수할 수 있습니다." };
+    if (ctx.role !== "ADMIN" && enrollment?.status !== EnrollmentStatus.ENROLLED) return { ok: false, error: "이 반의 재적 수강생만 신청할 수 있습니다." };
     if (!day || !day.isTraining) return { ok: false, error: "훈련일이 아닌 날짜입니다." };
-    if (dup) return { ok: false, error: `같은 날짜의 결석계(#${dup.id})가 이미 있습니다.` };
+    if (dup) return { ok: false, error: `같은 날짜의 신청(#${dup.id})이 이미 있습니다.` };
 
     const stored = await storeProofs(ctx.cohortId, formData.getAll("files") as File[]);
     if (typeof stored === "string") return { ok: false, error: stored };
+    if (stored.length === 0) return { ok: false, error: "증빙 서류를 1개 이상 첨부해 주세요." };
 
     const assigneeId = await primaryManagerId(ctx.cohortId);
     const ticket = await db.ticket.create({
@@ -108,7 +110,7 @@ export async function createAbsenceAction(cohortId: number, formData: FormData):
         type: "ABSENCE",
         requesterId: ctx.user.id,
         assigneeId,
-        title: `결석계 · ${absentDate} (${REASON_LABELS[reasonType]})`,
+        title: `${REASON_LABELS[reasonType]} 신청 · ${absentDate}`,
         body: body || null,
         absence: { create: { absentDate: d, reasonType } },
         attachments: { create: stored },
