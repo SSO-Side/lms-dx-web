@@ -1,3 +1,4 @@
+// 팀 프로젝트 단계 진행 표시(스테퍼).
 import { Check } from "lucide-react";
 import { STAGES, type StageNo } from "@/lib/team/guide";
 import { cn } from "@/lib/utils";

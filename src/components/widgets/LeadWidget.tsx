@@ -1,3 +1,4 @@
+// 홈 위젯(매니저·슈퍼어드민): 신규 기업 문의.
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
 import { Widget } from "@/components/Widget";

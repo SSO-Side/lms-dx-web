@@ -1,3 +1,4 @@
+// 홈 위젯: 팀 프로젝트(수강생 내 팀, 교직원 단계별 요약).
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
 import { Widget } from "@/components/Widget";

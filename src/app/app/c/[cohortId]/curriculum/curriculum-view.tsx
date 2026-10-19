@@ -1,5 +1,6 @@
 "use client";
 
+// 커리큘럼 화면(클라이언트): 주차 선택, 수업별 자료·과제 목록, 등록·제출·제출 현황 드로어.
 import { useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";

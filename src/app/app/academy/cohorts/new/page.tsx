@@ -1,3 +1,4 @@
+// 반 개설 페이지(/app/academy/cohorts/new). 입력 단계는 new-cohort-form.tsx.
 import { Role } from "@prisma/client";
 import { requireAuthUser } from "@/lib/auth/session";
 import { AccessDenied } from "@/components/shell/AccessDenied";

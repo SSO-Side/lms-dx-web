@@ -1,3 +1,4 @@
+// 역할 × 동작 권한표(docs/spec/permissions.md). 어떤 역할이 어떤 동작을 할 수 있는지 한 곳에 모아 둔다.
 import { Role } from "@prisma/client";
 
 export type Action =
@@ -28,6 +29,7 @@ export type Action =
   | "lead:read"
   | "account:manage";
 
+/** 권한표: 동작마다 역할별 허용(true)·거부(false). */
 export const ROLE_PERMISSIONS: Record<Action, Record<Role, boolean>> = {
   "material:read": {
     STUDENT: true,
@@ -216,6 +218,7 @@ export const ROLE_PERMISSIONS: Record<Action, Record<Role, boolean>> = {
   },
 };
 
+/** 이 역할이 이 동작을 할 수 있는지 권한표에서 찾는다. */
 export function hasActionPermission(role: Role, action: Action): boolean {
   return ROLE_PERMISSIONS[action]?.[role] ?? false;
 }

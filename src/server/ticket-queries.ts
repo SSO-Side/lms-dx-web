@@ -1,3 +1,4 @@
+// 티켓(M2) 조회 함수: 티켓 목록·상세, 상태별 개수.
 import type { Prisma, Role, TicketStatus, TicketType } from "@prisma/client";
 import { db } from "@/lib/db";
 import { dateToYmd, formatDateTime } from "@/lib/dates";
@@ -16,6 +17,7 @@ export type TicketRow = {
   absentDate: string | null;
 };
 
+/** 티켓 보드 탭별 상태 묶음(처리 대기·완료 등) */
 export const STATUS_GROUPS: Record<string, TicketStatus[]> = {
   PENDING: ["PENDING"],
   IN_REVIEW: ["IN_REVIEW"],
@@ -23,6 +25,7 @@ export const STATUS_GROUPS: Record<string, TicketStatus[]> = {
   DONE: ["APPROVED", "REJECTED", "CANCELED"],
 };
 
+/** 티켓 목록. 수강생은 본인 것만, 교직원은 반 전체. */
 export async function listTickets(
   cohortId: number,
   opts: { requesterId?: number; statuses?: TicketStatus[]; take?: number } = {}
@@ -49,6 +52,7 @@ export async function listTickets(
   }));
 }
 
+/** 상태별 티켓 수(홈 위젯·탭 숫자용). */
 export async function countTicketsByStatus(cohortId: number, requesterId?: number) {
   const rows = await db.ticket.groupBy({
     by: ["status"],
@@ -82,6 +86,7 @@ export type TicketDetail = {
   actions: { to: TicketStatus; commentRequired: boolean }[];
 };
 
+/** 티켓 상세(본문·첨부 파일·처리 이력). */
 export async function getTicketDetail(
   cohortId: number,
   ticketId: number,

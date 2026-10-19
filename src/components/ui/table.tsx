@@ -1,3 +1,4 @@
+// 기본 표 부품: 표 머리·행·칸 스타일.
 import * as React from "react";
 import { cn } from "@/lib/utils";
 

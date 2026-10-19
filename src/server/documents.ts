@@ -1,5 +1,6 @@
 "use server";
 
+// 서류(M7) 서버 액션: 서류 추가, 새 버전 업로드, 첨삭 요청, 강사 코멘트·상태 변경.
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { EnrollmentStatus, type DocumentStatus, type Role } from "@prisma/client";

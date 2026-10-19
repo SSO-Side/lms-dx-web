@@ -1,5 +1,6 @@
 "use client";
 
+// 로그인 입력 폼(아이디·비밀번호). 검사는 서버 액션 loginAction이 한다.
 import { useActionState } from "react";
 import { loginAction } from "@/server/auth";
 import { Button } from "@/components/ui/button";

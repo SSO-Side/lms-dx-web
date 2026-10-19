@@ -1,5 +1,6 @@
 "use client";
 
+// 티켓 > 반 티켓 보드(교직원): 티켓 표와 상세 드로어(승인·반려 등 상태 변경).
 import { useState } from "react";
 import { DataTable, type Column } from "@/components/DataTable";
 import { StatusBadge } from "@/components/StatusBadge";

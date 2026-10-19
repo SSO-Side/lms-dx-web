@@ -1,5 +1,6 @@
 "use server";
 
+// 쇼케이스(M10) 서버 액션: 작성·이미지 업로드, 공개 신청·동의, 강사 검토, 공개 승인·반려.
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { Role, type ShowcaseStatus } from "@prisma/client";

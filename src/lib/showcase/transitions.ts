@@ -5,6 +5,7 @@ import type { Role, ShowcaseStatus } from "@prisma/client";
 /** 역할 + 팀 소속으로 정한 행위자 구분 */
 export type ShowcaseActor = "MEMBER" | "INSTRUCTOR" | "APPROVER" | "ADMIN" | "NONE";
 
+/** 역할과 팀원 여부로 전이표의 행위자(팀원·강사·승인자 등)를 정한다. */
 export function showcaseActor(role: Role, isMember: boolean): ShowcaseActor {
   if (role === "ADMIN") return "ADMIN";
   if (role === "STUDENT") return isMember ? "MEMBER" : "NONE";
@@ -24,6 +25,7 @@ type Rule = {
   needsContent?: boolean;
 };
 
+/** 쇼케이스 상태 전이표(단일 기준). */
 export const SHOWCASE_TRANSITIONS: Rule[] = [
   { from: "DRAFT", to: "IN_REVIEW", actors: ["MEMBER"], label: "공개 신청", needsContent: true },
   { from: "IN_REVIEW", to: "DRAFT", actors: ["MEMBER"], label: "신청 취소" },
@@ -69,6 +71,7 @@ export function availableShowcaseTransitions(from: ShowcaseStatus, actor: Showca
   return SHOWCASE_TRANSITIONS.filter((r) => r.from === from && (actor === "ADMIN" || r.actors.includes(actor)));
 }
 
+/** 팀원 전원이 공개에 동의했는지 */
 export function allConsented(memberCount: number, consentCount: number): boolean {
   return memberCount > 0 && consentCount >= memberCount;
 }

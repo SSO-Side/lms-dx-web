@@ -1,5 +1,6 @@
 "use client";
 
+// 비밀번호 변경 입력 폼. 저장은 서버 액션 changePasswordAction.
 import { useActionState } from "react";
 import Link from "next/link";
 import { changePasswordAction } from "@/server/auth";

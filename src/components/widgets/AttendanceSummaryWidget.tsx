@@ -1,3 +1,4 @@
+// 홈 위젯: 수강생 "내 출결" 요약(잔여 허용 결석, 환산 결석).
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
 import { Widget } from "@/components/Widget";

@@ -1,3 +1,4 @@
+// 페이지용 반 접근 검사: 권한이 없으면 오류 대신 null을 돌려준다.
 import { requireCohortAccess, AccessDeniedError, type CohortContext } from "./requireCohortAccess";
 import type { Action } from "./permissions";
 

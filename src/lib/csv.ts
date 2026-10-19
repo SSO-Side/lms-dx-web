@@ -1,3 +1,4 @@
+// CSV 읽기: 명부 CSV를 행 단위로 나누고, 계정 발급용 행으로 검증한다.
 import { Role } from "@prisma/client";
 import { z } from "zod";
 
@@ -10,6 +11,7 @@ export interface ParsedAccountRow {
   error?: string;
 }
 
+/** CSV 글을 행·칸 배열로 나눈다(따옴표 안 쉼표·줄바꿈 처리). */
 export function parseCSVLines(text: string): string[][] {
   // BOM 제거
   const clean = text.replace(/^\uFEFF/, "").replace(/\r\n/g, "\n").replace(/\r/g, "\n");
@@ -70,6 +72,7 @@ const rowSchema = z.object({
   role: z.nativeEnum(Role, { message: "역할은 STUDENT, INSTRUCTOR, MANAGER 중 하나여야 합니다." }),
 });
 
+/** 명부 CSV를 계정 발급용 행으로 검증한다(필수 칸·형식·중복). */
 export function parseRosterCSV(csvText: string): {
   rows: ParsedAccountRow[];
   hasErrors: boolean;

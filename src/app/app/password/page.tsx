@@ -1,3 +1,4 @@
+// 비밀번호 변경 페이지(/app/password). 임시 비밀번호로 처음 로그인하면 여기로 온다.
 import { redirect } from "next/navigation";
 import { getSessionUser } from "@/lib/auth/session";
 import { AuthCard } from "@/components/shell/AuthCard";

@@ -17,6 +17,7 @@ export type StageGuide = {
   checkpoints: Checkpoint[];
 };
 
+/** 팀 프로젝트 단계별 가이드(목표·체크리스트·산출물) */
 export const STAGES: StageGuide[] = [
   {
     stage: 1,
@@ -77,12 +78,15 @@ export const COMPLETION_CHECKLIST: Checkpoint[] = [
   { key: "c_trouble", label: "트러블슈팅 기록 2건 이상 (원인 → 해결 → 결과)" },
 ];
 
+/** 완료 체크리스트를 뜻하는 단계 번호(0) */
 export const COMPLETION_STAGE = 0;
 
+/** 올바른 단계 번호인지 */
 export function isStageNo(n: unknown): n is StageNo {
   return n === 1 || n === 2 || n === 3 || n === 4;
 }
 
+/** 단계 번호로 가이드 찾기 */
 export function stageGuide(stage: number): StageGuide {
   return STAGES.find((s) => s.stage === stage) ?? STAGES[0];
 }

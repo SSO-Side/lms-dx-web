@@ -1,3 +1,4 @@
+// 출결 페이지: 수강생은 내 출결, 매니저·강사는 날짜별 출결표와 명부 카운터.
 import Link from "next/link";
 import { Role } from "@prisma/client";
 import { requireAuthUser } from "@/lib/auth/session";

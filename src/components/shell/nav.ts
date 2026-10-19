@@ -1,6 +1,8 @@
+// 역할별 메뉴 정의(docs/design/ia.md §2). 메뉴를 바꿀 때는 여기만 고친다.
 import { Role } from "@prisma/client";
 import type { NavItem } from "./AppShell";
 
+/** 역할 표시 이름 */
 export const ROLE_LABELS: Record<Role, string> = {
   STUDENT: "수강생",
   INSTRUCTOR: "강사",
@@ -14,6 +16,7 @@ const ACADEMY_NAV: NavItem[] = [
   { label: "반 개설", href: "/app/academy/cohorts/new", icon: "newCohort" },
 ];
 
+/** 학원 관리 화면 메뉴 */
 export function academyNav(): NavItem[] {
   return ACADEMY_NAV;
 }

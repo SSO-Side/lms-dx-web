@@ -4,6 +4,7 @@ import { addDaysYmd, addMonthsYmd, dowOfYmd } from "@/lib/dates";
 /** { "1": ["09:00","17:40"], ... } (1=월 ~ 5=금, 0=일, 6=토) */
 export type WeeklySchedule = Record<string, [string, string]>;
 
+/** 기본 훈련 요일(월~금) */
 export const DEFAULT_WEEKLY_SCHEDULE: WeeklySchedule = {
   "1": ["09:00", "17:40"],
   "2": ["09:00", "17:40"],

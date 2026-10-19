@@ -1,3 +1,4 @@
+// 환경 변수(.env) 읽기와 검사. 필수 값이 없으면 서버 시작 때 바로 오류를 낸다.
 import { z } from "zod";
 
 const envSchema = z.object({
@@ -26,4 +27,5 @@ if (!parsed.success) {
   throw new Error(`Environment validation failed for keys: ${missingKeys.join(", ")}`);
 }
 
+/** 검사를 통과한 환경 변수 값 */
 export const env = parsed.data;

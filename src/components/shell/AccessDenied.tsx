@@ -1,3 +1,4 @@
+// 권한 없음 화면: 들어올 수 없는 화면에 공통으로 보여 준다.
 import Link from "next/link";
 import { ShieldAlert } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";

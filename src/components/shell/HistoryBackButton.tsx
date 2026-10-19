@@ -1,5 +1,6 @@
 "use client";
 
+// 뒤로 가기 버튼(브라우저 기록 사용, 없으면 지정 경로로).
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 

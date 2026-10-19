@@ -1,3 +1,4 @@
+// 서류(이력서 등) PDF 열람 API (/api/c/[cohortId]/documents/versions/[id]).
 import { NextResponse } from "next/server";
 import { Role } from "@prisma/client";
 import { getSessionUser } from "@/lib/auth/session";

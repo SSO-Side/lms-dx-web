@@ -1,5 +1,6 @@
 "use client";
 
+// 팀 프로젝트 > 쇼케이스 보드(교직원): 쇼케이스 목록과 검토·공개 승인 드로어.
 import { useState } from "react";
 import type { Role } from "@prisma/client";
 import type { ShowcaseRow } from "@/server/showcase-queries";

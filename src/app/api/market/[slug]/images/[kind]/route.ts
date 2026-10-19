@@ -1,3 +1,4 @@
+// 마켓플레이스 공개 이미지 API (로그인 없음, 공개 승인된 쇼케이스만).
 import { NextResponse } from "next/server";
 import { isImageKind } from "@/lib/showcase/public";
 import { imageMimeOf } from "@/lib/storage";

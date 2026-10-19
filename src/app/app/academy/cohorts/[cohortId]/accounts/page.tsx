@@ -1,3 +1,4 @@
+// 반 계정 관리 페이지: 수강생·교직원 목록과 CSV 일괄 발급(account:manage 권한).
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireCohortAccess } from "@/lib/access/requireCohortAccess";

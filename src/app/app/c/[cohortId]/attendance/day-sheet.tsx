@@ -1,5 +1,6 @@
 "use client";
 
+// 출결 > 오늘 출결표(매니저): 수강생별 출석·지각·조퇴·결석 체크와 하루 마감.
 import { useMemo, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";

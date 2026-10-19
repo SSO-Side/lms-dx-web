@@ -1,3 +1,4 @@
+// 쇼케이스 공개 절차 진행 표시(초안 → 신청 → 동의 → 검토 → 공개).
 import { Check } from "lucide-react";
 import type { ShowcaseDetail } from "@/server/showcase-queries";
 import { cn } from "@/lib/utils";

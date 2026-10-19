@@ -1,5 +1,6 @@
 "use client";
 
+// 결석계 증빙 파일 확인 모달: 이미지·PDF 미리보기와 파일 목록.
 import { useEffect, useState } from "react";
 import { FileText, Download } from "lucide-react";
 import { listProofsAction } from "@/server/tickets";
@@ -8,7 +9,9 @@ import { Alert } from "@/components/ui/alert";
 
 type Att = { id: number; originalName: string; mimeType: string; size: number };
 
+/** 증빙 파일을 권한 확인 후 내려주는 서버 주소 */
 export const proofUrl = (cohortId: number, attachmentId: number) => `/api/c/${cohortId}/attachments/${attachmentId}`;
+/** 브라우저에서 바로 볼 수 있는 형식(이미지·PDF)인지 */
 export const isPreviewable = (mime: string) => mime === "image/jpeg" || mime === "image/png";
 
 /** 증빙 확인 모달 (드로어 위). ticketId가 null이면 닫힘. */
@@ -47,6 +50,7 @@ export function ProofDialog({ cohortId, ticketId, onClose }: { cohortId: number;
   );
 }
 
+/** 증빙 파일 목록(누르면 미리보기 모달) */
 export function ProofList({ cohortId, attachments, large = false }: { cohortId: number; attachments: Att[]; large?: boolean }) {
   return (
     <ul className={large ? "max-h-[70dvh] space-y-3 overflow-y-auto" : "grid grid-cols-3 gap-2"}>

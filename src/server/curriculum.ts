@@ -1,5 +1,6 @@
 "use server";
 
+// 커리큘럼 서버 액션: 주차·수업·자료·과제 등록/삭제, 과제 제출(링크·파일), 제출 현황.
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { EnrollmentStatus, SubmissionStatus } from "@prisma/client";
@@ -57,6 +58,7 @@ const str = (fd: FormData, k: string) => {
   return typeof v === "string" ? v : "";
 };
 
+/** 주차 추가(번호는 마지막 + 1). */
 export async function createWeekAction(cohortId: number, input: { title: string }): Promise<Result> {
   return wrap(async () => {
     const ctx = await requireCohortAccess(cohortId, "material:write");
@@ -75,6 +77,7 @@ const lessonSchema = z.object({
   title: z.string().trim().min(1, "수업명을 입력해 주세요.").max(200),
 });
 
+/** 주차에 수업 추가. */
 export async function createLessonAction(cohortId: number, input: z.input<typeof lessonSchema>): Promise<Result> {
   return wrap(async () => {
     const ctx = await requireCohortAccess(cohortId, "material:write");
@@ -157,6 +160,7 @@ export async function createMaterialAction(cohortId: number, formData: FormData)
   });
 }
 
+/** 자료 삭제(파일 자료면 저장된 파일도 지운다). */
 export async function deleteMaterialAction(cohortId: number, materialId: number): Promise<Result> {
   return wrap(async () => {
     const ctx = await requireCohortAccess(cohortId, "material:write");
@@ -177,6 +181,7 @@ const assignmentSchema = z.object({
   dueAt: z.string().regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/, "마감 일시를 입력해 주세요."),
 });
 
+/** 수업에 과제 추가(마감 일시는 한국 시간 기준). */
 export async function createAssignmentAction(cohortId: number, input: z.input<typeof assignmentSchema>): Promise<Result> {
   return wrap(async () => {
     const ctx = await requireCohortAccess(cohortId, "assignment:write");
@@ -194,6 +199,7 @@ export async function createAssignmentAction(cohortId: number, input: z.input<ty
   });
 }
 
+/** 과제 삭제. 제출물이 있으면 막는다. */
 export async function deleteAssignmentAction(cohortId: number, assignmentId: number): Promise<Result> {
   return wrap(async () => {
     const ctx = await requireCohortAccess(cohortId, "assignment:write");

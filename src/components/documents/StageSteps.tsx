@@ -1,3 +1,4 @@
+// 서류 진행 단계 표시(초안 → 첨삭 중 → 완성).
 import type { DocumentStatus } from "@prisma/client";
 import { Check } from "lucide-react";
 import { DOCUMENT_STATUSES, DOCUMENT_STATUS_LABELS } from "@/lib/documents/labels";

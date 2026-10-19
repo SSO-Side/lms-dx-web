@@ -1,5 +1,6 @@
 "use client";
 
+// 팀 프로젝트 > 팀 보드(교직원): 팀 목록, 팀 만들기, 팀 상세 드로어.
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { UsersRound } from "lucide-react";

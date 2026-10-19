@@ -1,3 +1,4 @@
+// 첫 화면(/): LMS 로그인과 마켓플레이스로 가는 안내 페이지.
 import Link from "next/link";
 import { LogIn, Store } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";

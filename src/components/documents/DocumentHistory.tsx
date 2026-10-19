@@ -1,3 +1,4 @@
+// 서류 버전 이력·첨삭 코멘트 목록 컴포넌트(수강생·강사 공용).
 import { ExternalLink, FileText, MessageSquareText, ShieldCheck } from "lucide-react";
 import type { DocumentVersionRow, ReviewNoteRow } from "@/server/document-queries";
 
@@ -10,6 +11,7 @@ function formatSize(bytes: number) {
   return bytes >= 1024 * 1024 ? `${(bytes / 1024 / 1024).toFixed(1)}MB` : `${Math.max(1, Math.round(bytes / 1024))}KB`;
 }
 
+/** 서류 버전 이력 목록(버전마다 파일 열기 링크) */
 export function VersionList({ cohortId, versions }: { cohortId: number; versions: DocumentVersionRow[] }) {
   if (versions.length === 0) {
     return <p className="rounded-lg bg-neutral-50 px-3 py-3 text-sm text-neutral-500">아직 올린 파일이 없습니다.</p>;
@@ -50,6 +52,7 @@ export function VersionList({ cohortId, versions }: { cohortId: number; versions
   );
 }
 
+/** 강사 첨삭 코멘트 목록 */
 export function ReviewNoteList({ notes }: { notes: ReviewNoteRow[] }) {
   if (notes.length === 0) {
     return <p className="rounded-lg bg-neutral-50 px-3 py-3 text-sm text-neutral-500">아직 강사 코멘트가 없습니다.</p>;

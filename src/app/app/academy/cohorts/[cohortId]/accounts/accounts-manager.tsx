@@ -1,5 +1,6 @@
 "use client";
 
+// 반 계정 관리 화면(클라이언트): 명부 CSV 업로드·검증 → 계정 일괄 발급, 비밀번호 재설정, 비활성화.
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Role } from "@prisma/client";

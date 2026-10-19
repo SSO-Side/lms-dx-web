@@ -1,5 +1,6 @@
 "use client";
 
+// 서류 > 내 서류(수강생): 서류 추가, 새 버전 업로드, 첨삭 요청.
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { ChevronRight, FilePlus2, Send, Upload } from "lucide-react";

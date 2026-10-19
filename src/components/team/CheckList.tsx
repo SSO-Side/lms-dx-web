@@ -1,5 +1,6 @@
 "use client";
 
+// 팀 프로젝트 체크리스트 컴포넌트(단계별 체크포인트·완료 체크).
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { CheckCircle2, Circle } from "lucide-react";

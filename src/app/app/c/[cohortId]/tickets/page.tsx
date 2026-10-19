@@ -1,3 +1,4 @@
+// 티켓 페이지: 수강생은 내 신청(병결·휴가·문의), 교직원은 반 전체 티켓 보드.
 import Link from "next/link";
 import { Role } from "@prisma/client";
 import { requireAuthUser } from "@/lib/auth/session";

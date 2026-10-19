@@ -3,6 +3,7 @@ import path from "path";
 import { promises as fs } from "fs";
 import { assertValidKey, type StorageDriver } from "./types";
 
+/** STORAGE_DIR 폴더에 파일을 저장하는 드라이버를 만든다. */
 export function createLocalDriver(rootDir: string): StorageDriver {
   const root = path.resolve(process.cwd(), rootDir);
   const resolve = (key: string) => {

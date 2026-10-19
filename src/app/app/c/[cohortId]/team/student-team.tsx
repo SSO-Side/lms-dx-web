@@ -1,5 +1,6 @@
 "use client";
 
+// 팀 프로젝트 > 내 팀(수강생): 단계 진행, 체크포인트, 피드백, 주간 로그, 기획안.
 import { useState, useTransition, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { NotebookPen, PencilLine } from "lucide-react";

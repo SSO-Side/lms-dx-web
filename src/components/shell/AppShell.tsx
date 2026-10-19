@@ -1,5 +1,6 @@
 "use client";
 
+// 로그인 후 화면의 뼈대: 상단 바, 사이드 메뉴(데스크톱), 하단 탭(모바일), 로그아웃.
 import * as React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";

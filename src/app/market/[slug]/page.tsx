@@ -1,3 +1,4 @@
+// 마켓플레이스 상세(/market/[slug]): 공개 쇼케이스 한 건과 기업 문의 폼.
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -7,12 +8,14 @@ import { StackChip } from "@/components/showcase/StackChip";
 import { buttonVariants } from "@/components/ui/button";
 import { LeadForm } from "./lead-form";
 
+/** 요청마다 새로 그린다(공개·비공개 전환을 바로 반영) */
 export const dynamic = "force-dynamic"; // 비공개 전환이 바로 반영되도록 매 요청 조회
 
 interface Props {
   params: Promise<{ slug: string }>;
 }
 
+/** 상세 페이지 제목·설명 메타데이터 */
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const s = await getPublicShowcase(slug);

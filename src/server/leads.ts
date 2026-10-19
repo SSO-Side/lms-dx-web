@@ -1,5 +1,6 @@
 "use server";
 
+// 기업 문의 접수 서버 액션(마켓플레이스, 로그인 없음).
 import { headers } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
@@ -27,6 +28,7 @@ async function clientIp(): Promise<string> {
   return h.get("x-forwarded-for")?.split(",")[0]?.trim() || h.get("x-real-ip")?.trim() || "unknown";
 }
 
+/** 기업 문의 접수(로그인 없음): 입력 검사, 스팸 방지 칸, IP당 요청 제한. */
 export async function submitLeadAction(slug: string, formData: FormData): Promise<LeadResult> {
   // 허니팟: 사람에게 보이지 않는 칸이 채워져 있으면 봇으로 보고, 성공처럼 응답만 한다
   if (String(formData.get("website") ?? "").trim() !== "") return { ok: true };

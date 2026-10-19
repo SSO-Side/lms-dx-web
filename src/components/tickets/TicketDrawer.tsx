@@ -1,5 +1,6 @@
 "use client";
 
+// 티켓 상세 드로어: 내용·증빙·처리 이력, 승인·반려·보완 요청 등 상태 변경 버튼.
 import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import type { TicketStatus } from "@prisma/client";

@@ -1,6 +1,8 @@
 // 업로드 파일 검증 (순수 함수). 확장자·MIME은 참고만 하고, 가능한 형식은 파일 앞부분 시그니처로 확인한다.
 
+/** 결석계 증빙 파일 한도(10MB) */
 export const PROOF_MAX_BYTES = 10 * 1024 * 1024;
+/** 결석계 증빙 허용 형식(MIME → 확장자) */
 export const PROOF_TYPES: Record<string, string> = {
   "image/jpeg": "jpg",
   "image/png": "png",
@@ -17,6 +19,7 @@ export function resolveProofMime(file: { type: string; name: string }): string |
   return EXT_MIME[ext] ?? null;
 }
 
+/** 서류 PDF 한도(10MB) */
 export const DOCUMENT_MAX_BYTES = 10 * 1024 * 1024;
 
 /** 서류 PDF 검사: 확장자 .pdf, MIME application/pdf(비어 있으면 허용), 파일 앞 5바이트 %PDF- 시그니처. 통과하면 null. */
@@ -29,7 +32,9 @@ export function checkPdf(file: { name: string; type: string; size: number }, hea
   return null;
 }
 
+/** 쇼케이스 이미지 한도(5MB) */
 export const IMAGE_MAX_BYTES = 5 * 1024 * 1024;
+/** 쇼케이스 이미지 확장자 → MIME */
 export const IMAGE_MIME: Record<string, string> = { png: "image/png", jpg: "image/jpeg", webp: "image/webp" };
 
 /** 파일 앞부분 시그니처로 형식 판별 (확장자·MIME은 믿지 않는다). png·jpg·webp만. */
@@ -58,6 +63,7 @@ export function imageMimeOf(relPath: string): string | null {
 
 /** 자료·제출 파일 한도. 서버 액션 본문 한도(next.config 32MB)와 Nginx client_max_body_size보다 작게 둔다. */
 export const COURSE_FILE_MAX_BYTES = 20 * 1024 * 1024;
+/** 업로드 칸 아래 안내 문구 */
 export const COURSE_FILE_HINT = "PDF·오피스·한글·이미지·ZIP·텍스트 · 20MB 이하";
 
 type Sig = "pdf" | "zip" | "ole" | "image" | "text";

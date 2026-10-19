@@ -1,3 +1,4 @@
+// 서류 페이지: 역할별로 내 서류(수강생) / 첨삭 보드(강사) / 상태 현황(매니저)을 보여 준다.
 import Link from "next/link";
 import { Role, type DocumentStatus } from "@prisma/client";
 import { requireAuthUser } from "@/lib/auth/session";

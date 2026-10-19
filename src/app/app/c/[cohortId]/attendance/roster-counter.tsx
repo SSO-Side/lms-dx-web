@@ -1,5 +1,6 @@
 "use client";
 
+// 출결 > 명부 카운터(매니저): 수강생별 누계, 이벤트 수정·삭제, 초기 이관값 붙여넣기, 기간 공결 일괄 처리.
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Plus, Trash2, Pencil } from "lucide-react";

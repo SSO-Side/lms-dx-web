@@ -1,5 +1,6 @@
 "use client";
 
+// 기업 문의 > 문의 표(클라이언트): 목록과 상세 드로어.
 import { useState } from "react";
 import type { LeadRow } from "@/server/lead-queries";
 import { DataTable } from "@/components/DataTable";

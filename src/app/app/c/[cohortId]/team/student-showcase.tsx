@@ -1,5 +1,6 @@
 "use client";
 
+// 팀 프로젝트 > 내 쇼케이스(수강생): 소개 작성, 이미지 업로드, 공개 신청·동의.
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";

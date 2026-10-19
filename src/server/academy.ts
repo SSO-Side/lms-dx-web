@@ -1,5 +1,6 @@
 "use server";
 
+// 학원 관리 서버 액션: 반 개설, 명부 CSV 검증, 계정 일괄 발급, 비밀번호 재설정, 계정 비활성화.
 import crypto from "crypto";
 import bcrypt from "bcryptjs";
 import { Role, StaffRole, EnrollmentStatus, ActiveStatus } from "@prisma/client";
@@ -34,6 +35,7 @@ const cohortInputSchema = z.object({
   staff: z.array(z.object({ userId: z.number().int(), isPrimary: z.boolean() })),
 });
 
+/** 반 개설: 반 정보·담당자·훈련일·단위기간을 한 번에 만든다. */
 export async function createCohortAction(prevState: unknown, formData: FormData) {
   const user = await requireAuthUser();
   if (user.role !== Role.ACADEMY_ADMIN && user.role !== Role.ADMIN) {
@@ -126,11 +128,13 @@ export async function createCohortAction(prevState: unknown, formData: FormData)
   return { success: true, cohortId: cohort.id };
 }
 
+/** 명부 CSV를 검증해 미리보기 행을 돌려준다(아직 저장하지 않음). */
 export async function parseRosterCSVAction(cohortId: number, csvText: string) {
   await requireCohortAccess(cohortId, "account:manage");
   return parseRosterCSV(csvText);
 }
 
+/** 검증된 명부로 수강생 계정을 일괄 발급하고 임시 비밀번호 CSV를 한 번만 돌려준다. */
 export async function bulkIssueAccountsAction(cohortId: number, validRows: ParsedAccountRow[]) {
   const ctx = await requireCohortAccess(cohortId, "account:manage");
 
@@ -258,6 +262,7 @@ async function findManageableTarget(cohortId: number, targetUserId: number) {
   return allowed ? target : null;
 }
 
+/** 이 반 수강생·교직원의 비밀번호를 임시 비밀번호로 재설정한다. */
 export async function resetPasswordAction(cohortId: number, targetUserId: number) {
   const ctx = await requireCohortAccess(cohortId, "account:manage");
 
@@ -280,6 +285,7 @@ export async function resetPasswordAction(cohortId: number, targetUserId: number
   return { success: true, tempPassword };
 }
 
+/** 이 반 수강생·교직원 계정을 비활성화한다(로그인 차단). */
 export async function deactivateAccountAction(cohortId: number, targetUserId: number) {
   const ctx = await requireCohortAccess(cohortId, "account:manage");
 

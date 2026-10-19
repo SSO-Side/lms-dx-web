@@ -1,5 +1,6 @@
 "use server";
 
+// 반 관리 서버 액션: 반 정보·출결 규칙·휴일 수정, 수강생 재적 상태 변경.
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { EnrollmentStatus } from "@prisma/client";

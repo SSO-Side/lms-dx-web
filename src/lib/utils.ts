@@ -1,3 +1,4 @@
+// 화면 공통 도구: CSS 클래스 합치기(cn).
 import { clsx, type ClassValue } from "clsx";
 import { extendTailwindMerge } from "tailwind-merge";
 
@@ -6,6 +7,7 @@ const twMerge = extendTailwindMerge({
   extend: { classGroups: { "font-size": [{ text: ["caption"] }] } },
 });
 
+/** CSS 클래스 이름을 합친다. 조건부 클래스와 Tailwind 충돌(예: p-2 vs p-4)을 정리한다. */
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }

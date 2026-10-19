@@ -1,3 +1,4 @@
+// 출결 조회 함수: 훈련일·단위기간·이벤트를 읽어 누계를 계산한다(저장하지 않음).
 import { EnrollmentStatus } from "@prisma/client";
 import { db } from "@/lib/db";
 import { dateToYmd, todayYmd, ymdToDate } from "@/lib/dates";
@@ -28,6 +29,7 @@ export type AttendanceBase = {
   today: string;
 };
 
+/** 출결 계산 공통 데이터: 반 출결 규칙, 훈련일, 단위기간, 마감한 날짜. */
 export async function getAttendanceBase(cohortId: number): Promise<AttendanceBase> {
   const [cohort, dayRows, periodRows, closeRows] = await Promise.all([
     db.cohort.findUnique({ where: { id: cohortId }, select: { attendanceConfig: true } }),

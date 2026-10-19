@@ -1,5 +1,6 @@
 "use client";
 
+// 기본 드로어(Sheet) 부품: 데스크톱은 오른쪽, 모바일은 아래에서 올라오는 패널.
 import * as React from "react";
 import { Dialog as SheetPrimitive } from "@base-ui/react/dialog";
 import { XIcon } from "lucide-react";

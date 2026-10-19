@@ -1,3 +1,4 @@
+// 기본 입력 부품: 한 줄 입력(Input)과 여러 줄 입력(Textarea).
 import * as React from "react";
 import { cn } from "@/lib/utils";
 

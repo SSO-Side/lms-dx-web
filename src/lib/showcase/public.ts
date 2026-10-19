@@ -5,8 +5,10 @@ import { todayYmd } from "@/lib/dates";
 
 export type Metric = { label: string; value: string };
 export type ImageKind = "cover" | "architecture";
+/** 쇼케이스 이미지 종류(대표·아키텍처) */
 export const IMAGE_KINDS: ImageKind[] = ["cover", "architecture"];
 
+/** 주소의 이미지 종류 값이 올바른지 */
 export function isImageKind(v: string): v is ImageKind {
   return (IMAGE_KINDS as string[]).includes(v);
 }
@@ -23,6 +25,7 @@ export function generateSlug(bytes: Uint8Array = crypto.randomBytes(12)): string
   return Array.from(bytes, (b) => SLUG_ALPHABET[b % SLUG_ALPHABET.length]).join("");
 }
 
+/** DB의 성과 지표(JSON)를 안전하게 배열로 바꾼다. */
 export function parseMetrics(v: unknown): Metric[] {
   if (!Array.isArray(v)) return [];
   return v
@@ -30,6 +33,7 @@ export function parseMetrics(v: unknown): Metric[] {
     .slice(0, 6);
 }
 
+/** DB의 기술 스택(JSON)을 안전하게 문자열 배열로 바꾼다. */
 export function parseStack(v: unknown): string[] {
   return Array.isArray(v) ? v.filter((s): s is string => typeof s === "string").slice(0, 12) : [];
 }
@@ -72,6 +76,7 @@ export type PublicShowcase = {
   publishedAt: string | null;
 };
 
+/** 공개 이미지 주소(로그인 없이 볼 수 있는 경로) */
 export function publicImageHref(slug: string, kind: ImageKind) {
   return `/api/market/${slug}/images/${kind}`;
 }

@@ -1,5 +1,6 @@
 "use server";
 
+// 팀 프로젝트(M5) 서버 액션: 팀 생성, 기획안·체크·로그 작성, 피드백, 단계 승인.
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { EnrollmentStatus, Prisma, Role } from "@prisma/client";

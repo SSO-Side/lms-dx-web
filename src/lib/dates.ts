@@ -2,6 +2,7 @@
 
 const YMD = /^\d{4}-\d{2}-\d{2}$/;
 
+/** "YYYY-MM-DD" 형식의 실제 날짜인지 */
 export function isYmd(s: unknown): s is string {
   if (typeof s !== "string" || !YMD.test(s)) return false;
   const d = new Date(`${s}T00:00:00Z`);
@@ -23,6 +24,7 @@ export function dateToYmd(d: Date): string {
   return d.toISOString().slice(0, 10);
 }
 
+/** "YYYY-MM-DD" 날짜에 n일을 더한다(시간대 영향 없음). */
 export function addDaysYmd(ymd: string, n: number): string {
   const d = ymdToDate(ymd);
   d.setUTCDate(d.getUTCDate() + n);

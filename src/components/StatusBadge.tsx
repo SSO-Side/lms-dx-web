@@ -1,3 +1,4 @@
+// 상태 배지: 상태를 색 + 아이콘 + 글자로 함께 보여 준다(색만으로 구분하지 않기 위해). 모든 상태 표시는 이것을 쓴다.
 import { CheckCircle2, AlertTriangle, AlertCircle, Clock, MinusCircle, type LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 

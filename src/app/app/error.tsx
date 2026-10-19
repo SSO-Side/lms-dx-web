@@ -1,5 +1,6 @@
 "use client";
 
+// 로그인 후 화면(/app/...)에서 오류가 나면 보여 주는 공통 오류 화면.
 import Link from "next/link";
 import { AlertCircle } from "lucide-react";
 import { Button, buttonVariants } from "@/components/ui/button";

@@ -1,3 +1,4 @@
+// 쇼케이스(M10) 조회 함수: LMS 안 목록·상세, 공개 목록·상세, 이미지 경로.
 import type { ShowcaseStatus } from "@prisma/client";
 import { db } from "@/lib/db";
 import { formatDateTime } from "@/lib/dates";
@@ -8,6 +9,7 @@ import { parsePlan } from "./team-queries";
 // LMS 조회: 호출 측이 먼저 requireCohortAccess로 권한을 확인하고 ctx.cohortId만 넘긴다.
 // 공개 조회(listPublicShowcases·getPublicShowcase·getPublicImagePath): 반 권한의 예외. PUBLISHED + 화이트리스트 필드만 select 한다.
 
+/** LMS 안에서 보는 쇼케이스 이미지 주소(미공개 포함, 권한 확인 경로). */
 export function internalImageHref(cohortId: number, showcaseId: number, kind: ImageKind, version: string) {
   // version: 이미지 교체 후 브라우저 캐시를 피하려는 값 (updatedAt)
   return `/api/c/${cohortId}/showcases/${showcaseId}/images/${kind}?v=${encodeURIComponent(version)}`;

@@ -1,3 +1,4 @@
+// 학원 관리 홈(/app/academy): 반 목록(기간·인원·담당 매니저·출결 위험 인원).
 import Link from "next/link";
 import { Role, CohortStatus } from "@prisma/client";
 import { Plus } from "lucide-react";

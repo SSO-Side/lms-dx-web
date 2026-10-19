@@ -1,3 +1,4 @@
+// 과제 제출 파일 내려받기 API (/api/c/[cohortId]/submissions/[id]/file).
 import { NextResponse } from "next/server";
 import { tryCohortAccess } from "@/lib/access/pageAccess";
 import { canViewSubmissionFilePure } from "@/lib/access/checker";

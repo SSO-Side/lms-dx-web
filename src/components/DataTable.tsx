@@ -1,3 +1,4 @@
+// 공용 표 컴포넌트: 데스크톱은 표, 모바일은 카드 목록. 행을 누르면 상세 드로어를 연다.
 import * as React from "react";
 import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from "@/components/ui/table";
 import { cn } from "@/lib/utils";

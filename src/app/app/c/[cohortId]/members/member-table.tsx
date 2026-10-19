@@ -1,5 +1,6 @@
 "use client";
 
+// 명부 표(클라이언트): 수강생 목록과 재적 상태(수강·중도 탈락 등) 변경.
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import type { EnrollmentStatus } from "@prisma/client";

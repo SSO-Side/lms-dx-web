@@ -1,3 +1,4 @@
+// 홈 위젯(교직원): 출결 위험 학생·위험 요약, 오늘 출결, 반 상태.
 import Link from "next/link";
 import { AlertTriangle, CheckCircle2, ChevronRight } from "lucide-react";
 import { Widget } from "@/components/Widget";

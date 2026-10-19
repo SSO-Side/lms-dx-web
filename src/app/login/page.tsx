@@ -1,3 +1,4 @@
+// 로그인 페이지(/login). 실제 입력 폼은 login-form.tsx.
 import { redirect } from "next/navigation";
 import { getSessionUser } from "@/lib/auth/session";
 import { AuthCard } from "@/components/shell/AuthCard";

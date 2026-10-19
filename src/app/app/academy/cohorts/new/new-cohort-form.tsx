@@ -1,5 +1,6 @@
 "use client";
 
+// 반 개설 마법사(클라이언트): 기본 정보 → 일정 → 확인 단계로 입력받아 createCohortAction으로 저장.
 import { useActionState, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Check, X } from "lucide-react";

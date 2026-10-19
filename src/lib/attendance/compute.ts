@@ -36,6 +36,7 @@ export type AttendanceResult = {
   counts: { absent: number; late: number; earlyLeave: number; out: number };
 };
 
+/** 반 개설 때 넣는 출결 규칙 기본값. 실제 계산은 반마다 저장된 attendanceConfig를 쓴다. */
 export const DEFAULT_ATTENDANCE_CONFIG: AttendanceConfig = {
   requiredPercent: 80,
   lateEarlyToAbsent: 3,
@@ -68,6 +69,7 @@ export function withDefaults(config?: DeepPartial<AttendanceConfig> | null): Att
   };
 }
 
+/** 출결 이벤트 목록으로 누계(출석률·환산 결석·남은 일수·등급)를 계산한다. 저장하지 않고 매번 계산한다. */
 export function computeAttendance(input: {
   trainingDays: number;
   events: Ev[];

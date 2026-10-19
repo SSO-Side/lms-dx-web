@@ -1,3 +1,4 @@
+// 필수 테스트(출결 계산): docs/spec/attendance.md 표를 그대로 옮겨 검사한다.
 import { describe, it, expect } from "vitest";
 import { computeAttendance, withDefaults, type Ev, type EvType, type Opening, type AttendanceConfig } from "./compute";
 

@@ -1,3 +1,4 @@
+// 커리큘럼 조회 함수: 커리큘럼 트리, 오늘 수업, 마감 임박 과제, 최근 제출.
 import { EnrollmentStatus, type MaterialType, type Role, type SubmissionStatus } from "@prisma/client";
 import { db } from "@/lib/db";
 import { dateToYmd, formatDateTime, ymdToDate } from "@/lib/dates";
@@ -27,6 +28,7 @@ export type LessonItem = {
 };
 export type WeekItem = { id: number; weekNo: number; title: string; lessons: LessonItem[] };
 
+/** 커리큘럼 트리(주차 → 수업 → 자료·과제)와 제출 상태. 수강생은 본인 제출만 본다. */
 export async function getCurriculum(cohortId: number, viewer: { id: number; role: Role }) {
   const isStudent = viewer.role === "STUDENT";
   const [weeks, enrolledCount] = await Promise.all([

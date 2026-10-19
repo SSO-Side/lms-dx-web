@@ -1,3 +1,4 @@
+// 홈 위젯: 오늘 수업, 마감 임박 과제, 최근 제출.
 import Link from "next/link";
 import { BookOpen, ChevronRight } from "lucide-react";
 import { Widget } from "@/components/Widget";

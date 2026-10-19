@@ -12,6 +12,7 @@ type Rule = {
 
 const STAFF: Role[] = ["INSTRUCTOR", "MANAGER", "ACADEMY_ADMIN"];
 
+/** 티켓 상태 전이표(docs/spec/ticket-state.md와 같은 단일 기준). */
 export const TRANSITIONS: Rule[] = [
   { from: "PENDING", to: "IN_REVIEW", roles: STAFF },
   { from: "IN_REVIEW", to: "APPROVED", roles: STAFF },
@@ -24,6 +25,7 @@ export const TRANSITIONS: Rule[] = [
 export type TransitionCtx = { isRequester: boolean; comment?: string | null };
 export type TransitionCheck = { ok: true } | { ok: false; reason: "NOT_ALLOWED" | "NOT_REQUESTER" | "COMMENT_REQUIRED" };
 
+/** 이 역할이 티켓 상태를 from → to로 바꿀 수 있는지 전이표에서 찾는다. */
 export function canTransition(from: TicketStatus, to: TicketStatus, actorRole: Role, ctx: TransitionCtx): TransitionCheck {
   const rule = TRANSITIONS.find((r) => r.from === from && r.to === to);
   if (!rule) return { ok: false, reason: "NOT_ALLOWED" };
@@ -43,4 +45,5 @@ export function availableTransitions(from: TicketStatus, actorRole: Role, isRequ
   );
 }
 
+/** 더 바뀌지 않는 마지막 상태들 */
 export const TERMINAL_STATUSES: TicketStatus[] = ["APPROVED", "REJECTED", "CANCELED"];

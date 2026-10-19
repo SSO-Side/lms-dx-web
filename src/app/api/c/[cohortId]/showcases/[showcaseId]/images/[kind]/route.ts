@@ -1,3 +1,4 @@
+// LMS 안 쇼케이스 이미지 API (미공개 포함, 권한 확인).
 import { NextResponse } from "next/server";
 import { Role } from "@prisma/client";
 import { getSessionUser } from "@/lib/auth/session";

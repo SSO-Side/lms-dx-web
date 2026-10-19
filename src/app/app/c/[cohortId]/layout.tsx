@@ -1,3 +1,4 @@
+// 반 화면(/app/c/[cohortId]/...)의 공통 틀: 반 접근 확인, 역할별 메뉴, 반 전환 드롭다운.
 import { notFound } from "next/navigation";
 import { Role } from "@prisma/client";
 import { requireAuthUser } from "@/lib/auth/session";

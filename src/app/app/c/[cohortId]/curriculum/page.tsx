@@ -1,3 +1,4 @@
+// 커리큘럼 페이지: 주차 → 수업 → 자료·과제 트리를 불러와 curriculum-view에 넘긴다.
 import { tryCohortAccess } from "@/lib/access/pageAccess";
 import { hasActionPermission } from "@/lib/access/permissions";
 import { todayYmd } from "@/lib/dates";

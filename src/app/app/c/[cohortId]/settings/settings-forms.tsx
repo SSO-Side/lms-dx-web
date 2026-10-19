@@ -1,5 +1,6 @@
 "use client";
 
+// 반 설정 입력 폼(클라이언트): 반 기본 정보, 출결 규칙 값(attendanceConfig), 휴일 지정.
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { X } from "lucide-react";

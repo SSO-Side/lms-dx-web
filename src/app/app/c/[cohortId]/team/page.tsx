@@ -1,3 +1,4 @@
+// 팀 프로젝트 페이지: 수강생은 내 팀·쇼케이스, 교직원은 팀 보드·쇼케이스 보드.
 import Link from "next/link";
 import { Role } from "@prisma/client";
 import { requireAuthUser } from "@/lib/auth/session";

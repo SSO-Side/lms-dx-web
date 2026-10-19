@@ -1,5 +1,6 @@
 "use client";
 
+// 서류 검토 드로어(강사): PDF 열람, 코멘트, 완성·수정 요청 처리.
 import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { CheckCircle2, MessageSquarePlus, Undo2 } from "lucide-react";

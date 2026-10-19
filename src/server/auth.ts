@@ -1,5 +1,6 @@
 "use server";
 
+// 로그인 서버 액션: 로그인(실패 횟수 제한 포함), 로그아웃, 비밀번호 변경.
 import { redirect } from "next/navigation";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
@@ -23,6 +24,7 @@ const changePasswordSchema = z.object({
 
 const UNIFORM_AUTH_ERROR = "ID 또는 비밀번호가 올바르지 않습니다.";
 
+/** 로그인: 아이디·비밀번호 확인, 실패 횟수 제한, 세션 생성 후 역할별 홈으로 이동. */
 export async function loginAction(prevState: unknown, formData: FormData) {
   const rawData = {
     loginId: formData.get("loginId"),
@@ -71,11 +73,13 @@ export async function loginAction(prevState: unknown, formData: FormData) {
   }
 }
 
+/** 로그아웃 후 로그인 화면으로 이동. */
 export async function logoutAction() {
   await destroySession();
   redirect("/login");
 }
 
+/** 비밀번호 변경(현재 비밀번호 확인, 임시 비밀번호 표시 해제). */
 export async function changePasswordAction(prevState: unknown, formData: FormData) {
   const user = await getSessionUser();
   if (!user) {

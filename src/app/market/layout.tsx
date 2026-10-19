@@ -1,3 +1,4 @@
+// 마켓플레이스(/market) 공통 틀: 상단 바·본문·하단과 검색 노출 설정.
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Store } from "lucide-react";
@@ -5,12 +6,14 @@ import { Store } from "lucide-react";
 // 공개 영역(로그인 없음). 기본은 검색 노출 차단(noindex), 운영에서 MARKET_INDEXABLE=true 일 때만 허용.
 const indexable = process.env.MARKET_INDEXABLE === "true";
 
+/** 마켓플레이스 기본 메타데이터. 검색 노출은 MARKET_INDEXABLE=true일 때만 */
 export const metadata: Metadata = {
   title: { default: "마켓플레이스 · lms_kdt", template: "%s · lms_kdt 마켓플레이스" },
   description: "KDT 수강생 팀 프로젝트 쇼케이스와 기업 문의",
   robots: indexable ? { index: true, follow: true } : { index: false, follow: false, nocache: true },
 };
 
+/** 마켓플레이스 공통 틀(상단 바·본문·하단) */
 export default function MarketLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex min-h-dvh flex-col bg-background text-base">

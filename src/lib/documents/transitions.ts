@@ -12,6 +12,7 @@ type Rule = {
   needsVersion?: boolean;
 };
 
+/** 서류 상태 전이표: 어떤 상태에서 누가 어떤 상태로 바꿀 수 있는지(단일 기준). */
 export const DOCUMENT_TRANSITIONS: Rule[] = [
   { from: "DRAFT", to: "IN_REVIEW", roles: ["STUDENT"], ownerOnly: true, needsVersion: true }, // 첨삭 요청
   { from: "IN_REVIEW", to: "DONE", roles: ["INSTRUCTOR"] }, // 완성 처리
@@ -26,6 +27,7 @@ export type DocumentTransitionCheck =
   | { ok: true }
   | { ok: false; reason: "NOT_ALLOWED" | "NOT_OWNER" | "NO_VERSION" | "COMMENT_REQUIRED" };
 
+/** 이 역할이 서류 상태를 from → to로 바꿀 수 있는지 전이표에서 찾는다. */
 export function canTransitionDocument(
   from: DocumentStatus,
   to: DocumentStatus,

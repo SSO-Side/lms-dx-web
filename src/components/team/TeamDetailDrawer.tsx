@@ -1,5 +1,6 @@
 "use client";
 
+// 팀 상세 드로어(교직원): 팀원·단계·체크리스트·피드백·로그, 단계 승인과 피드백 작성.
 import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowRightCircle, MessageSquarePlus } from "lucide-react";

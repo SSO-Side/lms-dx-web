@@ -1,5 +1,6 @@
 "use client";
 
+// 홈 위젯: 티켓 목록(수강생 내 티켓, 교직원 처리 대기).
 import { useState } from "react";
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";

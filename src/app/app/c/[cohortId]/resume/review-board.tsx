@@ -1,5 +1,6 @@
 "use client";
 
+// 서류 > 첨삭 보드(강사): 같은 반 수강생 서류 표와 검토 드로어.
 import { useState } from "react";
 import type { CohortDocumentRow } from "@/server/document-queries";
 import { DOCUMENT_TYPE_LABELS } from "@/lib/documents/labels";

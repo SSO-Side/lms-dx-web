@@ -1,3 +1,4 @@
+// 전체 반 요약(/app/overview): 강사·매니저는 담당 반, 학원 관리자는 학원 전체 반의 출결·티켓 요약.
 import Link from "next/link";
 import { Role } from "@prisma/client";
 import { ChevronRight } from "lucide-react";

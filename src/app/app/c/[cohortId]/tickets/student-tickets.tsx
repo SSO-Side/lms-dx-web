@@ -1,5 +1,6 @@
 "use client";
 
+// 티켓 > 내 신청(수강생): 병결·휴가 신청(증빙 첨부)과 일반 문의.
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Check, ChevronRight, FilePlus2, MessageSquarePlus } from "lucide-react";

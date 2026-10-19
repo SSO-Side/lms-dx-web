@@ -1,5 +1,6 @@
 "use server";
 
+// 출결 서버 액션: 출결 체크·수정·삭제, 하루 마감, 초기 이관값, 기간 공결 처리(변경 이력 기록).
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { EnrollmentStatus, LogAction, type AttendanceEvent, type Prisma } from "@prisma/client";
@@ -205,6 +206,7 @@ export async function upsertEventAction(cohortId: number, input: z.input<typeof 
   });
 }
 
+/** 출결 이벤트 한 건 삭제(변경 이력 남김). */
 export async function deleteEventAction(cohortId: number, eventId: number): Promise<Result> {
   return wrap(async () => {
     const ctx = await requireCohortAccess(cohortId, "attendance:write");

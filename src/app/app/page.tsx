@@ -1,3 +1,4 @@
+// 로그인 직후 진입점(/app): 역할에 맞는 홈(학원 관리·반 홈·전체 반 요약)으로 보낸다.
 import { redirect } from "next/navigation";
 import { Role, EnrollmentStatus } from "@prisma/client";
 import { requireAuthUser } from "@/lib/auth/session";

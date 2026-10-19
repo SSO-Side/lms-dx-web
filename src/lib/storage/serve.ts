@@ -13,6 +13,7 @@ export type ServeOptions = {
   cacheControl?: string;
 };
 
+/** 권한 확인을 마친 파일을 응답으로 내려준다(보안 헤더 포함). */
 export async function fileResponse({ key, mime, fileName, inline, cacheControl = "private, no-store" }: ServeOptions): Promise<NextResponse> {
   const disposition = (inline ?? isInlineMime(mime)) ? "inline" : "attachment";
   const headers: Record<string, string> = {

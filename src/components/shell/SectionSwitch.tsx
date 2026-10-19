@@ -1,3 +1,4 @@
+// 한 메뉴에 묶인 화면들 사이를 오가는 상단 전환 탭(예: 서류 ↔ 팀 프로젝트 ↔ 기업 문의).
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 

@@ -1,3 +1,4 @@
+// 대시보드 조회 함수: 반 요약 숫자와 훈련 진행률.
 import { db } from "@/lib/db";
 import { getAttendanceBase, computePeriodAttendance, type AttendanceBase } from "./attendance-queries";
 
@@ -12,6 +13,7 @@ export type CohortSummary = {
   unclosedCount: number;
 };
 
+/** 반 요약(위험·경고 인원, 처리 대기 티켓, 오늘 마감 여부, 미마감 일수): 전체 반 요약·학원 홈 카드용. */
 export async function getCohortSummary(cohortId: number, base?: AttendanceBase): Promise<CohortSummary> {
   const b = base ?? (await getAttendanceBase(cohortId));
   const [rows, pendingTickets] = await Promise.all([

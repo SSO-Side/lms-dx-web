@@ -1,5 +1,6 @@
 "use client";
 
+// 쇼케이스 검토 드로어(교직원): 강사 검토, 매니저 공개 승인·반려·비공개 전환.
 import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";

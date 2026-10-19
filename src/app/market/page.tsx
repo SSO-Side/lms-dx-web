@@ -1,9 +1,11 @@
+// 마켓플레이스 목록(/market): 공개 승인된 팀 프로젝트 쇼케이스. 로그인 없이 볼 수 있다.
 import Link from "next/link";
 import { ImageOff } from "lucide-react";
 import { listPublicShowcases } from "@/server/showcase-queries";
 import { cn } from "@/lib/utils";
 import { StackChip } from "@/components/showcase/StackChip";
 
+/** 요청마다 새로 그린다(공개·비공개 전환을 바로 반영) */
 export const dynamic = "force-dynamic"; // 비공개 전환이 바로 반영되도록 매 요청 조회
 
 interface Props {

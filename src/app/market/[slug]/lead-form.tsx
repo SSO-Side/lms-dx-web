@@ -1,5 +1,6 @@
 "use client";
 
+// 마켓플레이스 상세 > 기업 문의 폼(클라이언트, 로그인 없음).
 import { useState, useTransition } from "react";
 import { Coffee, Handshake, Send } from "lucide-react";
 import { submitLeadAction } from "@/server/leads";

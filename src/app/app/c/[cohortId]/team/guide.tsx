@@ -1,3 +1,4 @@
+// 팀 프로젝트 > 단계 가이드: 단계별 목표·체크포인트와 이 반 일정 기준 목표일(정적 내용).
 import { CheckCircle2 } from "lucide-react";
 import { COMPLETION_CHECKLIST, STAGES, type StageNo } from "@/lib/team/guide";
 import { cn } from "@/lib/utils";

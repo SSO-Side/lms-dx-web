@@ -1,3 +1,4 @@
+// 기술 스택 칩(단순 라벨).
 import { cn } from "@/lib/utils";
 
 /** 기술 스택 표시 (상태가 아니므로 StatusBadge 대신 단순 칩) */

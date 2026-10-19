@@ -1,3 +1,4 @@
+// 권한 판정 순수 함수 모음: 반 접근, 계정 관리, 파일 열람 등 "이 사람이 이 데이터에 접근해도 되나". DB 없이 테스트한다.
 import { Role, type ActiveStatus } from "@prisma/client";
 
 export interface UserAccessInfo {
@@ -18,6 +19,7 @@ export interface UserCohortMembership {
   staffCohortIds: number[];
 }
 
+/** 이 사용자가 이 반에 들어올 수 있는지(수강생은 재적, 교직원은 배정, 학원 관리자는 같은 학원). */
 export function canAccessCohortPure(
   user: UserAccessInfo,
   cohort: CohortAccessInfo | null,

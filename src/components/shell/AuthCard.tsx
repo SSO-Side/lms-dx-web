@@ -1,3 +1,4 @@
+// 로그인·비밀번호 변경 화면용 가운데 카드 틀.
 import * as React from "react";
 import Link from "next/link";
 

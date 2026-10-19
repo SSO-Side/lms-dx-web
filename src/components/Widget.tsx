@@ -1,3 +1,4 @@
+// 대시보드 카드 공통 틀: 로딩·빈 상태·오류 상태를 카드마다 따로 처리한다.
 import * as React from "react";
 import { AlertCircle, Inbox } from "lucide-react";
 import { cn } from "@/lib/utils";

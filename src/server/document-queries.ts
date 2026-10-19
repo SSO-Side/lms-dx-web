@@ -1,3 +1,4 @@
+// 서류(M7) 조회 함수: 내 서류·반 서류 목록, 상세, 상태별 개수, 반·학원 진행 현황.
 import { EnrollmentStatus, type DocumentStatus, type DocumentType } from "@prisma/client";
 import { db } from "@/lib/db";
 import { formatDateTime } from "@/lib/dates";
@@ -92,6 +93,7 @@ export async function listCohortDocuments(cohortId: number, status?: DocumentSta
   }));
 }
 
+/** 서류 상태별 개수(홈 위젯용). */
 export async function countDocumentsByStatus(cohortId: number): Promise<Record<DocumentStatus, number>> {
   const rows = await db.document.groupBy({
     by: ["status"],

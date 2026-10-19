@@ -1,3 +1,4 @@
+// 페이지 제목 영역: 제목·설명·뒤로 가기 링크·오른쪽 버튼 자리.
 import * as React from "react";
 import Link from "next/link";
 import { ChevronLeft } from "lucide-react";

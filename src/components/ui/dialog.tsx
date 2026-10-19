@@ -1,5 +1,6 @@
 "use client";
 
+// 기본 모달(Dialog) 부품: 화면 가운데 뜨는 확인·입력 창.
 import * as React from "react";
 import { Dialog as DialogPrimitive } from "@base-ui/react/dialog";
 import { XIcon } from "lucide-react";

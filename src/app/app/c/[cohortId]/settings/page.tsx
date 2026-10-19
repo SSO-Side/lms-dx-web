@@ -1,3 +1,4 @@
+// 반 설정 페이지: 반 정보·출결 규칙·휴일. 매니저는 읽기, 학원 관리자는 수정.
 import { tryCohortAccess } from "@/lib/access/pageAccess";
 import { hasActionPermission } from "@/lib/access/permissions";
 import { db } from "@/lib/db";

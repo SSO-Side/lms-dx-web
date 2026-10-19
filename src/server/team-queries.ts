@@ -1,3 +1,4 @@
+// 팀 프로젝트(M5) 조회 함수: 팀 목록·상세, 내 팀, 단계 요약.
 import { EnrollmentStatus, Role, type TeamStatus } from "@prisma/client";
 import { db } from "@/lib/db";
 import { dateToYmd, formatDateTime } from "@/lib/dates";
@@ -70,6 +71,7 @@ function strings(v: unknown, max = 20): string[] {
   return Array.isArray(v) ? v.filter((x): x is string => typeof x === "string").slice(0, max) : [];
 }
 
+/** DB의 기획안(JSON)을 안전하게 객체로 바꾼다. */
 export function parsePlan(v: unknown): ProjectPlan {
   const o = v && typeof v === "object" && !Array.isArray(v) ? (v as Record<string, unknown>) : {};
   const roles = Array.isArray(o.roles)

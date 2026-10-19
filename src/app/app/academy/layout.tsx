@@ -1,3 +1,4 @@
+// 학원 관리 화면(/app/academy/...)의 공통 틀. 학원 관리자·슈퍼어드민만 들어온다.
 import { Role } from "@prisma/client";
 import { requireAuthUser } from "@/lib/auth/session";
 import { db } from "@/lib/db";

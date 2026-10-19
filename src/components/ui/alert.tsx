@@ -1,3 +1,4 @@
+// 기본 알림 부품: 오류·경고·안내·성공 메시지 상자.
 import * as React from "react";
 import { AlertCircle, AlertTriangle, CheckCircle2, Info } from "lucide-react";
 import { cn } from "@/lib/utils";

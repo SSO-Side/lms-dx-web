@@ -1,3 +1,4 @@
+// 명부 페이지: 반 수강생 목록과 재적 상태(매니저·학원 관리자).
 import Link from "next/link";
 import { Settings } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";

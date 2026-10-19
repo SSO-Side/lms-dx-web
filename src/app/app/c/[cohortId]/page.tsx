@@ -1,3 +1,4 @@
+// 반 홈(대시보드) 페이지: 역할별 위젯(출결·티켓·수업·서류·팀·문의)을 모아 보여 준다.
 import Link from "next/link";
 import { Role, EnrollmentStatus } from "@prisma/client";
 import { FilePlus2 } from "lucide-react";

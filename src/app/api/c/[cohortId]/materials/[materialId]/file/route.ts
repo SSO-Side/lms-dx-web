@@ -1,3 +1,4 @@
+// 수업 자료 파일 내려받기 API (/api/c/[cohortId]/materials/[id]/file).
 import { NextResponse } from "next/server";
 import { tryCohortAccess } from "@/lib/access/pageAccess";
 import { db } from "@/lib/db";

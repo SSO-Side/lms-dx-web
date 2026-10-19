@@ -1,3 +1,4 @@
+// 기본 배지 부품: 역할·태그 같은 중립 라벨(상태 표시는 StatusBadge).
 import * as React from "react";
 import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";

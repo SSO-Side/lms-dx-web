@@ -1,3 +1,4 @@
+// 팀 프로젝트 기록 보기: 강사 피드백, 주간 로그, 기획안.
 import type { ReactNode } from "react";
 import { ExternalLink } from "lucide-react";
 import type { FeedbackRow, LogRow, TeamDetail } from "@/server/team-queries";

@@ -1,3 +1,4 @@
+// 출결 안내 배너: "참고용" 문구, 최종 반영일, 미확인 일 경고.
 import { Alert } from "@/components/ui/alert";
 
 /** ia.md §4 출결 배너: 참고용 · 최종 반영일, 미확인 일 경고. */

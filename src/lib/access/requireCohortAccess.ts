@@ -1,9 +1,11 @@
+// 반 접근 검사: 반 종속 서버 액션·페이지의 첫 줄에서 호출한다. 통과하면 cohortId·역할·사용자 정보(ctx)를 돌려준다.
 import { Role, EnrollmentStatus, type User } from "@prisma/client";
 import { db } from "@/lib/db";
 import { getSessionUser } from "@/lib/auth/session";
 import { hasActionPermission, type Action } from "./permissions";
 import { canAccessCohortPure } from "./checker";
 
+/** 권한 없음 오류. 서버 액션은 이것을 잡아 "권한이 없습니다"로 바꾼다. */
 export class AccessDeniedError extends Error {
   statusCode = 403;
   constructor(message = "접근할 수 없습니다.") {
@@ -18,6 +20,7 @@ export interface CohortContext {
   role: Role;
 }
 
+/** 반 접근과 동작 권한을 함께 검사한다. 실패하면 AccessDeniedError, 통과하면 ctx(cohortId·role·user). */
 export async function requireCohortAccess(
   cohortId: number | string,
   action: Action

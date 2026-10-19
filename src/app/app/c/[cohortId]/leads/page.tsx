@@ -1,3 +1,4 @@
+// 기업 문의 페이지: 이 반 쇼케이스로 들어온 기업 문의 목록(매니저·슈퍼어드민).
 import { tryCohortAccess } from "@/lib/access/pageAccess";
 import { AccessDenied } from "@/components/shell/AccessDenied";
 import { PageHeader } from "@/components/shell/PageHeader";

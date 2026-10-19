@@ -1,3 +1,4 @@
+// 홈 위젯: 서류 진행(수강생 내 서류, 교직원 단계별 현황).
 import Link from "next/link";
 import type { DocumentStatus, DocumentType } from "@prisma/client";
 import { ChevronRight, FilePlus2 } from "lucide-react";

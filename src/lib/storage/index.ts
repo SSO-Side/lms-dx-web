@@ -10,6 +10,7 @@ export type { StorageDriver } from "./types";
 
 let driver: StorageDriver | null = null;
 
+/** 설정(STORAGE_DRIVER)에 맞는 저장소 드라이버를 한 번만 만들어 돌려준다. */
 export function getStorage(): StorageDriver {
   if (driver) return driver;
   const kind = process.env.STORAGE_DRIVER || "local";
@@ -25,10 +26,12 @@ export async function saveFile(prefix: string, data: Buffer, ext: string, conten
   return key;
 }
 
+/** 저장 키로 파일 내용을 읽는다. */
 export async function readFile(key: string): Promise<Buffer> {
   return getStorage().get(key);
 }
 
+/** 저장 키의 파일을 지운다(없으면 무시). */
 export async function deleteFile(key: string): Promise<void> {
   await getStorage().delete(key);
 }

@@ -1,3 +1,4 @@
+// 기본 버튼 부품(shadcn/ui 기반). 모양은 variant, 크기는 size로 고른다.
 import * as React from "react";
 import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";

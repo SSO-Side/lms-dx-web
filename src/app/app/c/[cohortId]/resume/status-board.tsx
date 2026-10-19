@@ -1,3 +1,4 @@
+// 서류 > 상태 현황(매니저·슈퍼어드민): 수강생별 서류 진행 단계(파일 열람 없음).
 import type { DocumentType } from "@prisma/client";
 import type { StudentDocumentStatusRow, CohortStageRow } from "@/server/document-queries";
 import type { StageCounts } from "@/lib/documents/summary";

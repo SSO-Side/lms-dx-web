@@ -1,3 +1,4 @@
+// 필수 테스트(티켓 전이): 허용 전이는 전이표에서, 불허 전이는 모든 조합을 자동 생성해 검사한다.
 import { describe, it, expect } from "vitest";
 import { Role, TicketStatus } from "@prisma/client";
 import { canTransition, TRANSITIONS } from "./transitions";

@@ -1,5 +1,6 @@
 "use server";
 
+// 티켓(M2) 서버 액션: 병결·휴가 신청(증빙), 문의, 승인·반려·보완 등 상태 변경.
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { EnrollmentStatus, LogAction, type Prisma, type TicketStatus } from "@prisma/client";

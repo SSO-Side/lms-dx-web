@@ -1,3 +1,4 @@
+// 기본 카드 부품(테두리 상자와 제목·본문 영역).
 import * as React from "react";
 import { cn } from "@/lib/utils";
 
