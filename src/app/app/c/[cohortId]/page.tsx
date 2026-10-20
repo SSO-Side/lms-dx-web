@@ -3,7 +3,8 @@ import Link from "next/link";
 import { Role, EnrollmentStatus } from "@prisma/client";
 import { FilePlus2 } from "lucide-react";
 import { tryCohortAccess } from "@/lib/access/pageAccess";
-import { db } from "@/lib/db";
+import { getCohortInfo, countEnrollmentsByStatus } from "@/server/cohort-queries";
+import { listStaffCohortIds } from "@/server/shell-queries";
 import { formatDate } from "@/lib/utils";
 import { todayYmd } from "@/lib/dates";
 import { Widget } from "@/components/Widget";
@@ -54,10 +55,7 @@ export default async function CohortHomePage({ params }: CohortHomePageProps) {
   if (!ctx) return <AccessDenied />;
   const id = ctx.cohortId;
 
-  const cohort = await db.cohort.findUnique({
-    where: { id },
-    select: { name: true, trainingType: true, room: true, startDate: true, endDate: true, status: true },
-  });
+  const cohort = await getCohortInfo(id);
   if (!cohort) return <AccessDenied />;
 
   const period = `${formatDate(cohort.startDate)} ~ ${formatDate(cohort.endDate)}`;
@@ -66,7 +64,7 @@ export default async function CohortHomePage({ params }: CohortHomePageProps) {
     ctx.role === Role.ACADEMY_ADMIN || ctx.role === Role.ADMIN
       ? { href: "/app/academy", label: "학원 홈" }
       : (ctx.role === Role.INSTRUCTOR || ctx.role === Role.MANAGER) &&
-          (await db.cohortStaff.count({ where: { userId: ctx.user.id } })) > 1
+          (await listStaffCohortIds(ctx.user.id)).length > 1
         ? { href: "/app/overview", label: "담당 반" }
         : undefined;
   const header = (
@@ -177,7 +175,7 @@ export default async function CohortHomePage({ params }: CohortHomePageProps) {
   const [summary, tickets, counts, docs, teams, leads] = await Promise.all([
     safe(base ? getCohortSummary(id, base) : Promise.reject(new Error("no base"))),
     pendingTickets,
-    safe(db.enrollment.groupBy({ by: ["status"], where: { cohortId: id }, _count: { _all: true } })),
+    safe(countEnrollmentsByStatus(id)),
     docStatus,
     teamStatus,
     safe(canReadLeads ? Promise.all([listLeads(id, { take: 3, now }), countNewLeads(id, now)]) : Promise.resolve(null)),

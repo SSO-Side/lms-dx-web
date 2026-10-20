@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireCohortAccess } from "@/lib/access/requireCohortAccess";
-import { db } from "@/lib/db";
+import { getCohortAccounts } from "@/server/academy-queries";
 import { AccountsManager } from "./accounts-manager";
 import { buttonVariants } from "@/components/ui/button";
 import { PageHeader } from "@/components/shell/PageHeader";
@@ -20,55 +20,11 @@ export default async function AccountsPage({ params }: AccountsPageProps) {
 
   const ctx = await requireCohortAccess(numCohortId, "account:manage");
 
-  const cohort = await db.cohort.findUnique({
-    where: { id: ctx.cohortId },
-    select: { id: true, name: true },
-  });
-
-  if (!cohort) {
+  const accounts = await getCohortAccounts(ctx.cohortId);
+  if (!accounts) {
     notFound();
   }
-
-  // 등록된 수강생 조회
-  const enrollments = await db.enrollment.findMany({
-    where: { cohortId: ctx.cohortId },
-    include: {
-      student: {
-        select: {
-          id: true,
-          name: true,
-          loginId: true,
-          phone: true,
-          role: true,
-          status: true,
-        },
-      },
-    },
-    orderBy: { student: { name: "asc" } },
-  });
-
-  // 배정된 강사/매니저 조회
-  const staffList = await db.cohortStaff.findMany({
-    where: { cohortId: ctx.cohortId },
-    include: {
-      user: {
-        select: {
-          id: true,
-          name: true,
-          loginId: true,
-          phone: true,
-          role: true,
-          status: true,
-        },
-      },
-    },
-    orderBy: { user: { name: "asc" } },
-  });
-
-  const members = [
-    ...staffList.map((s) => s.user),
-    ...enrollments.map((e) => e.student),
-  ];
+  const { cohort, members } = accounts;
 
   return (
     <>

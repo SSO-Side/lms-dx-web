@@ -4,7 +4,7 @@ import { Role, type DocumentStatus } from "@prisma/client";
 import { requireAuthUser } from "@/lib/auth/session";
 import { tryCohortAccess } from "@/lib/access/pageAccess";
 import { hasActionPermission } from "@/lib/access/permissions";
-import { db } from "@/lib/db";
+import { getCohortAcademyId } from "@/server/cohort-queries";
 import { cn } from "@/lib/utils";
 import { DOCUMENT_STATUSES, DOCUMENT_STATUS_LABELS } from "@/lib/documents/labels";
 import { AccessDenied } from "@/components/shell/AccessDenied";
@@ -116,11 +116,8 @@ export default async function ResumePage({ params, searchParams }: Props) {
   // 매니저·슈퍼어드민: 상태 현황만 (파일 열람 불가)
   const ctx = await tryCohortAccess(cohortId, "resume:readOthers");
   if (!ctx) return <AccessDenied />;
-  const [{ rows, stages }, cohort] = await Promise.all([
-    getCohortDocumentStatus(ctx.cohortId),
-    db.cohort.findUnique({ where: { id: ctx.cohortId }, select: { academyId: true } }),
-  ]);
-  const academyRows = ctx.role === Role.ACADEMY_ADMIN && cohort ? await getAcademyDocumentStatus(cohort.academyId) : null;
+  const [{ rows, stages }, academyId] = await Promise.all([getCohortDocumentStatus(ctx.cohortId), getCohortAcademyId(ctx.cohortId)]);
+  const academyRows = ctx.role === Role.ACADEMY_ADMIN && academyId ? await getAcademyDocumentStatus(academyId) : null;
 
   return (
     <>

@@ -146,3 +146,16 @@ export async function getRecentSubmissions(cohortId: number, take = 5) {
     submittedAt: formatDateTime(s.submittedAt),
   }));
 }
+
+/** 자료 파일 전달용: 이 반 자료의 저장 키·파일명·MIME (없으면 null) */
+export async function getMaterialFile(cohortId: number, materialId: number) {
+  return db.material.findFirst({ where: { id: materialId, cohortId }, select: { filePath: true, fileName: true, fileMime: true, title: true } });
+}
+
+/** 제출 파일 전달용: 이 반 제출물의 제출자·저장 키·파일명·MIME (없으면 null) */
+export async function getSubmissionFile(cohortId: number, submissionId: number) {
+  return db.submission.findFirst({
+    where: { id: submissionId, cohortId },
+    select: { cohortId: true, studentId: true, filePath: true, fileName: true, fileMime: true },
+  });
+}

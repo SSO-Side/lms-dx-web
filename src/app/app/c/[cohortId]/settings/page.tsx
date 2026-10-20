@@ -1,7 +1,7 @@
 // 반 설정 페이지: 반 정보·출결 규칙·휴일. 매니저는 읽기, 학원 관리자는 수정.
 import { tryCohortAccess } from "@/lib/access/pageAccess";
 import { hasActionPermission } from "@/lib/access/permissions";
-import { db } from "@/lib/db";
+import { getCohortSettings } from "@/server/cohort-queries";
 import { dateToYmd } from "@/lib/dates";
 import { AccessDenied } from "@/components/shell/AccessDenied";
 import { PageHeader } from "@/components/shell/PageHeader";
@@ -17,10 +17,7 @@ export default async function SettingsPage({ params }: { params: Promise<{ cohor
   const canEdit = hasActionPermission(ctx.role, "account:manage");
 
   const [cohort, base] = await Promise.all([
-    db.cohort.findUnique({
-      where: { id: ctx.cohortId },
-      select: { name: true, trainingType: true, room: true, status: true, startDate: true, endDate: true, weeklySchedule: true, holidays: true },
-    }),
+    getCohortSettings(ctx.cohortId),
     getAttendanceBase(ctx.cohortId),
   ]);
   if (!cohort) return <AccessDenied />;

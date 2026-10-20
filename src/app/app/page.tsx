@@ -1,8 +1,8 @@
 // 로그인 직후 진입점(/app): 역할에 맞는 홈(학원 관리·반 홈·전체 반 요약)으로 보낸다.
 import { redirect } from "next/navigation";
-import { Role, EnrollmentStatus } from "@prisma/client";
+import { Role } from "@prisma/client";
 import { requireAuthUser } from "@/lib/auth/session";
-import { db } from "@/lib/db";
+import { getEnrolledCohortId, listStaffCohortIds } from "@/server/shell-queries";
 import { logoutAction } from "@/server/auth";
 import { Button } from "@/components/ui/button";
 import { AuthCard } from "@/components/shell/AuthCard";
@@ -15,27 +15,16 @@ export default async function AppRootPage() {
   }
 
   if (user.role === Role.STUDENT) {
-    const enrollment = await db.enrollment.findFirst({
-      where: {
-        studentId: user.id,
-        status: EnrollmentStatus.ENROLLED,
-      },
-      select: { cohortId: true },
-    });
-
-    if (enrollment) {
-      redirect(`/app/c/${enrollment.cohortId}`);
+    const cohortId = await getEnrolledCohortId(user.id);
+    if (cohortId) {
+      redirect(`/app/c/${cohortId}`);
     }
   }
 
   if (user.role === Role.INSTRUCTOR || user.role === Role.MANAGER) {
-    const staffList = await db.cohortStaff.findMany({
-      where: { userId: user.id },
-      select: { cohortId: true },
-    });
-
-    if (staffList.length === 1) {
-      redirect(`/app/c/${staffList[0].cohortId}`);
+    const cohortIds = await listStaffCohortIds(user.id);
+    if (cohortIds.length === 1) {
+      redirect(`/app/c/${cohortIds[0]}`);
     } else {
       redirect("/app/overview");
     }

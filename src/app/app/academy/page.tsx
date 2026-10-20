@@ -3,7 +3,7 @@ import Link from "next/link";
 import { Role, CohortStatus } from "@prisma/client";
 import { Plus } from "lucide-react";
 import { requireAuthUser } from "@/lib/auth/session";
-import { db } from "@/lib/db";
+import { listAcademyCohorts } from "@/server/academy-queries";
 import { formatDate } from "@/lib/utils";
 import { DataTable, type Column } from "@/components/DataTable";
 import { StatusBadge } from "@/components/StatusBadge";
@@ -29,14 +29,7 @@ export default async function AcademyPage() {
     return <AccessDenied />;
   }
 
-  const cohorts = await db.cohort.findMany({
-    where: user.academyId ? { academyId: user.academyId } : {},
-    include: {
-      enrollments: { where: { status: "ENROLLED" }, select: { id: true } },
-      staff: { where: { staffRole: "MANAGER" }, include: { user: { select: { name: true } } } },
-    },
-    orderBy: { id: "desc" },
-  });
+  const cohorts = await listAcademyCohorts(user.academyId);
 
   const rows: CohortRow[] = cohorts.map((c) => ({
     id: c.id,

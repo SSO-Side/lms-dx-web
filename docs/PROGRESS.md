@@ -56,6 +56,7 @@
 - 2026-10-16: M10 공개 영역 — PUBLISHED + 공개 DTO(동의 팀원 이름·역할만, 사용자 ID·연락처·반 ID 없음), 과정명은 카드에 노출, 기본 noindex(MARKET_INDEXABLE=true로 해제), 슬러그 난수 12자
 - 2026-10-16: M10 리드 — 로그인 없는 서버 액션, zod 길이 제한 + 허니팟(website) + IP당 1시간 5건(기존 메모리 레이트 리밋에 횟수·기간 옵션 추가), cohortId는 쇼케이스에서 꺼냄, 메일 없음(문의 화면·홈 위젯), "신규" = 최근 7일
 - 2026-10-16: M10 메뉴 — 기업 문의는 "서류·프로젝트" 상단 전환의 세 번째 화면(lead:read 역할만)으로 두어 메뉴 5개 유지
+- 2026-10-20: src/app의 직접 DB 호출(17개 파일)을 src/server 조회 함수로 이동 — shell-queries(반 레이아웃·진입 반), academy-queries, cohort-queries 신설, 파일 전달 조회는 각 모듈 queries에 추가. src/app에서 db import는 api/health(DB 연결 확인용)만 남김
 - 2026-10-17: 사람이 하는 일(환경 준비·화면 확인·배포·학원 협의)을 docs/user-tasks.md로 분리
 - 2026-10-17: M1 파일 — 저장소를 드라이버 구조로 분리(src/lib/storage: types·local·validators·serve, STORAGE_DRIVER=local), 공통 전달 fileResponse에 Nginx X-Accel-Redirect 선택 지원(STORAGE_ACCEL_PREFIX), 기존 파일 라우트 4개도 통일
 - 2026-10-17: M1 파일 — Material·Submission에 filePath·fileName·fileMime·fileSize(마이그레이션 m1_files, Material.url nullable), 허용 형식 PDF·오피스·한글·이미지·ZIP·텍스트 20MB(시그니처 검사), 다시 제출 시 새 파일만 교체·이전 파일 삭제, 제출 파일 열람은 본인·같은 반 교직원(canViewSubmissionFilePure)

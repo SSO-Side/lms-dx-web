@@ -205,3 +205,14 @@ export async function getStudentEvents(
     note: e.note,
   }));
 }
+
+/** 초기 이관값이 등록된 수강생 수 */
+export async function countOpenings(cohortId: number): Promise<number> {
+  return db.attendanceOpening.count({ where: { cohortId } });
+}
+
+/** 훈련일 날짜 목록("YYYY-MM-DD", 오름차순) */
+export async function listTrainingDates(cohortId: number): Promise<string[]> {
+  const rows = await db.trainingDay.findMany({ where: { cohortId, isTraining: true }, select: { date: true }, orderBy: { date: "asc" } });
+  return rows.map((d) => dateToYmd(d.date));
+}

@@ -1,9 +1,8 @@
 // 전체 반 요약(/app/overview): 강사·매니저는 담당 반, 학원 관리자는 학원 전체 반의 출결·티켓 요약.
 import Link from "next/link";
-import { Role } from "@prisma/client";
 import { ChevronRight } from "lucide-react";
 import { requireAuthUser } from "@/lib/auth/session";
-import { db } from "@/lib/db";
+import { listOverviewCohorts } from "@/server/academy-queries";
 import { formatDate } from "@/lib/utils";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Widget } from "@/components/Widget";
@@ -12,24 +11,10 @@ import { PageHeader } from "@/components/shell/PageHeader";
 import { ROLE_LABELS } from "@/components/shell/nav";
 import { getCohortSummary, type CohortSummary } from "@/server/dashboard-queries";
 
-const cohortSelect = { id: true, name: true, room: true, startDate: true, endDate: true, status: true } as const;
-
 export default async function OverviewPage() {
   const user = await requireAuthUser();
 
-  const cohorts =
-    user.role === Role.ACADEMY_ADMIN || user.role === Role.ADMIN
-      ? await db.cohort.findMany({
-          where: user.academyId ? { academyId: user.academyId } : {},
-          orderBy: { id: "asc" },
-          select: cohortSelect,
-        })
-      : (
-          await db.cohortStaff.findMany({
-            where: { userId: user.id },
-            select: { cohort: { select: cohortSelect } },
-          })
-        ).map((s) => s.cohort);
+  const cohorts = await listOverviewCohorts(user);
 
   // 반별 요약 (위젯 단위 오류 격리)
   const summaries = new Map<number, CohortSummary | null>(

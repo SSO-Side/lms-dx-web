@@ -3,7 +3,7 @@ import Link from "next/link";
 import { Settings } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";
 import { tryCohortAccess } from "@/lib/access/pageAccess";
-import { db } from "@/lib/db";
+import { listCohortMembers } from "@/server/cohort-queries";
 import { formatDateTime } from "@/lib/dates";
 import { AccessDenied } from "@/components/shell/AccessDenied";
 import { PageHeader } from "@/components/shell/PageHeader";
@@ -16,18 +16,7 @@ export default async function MembersPage({ params }: { params: Promise<{ cohort
   const ctx = await tryCohortAccess(cohortId, "attendance:write");
   if (!ctx) return <AccessDenied />;
 
-  const [enrollments, staff] = await Promise.all([
-    db.enrollment.findMany({
-      where: { cohortId: ctx.cohortId },
-      include: { student: { select: { id: true, name: true, loginId: true, phone: true, status: true, lastLoginAt: true } } },
-      orderBy: { student: { name: "asc" } },
-    }),
-    db.cohortStaff.findMany({
-      where: { cohortId: ctx.cohortId },
-      include: { user: { select: { id: true, name: true, loginId: true, phone: true, status: true, lastLoginAt: true, role: true } } },
-      orderBy: { staffRole: "asc" },
-    }),
-  ]);
+  const { enrollments, staff } = await listCohortMembers(ctx.cohortId);
 
   const rows: MemberRow[] = [
     ...staff.map((s) => ({

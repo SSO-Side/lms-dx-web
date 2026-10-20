@@ -136,3 +136,11 @@ export async function getTicketDetail(
     actions: availableTransitions(t.status, viewer.role, isRequester).map((r) => ({ to: r.to, commentRequired: !!r.commentRequired })),
   };
 }
+
+/** 증빙 파일 전달용: 이 반 티켓의 첨부 한 건과 신청자 id (없으면 null) */
+export async function getAttachmentForFile(cohortId: number, attachmentId: number) {
+  return db.ticketAttachment.findFirst({
+    where: { id: attachmentId, ticket: { cohortId } },
+    include: { ticket: { select: { requesterId: true } } },
+  });
+}

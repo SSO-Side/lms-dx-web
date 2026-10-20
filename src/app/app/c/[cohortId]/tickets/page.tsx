@@ -3,8 +3,7 @@ import Link from "next/link";
 import { Role } from "@prisma/client";
 import { requireAuthUser } from "@/lib/auth/session";
 import { tryCohortAccess } from "@/lib/access/pageAccess";
-import { db } from "@/lib/db";
-import { dateToYmd } from "@/lib/dates";
+import { listTrainingDates } from "@/server/attendance-queries";
 import { cn } from "@/lib/utils";
 import { AccessDenied } from "@/components/shell/AccessDenied";
 import { PageHeader } from "@/components/shell/PageHeader";
@@ -33,9 +32,9 @@ export default async function TicketsPage({ params, searchParams }: Props) {
   if (user.role === Role.STUDENT) {
     const ctx = await tryCohortAccess(cohortId, "ticket:readOwn");
     if (!ctx) return <AccessDenied />;
-    const [tickets, days] = await Promise.all([
+    const [tickets, trainingDates] = await Promise.all([
       listTickets(ctx.cohortId, { requesterId: ctx.user.id }),
-      db.trainingDay.findMany({ where: { cohortId: ctx.cohortId, isTraining: true }, select: { date: true }, orderBy: { date: "asc" } }),
+      listTrainingDates(ctx.cohortId),
     ]);
     return (
       <div className="mx-auto max-w-2xl">
@@ -43,7 +42,7 @@ export default async function TicketsPage({ params, searchParams }: Props) {
         <StudentTickets
           cohortId={ctx.cohortId}
           tickets={tickets}
-          trainingDates={days.map((d) => dateToYmd(d.date))}
+          trainingDates={trainingDates}
           initialTicketId={initialTicketId}
           initialNew={sp.new === "absence" || sp.new === "inquiry" ? sp.new : null}
         />

@@ -3,7 +3,6 @@ import Link from "next/link";
 import { Role } from "@prisma/client";
 import { requireAuthUser } from "@/lib/auth/session";
 import { tryCohortAccess } from "@/lib/access/pageAccess";
-import { db } from "@/lib/db";
 import { isYmd, formatYmdWithDow } from "@/lib/dates";
 import { cn } from "@/lib/utils";
 import { AccessDenied } from "@/components/shell/AccessDenied";
@@ -18,6 +17,7 @@ import {
   computePeriodAttendance,
   getDaySheet,
   getStudentEvents,
+  countOpenings,
 } from "@/server/attendance-queries";
 import { DaySheet } from "./day-sheet";
 import { RosterCounter } from "./roster-counter";
@@ -114,7 +114,7 @@ export default async function AttendancePage({ params, searchParams }: Props) {
   }
 
   const rows = await computePeriodAttendance(ctx.cohortId, base, period);
-  const openingCount = await db.attendanceOpening.count({ where: { cohortId: ctx.cohortId } });
+  const openingCount = await countOpenings(ctx.cohortId);
 
   return (
     <>

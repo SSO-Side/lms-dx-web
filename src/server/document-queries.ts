@@ -157,3 +157,11 @@ export async function getAcademyDocumentStatus(academyId: number): Promise<Cohor
     })
   );
 }
+
+/** 서류 PDF 전달용: 이 반 서류 버전 한 건과 소유자 (없으면 null) */
+export async function getDocumentVersionForFile(cohortId: number, versionId: number) {
+  return db.documentVersion.findFirst({
+    where: { id: versionId, cohortId },
+    include: { document: { select: { cohortId: true, ownerId: true } } },
+  });
+}

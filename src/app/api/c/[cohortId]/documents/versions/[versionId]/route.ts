@@ -4,7 +4,7 @@ import { Role } from "@prisma/client";
 import { getSessionUser } from "@/lib/auth/session";
 import { tryCohortAccess } from "@/lib/access/pageAccess";
 import { canViewDocumentFilePure } from "@/lib/access/checker";
-import { db } from "@/lib/db";
+import { getDocumentVersionForFile } from "@/server/document-queries";
 import { fileResponse } from "@/lib/storage/serve";
 
 // 서류 PDF 전달: 반 접근 확인 → 본인 또는 같은 반 강사만 → 서버가 읽어서 내려준다 (직접 URL 없음).
@@ -19,10 +19,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ cohortI
 
   const id = parseInt(versionId, 10);
   if (!id) return denied();
-  const version = await db.documentVersion.findFirst({
-    where: { id, cohortId: ctx.cohortId },
-    include: { document: { select: { cohortId: true, ownerId: true } } },
-  });
+  const version = await getDocumentVersionForFile(ctx.cohortId, id);
   if (!version || !canViewDocumentFilePure({ id: ctx.user.id, role: ctx.role }, ctx.cohortId, version.document)) return denied();
 
   return fileResponse({ key: version.storagePath, mime: "application/pdf", fileName: version.fileName, inline: true });

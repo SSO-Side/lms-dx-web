@@ -3,7 +3,7 @@ import { Role } from "@prisma/client";
 import { requireAuthUser } from "@/lib/auth/session";
 import { AccessDenied } from "@/components/shell/AccessDenied";
 import { PageHeader } from "@/components/shell/PageHeader";
-import { db } from "@/lib/db";
+import { listStaffOptions } from "@/server/academy-queries";
 import { NewCohortForm } from "./new-cohort-form";
 
 export default async function NewCohortPage() {
@@ -12,15 +12,7 @@ export default async function NewCohortPage() {
     return <AccessDenied />;
   }
 
-  const staffOptions = await db.user.findMany({
-    where: {
-      ...(user.academyId ? { academyId: user.academyId } : {}),
-      role: { in: [Role.MANAGER, Role.INSTRUCTOR] },
-      status: "ACTIVE",
-    },
-    select: { id: true, name: true, loginId: true, role: true },
-    orderBy: [{ role: "desc" }, { name: "asc" }],
-  });
+  const staffOptions = await listStaffOptions(user.academyId);
 
   return (
     <div className="mx-auto max-w-2xl">

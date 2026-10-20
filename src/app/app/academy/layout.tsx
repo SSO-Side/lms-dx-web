@@ -1,7 +1,7 @@
 // 학원 관리 화면(/app/academy/...)의 공통 틀. 학원 관리자·슈퍼어드민만 들어온다.
 import { Role } from "@prisma/client";
 import { requireAuthUser } from "@/lib/auth/session";
-import { db } from "@/lib/db";
+import { getAcademyName } from "@/server/shell-queries";
 import { AppShell } from "@/components/shell/AppShell";
 import { AccessDenied } from "@/components/shell/AccessDenied";
 import { academyNav, ROLE_LABELS } from "@/components/shell/nav";
@@ -12,13 +12,11 @@ export default async function AcademyLayout({ children }: { children: React.Reac
     return <AccessDenied />;
   }
 
-  const academy = user.academyId
-    ? await db.academy.findUnique({ where: { id: user.academyId }, select: { name: true } })
-    : null;
+  const academyName = await getAcademyName(user.academyId);
 
   return (
     <AppShell
-      title={academy?.name ?? "학원 관리"}
+      title={academyName ?? "학원 관리"}
       nav={academyNav()}
       user={{ name: user.name, roleLabel: ROLE_LABELS[user.role] }}
     >
