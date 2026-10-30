@@ -1,0 +1,45 @@
+# 스테이징 Nginx 예시. staging.example.com과 경로를 실제 값으로 바꿔 /etc/nginx/sites-available/ 에 둔다.
+# 인증서는 certbot 등으로 발급한다. 로그인 쿠키가 secure라 HTTPS가 아니면 로그인되지 않는다.
+
+server {
+    listen 80;
+    server_name staging.example.com;
+    return 301 https://$host$request_uri;
+}
+
+server {
+    listen 443 ssl http2;
+    server_name staging.example.com;
+
+    ssl_certificate     /etc/letsencrypt/live/staging.example.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/staging.example.com/privkey.pem;
+
+    add_header Strict-Transport-Security "max-age=31536000" always;
+
+    # 업로드 상한: 앱의 서버 액션 상한(32mb)과 맞춘다
+    client_max_body_size 32m;
+
+    # 스테이징은 검색 엔진 수집 차단
+    add_header X-Robots-Tag "noindex, nofollow" always;
+
+    location / {
+        proxy_pass http://127.0.0.1:3333;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        # 덮어쓰기(append 금지): 클라이언트가 보낸 X-Forwarded-For로 요청 제한을 속이지 못하게 한다
+        proxy_set_header X-Forwarded-For $remote_addr;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_read_timeout 60s;
+    }
+
+    # (선택) 파일을 Nginx가 직접 보내기: deploy/.env에 STORAGE_ACCEL_PREFIX="/_files"를 넣었을 때만 사용.
+    # 앱이 권한을 확인한 뒤 X-Accel-Redirect로 넘긴 요청만 통과한다(internal). alias는 STORAGE_HOST_DIR 경로.
+    # location /_files/ {
+    #     internal;
+    #     alias /srv/lms-kdt/storage/;
+    #     # location 안에 add_header가 있으면 server의 헤더를 물려받지 않으니 필요한 것을 다시 적는다
+    #     add_header X-Content-Type-Options nosniff always;
+    #     add_header X-Robots-Tag "noindex, nofollow" always;
+    # }
+}

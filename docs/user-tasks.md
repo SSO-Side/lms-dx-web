@@ -67,6 +67,25 @@ npm run db:seed
 
 ## 3. 운영 서버 배포 (임시 서버, PRD 5.6)
 
+### 3-0. 스테이징 배포 (Ubuntu + Docker, 기존 MariaDB 컨테이너 사용)
+
+배포 파일: `Dockerfile`, `deploy/docker-compose.yml`, `deploy/.env.example`, `deploy/nginx.conf.example`. 명령은 모두 서버의 `deploy/` 폴더에서 실행합니다.
+
+1. **DB 준비** (기존 MariaDB 컨테이너 안): 버전 10.6 이상인지 `SELECT VERSION();`으로 확인하고, 전용 DB·계정을 만듭니다.
+   ```sql
+   CREATE DATABASE lms_kdt_staging CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+   CREATE USER 'lms_app'@'%' IDENTIFIED BY '<비밀번호>';
+   GRANT ALL PRIVILEGES ON lms_kdt_staging.* TO 'lms_app'@'%';
+   ```
+   그 컨테이너의 네트워크 이름을 확인합니다: `docker inspect -f '{{json .NetworkSettings.Networks}}' <MariaDB 컨테이너>`
+2. **코드·설정**: 서버에 저장소를 받고 `cp deploy/.env.example deploy/.env` 후 값을 채웁니다(`DB_NETWORK`, `DATABASE_URL`의 호스트=MariaDB 컨테이너 이름, `SESSION_SECRET`=`openssl rand -base64 48`, `SEED_PASSWORD`, `APP_BASE_URL`).
+3. **파일 저장 폴더**: `sudo mkdir -p /srv/lms-kdt/storage && sudo chown 1000:1000 /srv/lms-kdt/storage`
+4. **스키마 반영**: `docker compose run --rm --build tools` (= `prisma migrate deploy`)
+5. **가상 데이터 시드(스테이징만)**: `docker compose run --rm -e ALLOW_SEED=true tools npx prisma db seed`
+6. **앱 실행**: `docker compose up -d --build app` → `curl -s http://127.0.0.1:3333/api/health`가 `{"ok":true}`면 정상
+7. **Nginx·TLS**: `deploy/nginx.conf.example`을 도메인에 맞게 고쳐 등록하고 `sudo certbot --nginx -d <도메인>`. **HTTPS가 아니면 로그인되지 않습니다**(세션 쿠키 secure).
+8. **업데이트할 때**: `git pull` → 4번(새 마이그레이션이 있을 때) → 6번. 로그는 `docker compose logs -f app`.
+
 | 항목 | 할 일 |
 | :-- | :-- |
 | DB | 운영 DB 생성·권한 (1-1과 같고 섀도 DB는 불필요), 스키마 반영은 `npx prisma migrate deploy`만. 시드는 운영에서 실행하지 않음 |

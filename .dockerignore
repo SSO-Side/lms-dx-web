@@ -1,0 +1,15 @@
+# Docker 빌드에 넣지 않는 파일 (비밀값·로컬 데이터·빌드 산출물)
+.env
+.env.*
+!.env.example
+deploy/.env
+node_modules
+.next
+.storage
+storage
+coverage
+proposal-screens
+.git
+.claude
+*.tsbuildinfo
+npm-debug.log*
