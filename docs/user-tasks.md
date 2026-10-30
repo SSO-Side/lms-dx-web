@@ -8,14 +8,12 @@
 ## 1. 개발 환경 준비 (처음 한 번)
 
 ### 1-1. DB 만들기
-MariaDB에 앱 DB와 **섀도 DB**(`prisma migrate dev`용 빈 DB)를 만들고, 같은 계정에 두 DB 권한만 줍니다.
+MariaDB에 앱 DB를 만들고, 그 DB 권한만 가진 계정을 줍니다. 섀도 DB는 쓰지 않습니다(마이그레이션 방식은 `docs/dev-guide.md` 6절).
 
 ```sql
 CREATE DATABASE lms_kdt CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-CREATE DATABASE lms_kdt_shadow CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 CREATE USER 'lms_kdt'@'localhost' IDENTIFIED BY '<비밀번호>';
 GRANT ALL PRIVILEGES ON lms_kdt.* TO 'lms_kdt'@'localhost';
-GRANT ALL PRIVILEGES ON lms_kdt_shadow.* TO 'lms_kdt'@'localhost';
 ```
 
 ### 1-2. `.env` 작성
@@ -23,7 +21,7 @@ GRANT ALL PRIVILEGES ON lms_kdt_shadow.* TO 'lms_kdt'@'localhost';
 
 | 키 | 넣을 값 |
 | :-- | :-- |
-| `DATABASE_URL` · `SHADOW_DATABASE_URL` | 1-1에서 만든 DB 접속 주소 (`mysql://…`) |
+| `DATABASE_URL` | 1-1에서 만든 DB 접속 주소 (`mysql://…`) |
 | `APP_BASE_URL` | 앱 기준 주소 (개발: `http://localhost:3333`) |
 | `SESSION_SECRET` | 충분히 긴 난수 |
 | `TZ` | `Asia/Seoul` |
@@ -88,7 +86,7 @@ npm run db:seed
 
 | 항목 | 할 일 |
 | :-- | :-- |
-| DB | 운영 DB 생성·권한 (1-1과 같고 섀도 DB는 불필요), 스키마 반영은 `npx prisma migrate deploy`만. 시드는 운영에서 실행하지 않음 |
+| DB | 운영 DB 생성·권한 (1-1과 같음), 스키마 반영은 `npx prisma migrate deploy`만. 시드는 운영에서 실행하지 않음 |
 | 앱 실행 | `npm run build` 후 pm2 또는 systemd로 `npm run start` (포트 3333) |
 | Nginx | 리버스 프록시 + TLS. 아래 설정 두 줄은 **필수** |
 | 파일 | `STORAGE_DIR`를 웹 루트 밖에 두고, 앱 계정만 읽기·쓰기. Docker면 named volume 또는 호스트 경로를 마운트해 컨테이너 교체 후에도 유지 |

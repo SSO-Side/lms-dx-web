@@ -187,7 +187,7 @@ docs/                    명세(spec/), 디자인(design/), 진행 현황(PROGRE
 
 1. **명세 확인**: `docs/spec/modules.md`에서 해당 모듈 절을 읽습니다. 명세에 없는 기능이면 먼저 물어봅니다.
 2. **DB**: `prisma/schema.prisma`에 모델·컬럼을 추가합니다. 반 데이터라면 `cohortId`를 꼭 넣습니다.
-   그다음 `npx prisma migrate dev --name 짧은이름`으로 마이그레이션을 만듭니다.
+   그다음 아래 6절 "마이그레이션 만들기" 순서로 마이그레이션을 만들고 반영합니다.
 3. **권한**: 새 동작이 필요하면 `src/lib/access/permissions.ts` 권한표에 한 줄 추가합니다(역할별 true/false).
 4. **서버**: `src/server/`에 서버 액션(쓰기)과 쿼리 함수(읽기)를 만듭니다. 첫 줄 `requireCohortAccess`, `where`에 `cohortId`.
 5. **화면**: `src/app/app/c/[cohortId]/...`에 페이지와 화면 파일을 만들고 서버 액션을 연결합니다.
@@ -205,7 +205,15 @@ docs/                    명세(spec/), 디자인(design/), 진행 현황(PROGRE
 
 - 표 정의는 `prisma/schema.prisma`만 기준으로 삼습니다. 따로 ER 그림이나 SQL 문서를 만들지 않습니다.
 - 스키마는 필요한 부분만 고칩니다. 모델은 해당 모듈 명세에 있는 것만 추가합니다.
-- 마이그레이션 만들기: `npx prisma migrate dev --name <짧은이름>`
+- **마이그레이션 만들기** (섀도 DB를 쓰지 않으므로 `prisma migrate dev`는 쓰지 않습니다):
+  1. `schema.prisma`를 고칩니다.
+  2. 개발 DB와 스키마의 차이를 SQL 파일로 뽑습니다. 폴더 이름은 `연월일시분초_짧은이름`(기존 폴더처럼).
+     ```bash
+     npm run db:diff -- -o prisma/migrations/20261030120000_add_notice/migration.sql
+     ```
+  3. 만든 SQL을 열어 의도한 변경만 있는지 확인합니다(특히 `DROP`이 있으면 멈추고 팀장에게 묻습니다).
+  4. `npm run db:migrate`(= `prisma migrate deploy`)로 개발 DB에 반영하고, `npx prisma generate`가 자동으로 돌지 않았다면 직접 실행합니다.
+  - 개발 DB를 SQL로 직접 고치지 않습니다. 고치면 2번의 차이 계산이 어긋납니다.
 - **하면 안 되는 명령**: `npx prisma migrate reset`, `db push --force-reset`, 테이블 DROP. DB 데이터가 모두 지워집니다. 꼭 필요하면 팀장에게 먼저 말합니다.
 - 시드(가상 데이터)는 `prisma/seed.ts`를 그대로 씁니다. 대량의 가짜 데이터를 만들지 않습니다.
 
