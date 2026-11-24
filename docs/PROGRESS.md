@@ -57,6 +57,7 @@
 - 2026-10-16: M10 리드 — 로그인 없는 서버 액션, zod 길이 제한 + 허니팟(website) + IP당 1시간 5건(기존 메모리 레이트 리밋에 횟수·기간 옵션 추가), cohortId는 쇼케이스에서 꺼냄, 메일 없음(문의 화면·홈 위젯), "신규" = 최근 7일
 - 2026-10-16: M10 메뉴 — 기업 문의는 "서류·프로젝트" 상단 전환의 세 번째 화면(lead:read 역할만)으로 두어 메뉴 5개 유지
 - 2026-10-20: src/app의 직접 DB 호출(17개 파일)을 src/server 조회 함수로 이동 — shell-queries(반 레이아웃·진입 반), academy-queries, cohort-queries 신설, 파일 전달 조회는 각 모듈 queries에 추가. src/app에서 db import는 api/health(DB 연결 확인용)만 남김
+- 2026-11-24: Pretendard 가변 폰트를 src/app/fonts에 직접 호스팅(next/font/local, 패키지 추가 없음, OFL 라이선스 동봉, 2MB라 preload 끔). PC(≥1024px)는 text-xs 13px·페이지 제목 24px·위젯 제목/여백 통일, 한글 keep-all·자간 -0.01em. 폰트 용량 축소(서브셋)는 후속
 - 2026-10-30: 섀도 DB 쓰지 않음 — `migrate dev` 대신 `npm run db:diff -- -o <마이그레이션 폴더>/migration.sql` → `npm run db:migrate`(migrate deploy). schema의 shadowDatabaseUrl 제거
 - 2026-10-30: 스테이징 배포 — Dockerfile(runner·tools 단계 분리, node:22-slim, uid 1000), deploy/ compose는 서버의 기존 MariaDB 컨테이너를 외부 네트워크(DB_NETWORK)로 사용, 파일은 호스트 경로 바인드. 절차는 user-tasks 3-0
 - 2026-10-30: 배포 전 전체 검수 — 보안 헤더(nosniff·X-Frame-Options DENY·Referrer-Policy, X-Powered-By 끔, HSTS는 Nginx), shadcn CLI는 devDependencies로. npm audit 잔여(next 16·prisma 7 필요)는 스택 고정으로 보류

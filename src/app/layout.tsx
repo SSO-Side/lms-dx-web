@@ -1,6 +1,16 @@
 // 최상위 레이아웃: 모든 화면이 공유하는 <html>·폰트·기본 메타데이터.
 import type { Metadata, Viewport } from "next";
+import localFont from "next/font/local";
 import "./globals.css";
+
+/** Pretendard 가변 폰트(SIL OFL, 라이선스는 fonts/PRETENDARD-LICENSE.txt). 직접 호스팅하며 굵기 45~920 전부 지원. 파일이 커서 미리 불러오기(preload)는 끈다. */
+const pretendard = localFont({
+  src: "./fonts/PretendardVariable.woff2",
+  weight: "45 920",
+  display: "swap",
+  preload: false,
+  variable: "--font-pretendard",
+});
 
 /** 브라우저 탭 제목·설명 */
 export const metadata: Metadata = {
@@ -21,7 +31,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="ko">
+    <html lang="ko" className={pretendard.variable}>
       <body>{children}</body>
     </html>
   );
