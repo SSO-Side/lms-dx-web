@@ -3,7 +3,7 @@ import { Role } from "@prisma/client";
 import {
   canAccessCohortPure,
   canManageCohortAccountPure,
-  canViewDocumentFilePure,
+  canViewDocumentPure,
   canViewSubmissionFilePure,
   canEditTeamProjectPure,
   canViewTeamProjectPure,
@@ -198,7 +198,7 @@ describe("반 간 접근 차단 테스트 (permissions.md §3)", () => {
       fn: () => canManageCohortAccountPure({ role: acadAdmin.role, academyId: 10, enrolledInCohort: false, staffInCohort: true }, cohortA),
       expected: false,
     },
-    // M7 서류 파일 열람 (반 접근 → resume:review 권한 → 리소스 단위 검사)
+    // M7 서류 내용 열람 (반 접근 → resume:review 권한 → 리소스 단위 검사)
     {
       actorName: "inst_b(반 B 강사)",
       desc: "반 A 수강생 s01의 서류 열람",
@@ -207,7 +207,7 @@ describe("반 간 접근 차단 테스트 (permissions.md §3)", () => {
         const instBMembership: UserCohortMembership = { enrolledCohortIds: [], staffCohortIds: [2] };
         return (
           canAccessCohortPure(instB, cohortA, instBMembership) &&
-          canViewDocumentFilePure({ id: instB.id, role: instB.role }, cohortA.id, { cohortId: cohortA.id, ownerId: s01.id })
+          canViewDocumentPure({ id: instB.id, role: instB.role }, cohortA.id, { cohortId: cohortA.id, ownerId: s01.id })
         );
       },
       expected: false,
@@ -218,17 +218,26 @@ describe("반 간 접근 차단 테스트 (permissions.md §3)", () => {
       fn: () =>
         canAccessCohortPure(s01, cohortA, s01Membership) &&
         hasActionPermission(s01.role, "resume:own") &&
-        canViewDocumentFilePure({ id: s01.id, role: s01.role }, cohortA.id, { cohortId: cohortA.id, ownerId: s02.id }),
+        canViewDocumentPure({ id: s01.id, role: s01.role }, cohortA.id, { cohortId: cohortA.id, ownerId: s02.id }),
       expected: false,
     },
     {
       actorName: "mgr_a",
-      desc: "반 A 수강생 서류 파일 열람 (상태만 허용)",
+      desc: "반 A 수강생 서류 내용 열람 (상태만 허용)",
       fn: () =>
         canAccessCohortPure(mgrA, cohortA, mgrAMembership) &&
         hasActionPermission(mgrA.role, "resume:review") &&
-        canViewDocumentFilePure({ id: mgrA.id, role: mgrA.role }, cohortA.id, { cohortId: cohortA.id, ownerId: s01.id }),
+        canViewDocumentPure({ id: mgrA.id, role: mgrA.role }, cohortA.id, { cohortId: cohortA.id, ownerId: s01.id }),
       expected: false,
+    },
+    {
+      actorName: "s01",
+      desc: "본인 서류(면접 연동 포함) 열람",
+      fn: () =>
+        canAccessCohortPure(s01, cohortA, s01Membership) &&
+        hasActionPermission(s01.role, "resume:own") &&
+        canViewDocumentPure({ id: s01.id, role: s01.role }, cohortA.id, { cohortId: cohortA.id, ownerId: s01.id }),
+      expected: true,
     },
     // M1 과제 제출 파일 열람 (반 접근 → assignment:read → 리소스 단위 검사)
     {

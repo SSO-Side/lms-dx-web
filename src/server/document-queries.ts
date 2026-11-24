@@ -1,12 +1,12 @@
-// 서류(M7) 조회 함수: 내 서류·반 서류 목록, 상세, 상태별 개수, 반·학원 진행 현황.
+// 서류(M7) 조회 함수: 내 서류·반 서류 목록, 상세, 상태별 개수, 반·학원 진행 현황, 면접 연동 조회.
 import { EnrollmentStatus, type DocumentStatus, type DocumentType } from "@prisma/client";
 import { db } from "@/lib/db";
 import { formatDateTime } from "@/lib/dates";
+import { readDocumentContent, type DocumentContent } from "@/lib/documents/forms";
 import { studentStage, countStages, type StageCounts, type StudentStage } from "@/lib/documents/summary";
 
 // 호출 측이 먼저 requireCohortAccess로 권한을 확인하고 ctx.cohortId만 넘긴다.
 
-export type DocumentVersionRow = { id: number; versionNo: number; fileName: string; size: number; createdAt: string; aiConsent: boolean };
 export type ReviewNoteRow = { id: number; reviewerName: string; comment: string; createdAt: string };
 
 export type DocumentDetail = {
@@ -16,13 +16,12 @@ export type DocumentDetail = {
   status: DocumentStatus;
   updatedAt: string;
   owner: { name: string; loginId: string };
-  versions: DocumentVersionRow[];
+  content: DocumentContent | null;
   notes: ReviewNoteRow[];
 };
 
 const detailInclude = {
   owner: { select: { name: true, loginId: true } },
-  versions: { orderBy: { versionNo: "desc" as const } },
   reviewNotes: { include: { reviewer: { select: { name: true } } }, orderBy: { createdAt: "desc" as const } },
 };
 
@@ -40,14 +39,7 @@ function toDetail(d: DocWithDetail): DocumentDetail {
     status: d.status,
     updatedAt: formatDateTime(d.updatedAt),
     owner: d.owner,
-    versions: d.versions.map((v) => ({
-      id: v.id,
-      versionNo: v.versionNo,
-      fileName: v.fileName,
-      size: v.size,
-      createdAt: formatDateTime(v.createdAt),
-      aiConsent: v.aiConsentAt !== null,
-    })),
+    content: readDocumentContent(d.type, d.content),
     notes: d.reviewNotes.map((n) => ({ id: n.id, reviewerName: n.reviewer.name, comment: n.comment, createdAt: formatDateTime(n.createdAt) })),
   };
 }
@@ -70,7 +62,6 @@ export type CohortDocumentRow = {
   type: DocumentType;
   title: string;
   status: DocumentStatus;
-  versionCount: number;
   updatedAt: string;
 };
 
@@ -78,7 +69,7 @@ export type CohortDocumentRow = {
 export async function listCohortDocuments(cohortId: number, status?: DocumentStatus): Promise<CohortDocumentRow[]> {
   const docs = await db.document.findMany({
     where: { cohortId, ...(status ? { status } : {}), owner: { enrollments: { some: { cohortId, status: EnrollmentStatus.ENROLLED } } } },
-    include: { owner: { select: { name: true, loginId: true } }, _count: { select: { versions: true } } },
+    include: { owner: { select: { name: true, loginId: true } } },
     orderBy: [{ updatedAt: "desc" }],
   });
   return docs.map((d) => ({
@@ -88,7 +79,6 @@ export async function listCohortDocuments(cohortId: number, status?: DocumentSta
     type: d.type,
     title: d.title,
     status: d.status,
-    versionCount: d._count.versions,
     updatedAt: formatDateTime(d.updatedAt),
   }));
 }
@@ -158,10 +148,24 @@ export async function getAcademyDocumentStatus(academyId: number): Promise<Cohor
   );
 }
 
-/** 서류 PDF 전달용: 이 반 서류 버전 한 건과 소유자 (없으면 null) */
-export async function getDocumentVersionForFile(cohortId: number, versionId: number) {
-  return db.documentVersion.findFirst({
-    where: { id: versionId, cohortId },
-    include: { document: { select: { cohortId: true, ownerId: true } } },
+export type InterviewDocuments = {
+  resume: { content: DocumentContent; status: DocumentStatus; updatedAt: string } | null;
+  coverLetter: { content: DocumentContent; status: DocumentStatus; updatedAt: string } | null;
+};
+
+/**
+ * 면접 연동용: 수강생 본인이 저장한 이력서·자기소개서 (면접 화면과 외부 면접 서비스 입력의 단일 출처).
+ * 호출 측이 requireCohortAccess/tryCohortAccess 후 ctx.cohortId와 본인 userId만 넘긴다. 내용이 없는 서류는 null.
+ */
+export async function getInterviewDocuments(cohortId: number, ownerId: number): Promise<InterviewDocuments> {
+  const docs = await db.document.findMany({
+    where: { cohortId, ownerId, type: { in: ["RESUME", "COVER_LETTER"] } },
+    select: { type: true, content: true, status: true, updatedAt: true },
   });
+  const pick = (type: DocumentType) => {
+    const d = docs.find((x) => x.type === type);
+    const content = d ? readDocumentContent(d.type, d.content) : null;
+    return d && content ? { content, status: d.status, updatedAt: formatDateTime(d.updatedAt) } : null;
+  };
+  return { resume: pick("RESUME"), coverLetter: pick("COVER_LETTER") };
 }

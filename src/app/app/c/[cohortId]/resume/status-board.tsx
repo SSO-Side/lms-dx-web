@@ -6,7 +6,7 @@ import { DOCUMENT_TYPE_LABELS } from "@/lib/documents/labels";
 import { DataTable } from "@/components/DataTable";
 import { StatusBadge } from "@/components/StatusBadge";
 
-const TYPES: DocumentType[] = ["RESUME", "COVER_LETTER", "PORTFOLIO"];
+const TYPES: DocumentType[] = ["RESUME", "COVER_LETTER"];
 const STAGE_TILES: Array<{ key: keyof StageCounts; label: string }> = [
   { key: "NONE", label: "미등록" },
   { key: "DRAFT", label: "초안" },

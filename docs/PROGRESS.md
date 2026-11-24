@@ -21,7 +21,7 @@
 - 챗봇·면접 질문 연동 (외부 서비스 규격 확정 후)
 - M5 후속: 팀원 참여 신청·팀장 승인, 팀 간 이동·팀 수정/해산, 알림, 단계 승인 되돌리기
 - M10 후속: 리드 이메일 알림, B2B 아웃바운드 패키징(학원 협의 후), 리드 읽음 표시, 레이트 리밋 DB/공유 저장소화, 검색 노출(SEO) 결정, 공개 이미지 재인코딩
-- (학원 요청, 2026-11-24 수신) M7 서류 정책 변경: 학생 마이페이지에 이력서 최대 1개·자소서 최대 1개만 보관, 이력서 기본 양식 제공·적용, 자소서는 기본 양식 + 항목 구분 없는 단일 텍스트 영역 최대 4,000자, 저장한 서류를 면접 진행 페이지에서 불러오기(면접 연동). 현재 구현(3종·PDF 업로드·버전)과 달라 명세(docs/spec) 확정 후 새 세션에서
+- M7 서류 정책 변경 후속: 이력서 양식 7항목 학원 확정 [TBD], 면접 질문 생성(외부 서비스 규격 후), 서류 삭제
 - (학원 요청) 챗봇: 서비스 내 위젯 형태 UI, 관리자용 매뉴얼 문서 업로드 공간(챗봇 응답 근거, PDF만 허용). 외부 챗봇 규격 확정 후 새 세션에서
 - M7 후속: 서류 파일 열람 접근 로그, 업로드 PDF 악성 내용 검사, 서류 삭제, 강사-수강생 배정 개념(도입 시 resume:review 범위 축소)
 
@@ -68,6 +68,7 @@
 - 2026-10-17: M1 파일 — 저장소를 드라이버 구조로 분리(src/lib/storage: types·local·validators·serve, STORAGE_DRIVER=local), 공통 전달 fileResponse에 Nginx X-Accel-Redirect 선택 지원(STORAGE_ACCEL_PREFIX), 기존 파일 라우트 4개도 통일
 - 2026-10-17: M1 파일 — Material·Submission에 filePath·fileName·fileMime·fileSize(마이그레이션 m1_files, Material.url nullable), 허용 형식 PDF·오피스·한글·이미지·ZIP·텍스트 20MB(시그니처 검사), 다시 제출 시 새 파일만 교체·이전 파일 삭제, 제출 파일 열람은 본인·같은 반 교직원(canViewSubmissionFilePure)
 - 2026-10-16: M10 이미지 — png·jpg·webp 시그니처 검사 5MB, 공개 라우트는 PUBLISHED만, 응답에 nosniff·CSP default-src 'none'. 시드 이미지는 시드 코드가 단색 PNG를 직접 생성
+- 2026-11-24: M7 서류 정책 변경 — 이력서·자소서 반당 유형별 1개(DB 유니크), PDF 업로드·포트폴리오 폐지, 이력서 7항목·자소서 단일 칸 4,000자 입력 양식(Document.content JSON), 첨삭 흐름 유지, 면접 화면(/interview)+getInterviewDocuments 신설. 마이그레이션 20261124120000_m7_document_form
 ## 막힘·확인 필요 (사람이 처리)
 > 절차·명령은 `docs/user-tasks.md`에 모아 두었다. 여기는 남은 항목만 한 줄씩.
 - 로그인 후 화면을 브라우저·모바일에서 눈으로 확인 (에이전트는 임시 세션으로 주요 흐름만 확인)
@@ -77,3 +78,4 @@
 - M10 운영 배포 전: Nginx가 X-Forwarded-For를 실제 클라이언트 IP로 덮어쓰게 설정(리드 요청 제한 위조 방지), 검색 노출 원할 때만 MARKET_INDEXABLE=true
 - M1 파일 업로드·다운로드를 로그인 후 브라우저에서 확인 (에이전트는 비로그인 403과 검증 함수만 확인)
 - M7 시드 확인용: STORAGE_DIR(기본 .storage)/seed/sample-resume.pdf 에 가상 PDF 1개 배치 후 서류 시드 실행
+- [사용자 작업] M7 마이그레이션 전 기존 서류 초기화(가상 데이터): 마이그레이션이 유니크를 추가하므로 DB에서 Document 관련 행을 먼저 지운 뒤 `npm run db:migrate`, 이어서 서류 시드 재실행. 삭제 SQL은 사람이 실행.

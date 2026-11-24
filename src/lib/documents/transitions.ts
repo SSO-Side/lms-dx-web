@@ -8,24 +8,24 @@ type Rule = {
   /** 서류 소유자 본인만 */
   ownerOnly?: boolean;
   commentRequired?: boolean;
-  /** 버전이 1개 이상 있어야 함 */
-  needsVersion?: boolean;
+  /** 저장된 내용이 있어야 함 */
+  needsContent?: boolean;
 };
 
 /** 서류 상태 전이표: 어떤 상태에서 누가 어떤 상태로 바꿀 수 있는지(단일 기준). */
 export const DOCUMENT_TRANSITIONS: Rule[] = [
-  { from: "DRAFT", to: "IN_REVIEW", roles: ["STUDENT"], ownerOnly: true, needsVersion: true }, // 첨삭 요청
+  { from: "DRAFT", to: "IN_REVIEW", roles: ["STUDENT"], ownerOnly: true, needsContent: true }, // 첨삭 요청
   { from: "IN_REVIEW", to: "DONE", roles: ["INSTRUCTOR"] }, // 완성 처리
   { from: "IN_REVIEW", to: "DRAFT", roles: ["INSTRUCTOR"], commentRequired: true }, // 수정 요청
 ];
 
-/** 새 버전을 올리면 어느 상태에서든 DRAFT로 돌아간다 (전이표 밖의 시스템 전이). */
-export const STATUS_AFTER_NEW_VERSION: DocumentStatus = "DRAFT";
+/** 내용을 고쳐 저장하면 어느 상태에서든 DRAFT로 돌아간다 (전이표 밖의 시스템 전이). */
+export const STATUS_AFTER_EDIT: DocumentStatus = "DRAFT";
 
-export type DocumentTransitionCtx = { isOwner: boolean; versionCount: number; comment?: string | null };
+export type DocumentTransitionCtx = { isOwner: boolean; hasContent: boolean; comment?: string | null };
 export type DocumentTransitionCheck =
   | { ok: true }
-  | { ok: false; reason: "NOT_ALLOWED" | "NOT_OWNER" | "NO_VERSION" | "COMMENT_REQUIRED" };
+  | { ok: false; reason: "NOT_ALLOWED" | "NOT_OWNER" | "NO_CONTENT" | "COMMENT_REQUIRED" };
 
 /** 이 역할이 서류 상태를 from → to로 바꿀 수 있는지 전이표에서 찾는다. */
 export function canTransitionDocument(
@@ -41,7 +41,7 @@ export function canTransitionDocument(
     if (!rule.roles.includes(actorRole)) return { ok: false, reason: "NOT_ALLOWED" };
     if (rule.ownerOnly && !ctx.isOwner) return { ok: false, reason: "NOT_OWNER" };
   }
-  if (rule.needsVersion && ctx.versionCount < 1) return { ok: false, reason: "NO_VERSION" };
+  if (rule.needsContent && !ctx.hasContent) return { ok: false, reason: "NO_CONTENT" };
   if (rule.commentRequired && !ctx.comment?.trim()) return { ok: false, reason: "COMMENT_REQUIRED" };
   return { ok: true };
 }

@@ -1,6 +1,6 @@
 "use client";
 
-// 서류 검토 드로어(강사): PDF 열람, 코멘트, 완성·수정 요청 처리.
+// 서류 검토 드로어(강사): 작성 내용 열람, 코멘트, 완성·수정 요청 처리.
 import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { CheckCircle2, MessageSquarePlus, Undo2 } from "lucide-react";
@@ -10,14 +10,14 @@ import { DOCUMENT_TYPE_LABELS } from "@/lib/documents/labels";
 import { availableDocumentTransitions } from "@/lib/documents/transitions";
 import { StatusBadge } from "@/components/StatusBadge";
 import { StageSteps } from "./StageSteps";
-import { VersionList, ReviewNoteList } from "./DocumentHistory";
+import { DocumentContentView, ReviewNoteList } from "./DocumentHistory";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert } from "@/components/ui/alert";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetBody, SheetFooter } from "@/components/ui/sheet";
 
-/** 강사 서류 드로어: 버전 목록(PDF 열람), 코멘트 작성, 상태 변경 (완성 / 수정 요청은 코멘트 필수). documentId가 null이면 닫힘. */
+/** 강사 서류 드로어: 작성 내용, 코멘트 작성, 상태 변경 (완성 / 수정 요청은 코멘트 필수). documentId가 null이면 닫힘. */
 export function DocumentReviewDrawer({ cohortId, documentId, onClose }: { cohortId: number; documentId: number | null; onClose: () => void }) {
   const router = useRouter();
   const [detail, setDetail] = useState<DocumentDetail | null>(null);
@@ -91,8 +91,8 @@ export function DocumentReviewDrawer({ cohortId, documentId, onClose }: { cohort
             <>
               <StageSteps status={detail.status} />
               <section className="space-y-2">
-                <h3 className="text-sm font-semibold text-neutral-900">버전 ({detail.versions.length})</h3>
-                <VersionList cohortId={cohortId} versions={detail.versions} />
+                <h3 className="text-sm font-semibold text-neutral-900">작성 내용</h3>
+                <DocumentContentView type={detail.type} content={detail.content} />
               </section>
               <section className="space-y-2">
                 <Label htmlFor="review-comment">코멘트 {actions.includes("DRAFT") && <span className="font-normal text-neutral-500">(수정 요청 시 필수)</span>}</Label>

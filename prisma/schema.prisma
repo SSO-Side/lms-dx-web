@@ -541,7 +541,8 @@ model Document {
   ownerId          Int
   type             DocumentType
   title            String         @db.VarChar(200)
-  currentVersionId Int? // 최신 DocumentVersion.id (순환 FK를 피하려고 관계 없이 둔다)
+  currentVersionId Int? // 폐지: PDF 버전 방식 (2026-11-24 입력 양식으로 전환). 새 서류는 쓰지 않는다
+  content          Json? // 입력 양식 내용 (src/lib/documents/forms.ts 형식). 이력서·자소서 공통
   status           DocumentStatus @default(DRAFT)
   createdAt        DateTime       @default(now())
   updatedAt        DateTime       @updatedAt
@@ -552,10 +553,12 @@ model Document {
   versions    DocumentVersion[]
   reviewNotes DocumentReviewNote[]
 
+  @@unique([cohortId, ownerId, type]) // 반마다 유형당 1개
   @@index([cohortId, status])
   @@index([ownerId])
 }
 
+// 폐지: PDF 업로드 버전. 새 서류는 쓰지 않는다(테이블은 유지, 기존 가상 데이터는 초기화)
 model DocumentVersion {
   id          Int       @id @default(autoincrement())
   documentId  Int

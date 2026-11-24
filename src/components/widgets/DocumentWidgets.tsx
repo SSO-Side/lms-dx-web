@@ -9,7 +9,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { DOCUMENT_TYPE_LABELS } from "@/lib/documents/labels";
 import type { StageCounts } from "@/lib/documents/summary";
 
-const TYPES: DocumentType[] = ["RESUME", "COVER_LETTER", "PORTFOLIO"];
+const TYPES: DocumentType[] = ["RESUME", "COVER_LETTER"];
 
 /** 수강생 홈: 내 서류 — 유형별 최신 서류의 단계 진행 */
 export function MyDocumentsWidget({
@@ -29,7 +29,7 @@ export function MyDocumentsWidget({
       title="내 서류"
       subtitle={`${registered}/${TYPES.length}종 등록`}
       density="comfortable"
-      empty={documents.length === 0 ? { message: "아직 올린 서류가 없습니다.", action: <Link href={href} className={buttonVariants({ size: "sm" })}><FilePlus2 aria-hidden /> 이력서 올리기</Link> } : undefined}
+      empty={documents.length === 0 ? { message: "아직 작성한 서류가 없습니다.", action: <Link href={href} className={buttonVariants({ size: "sm" })}><FilePlus2 aria-hidden /> 이력서 작성하기</Link> } : undefined}
     >
       <ul className="space-y-4">
         {latest.map(({ type, doc }) => (
