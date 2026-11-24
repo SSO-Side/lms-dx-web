@@ -5,6 +5,7 @@ import { requireAuthUser } from "@/lib/auth/session";
 import { getCohortShell } from "@/server/shell-queries";
 import { AppShell } from "@/components/shell/AppShell";
 import { AccessDenied } from "@/components/shell/AccessDenied";
+import { ChatbotWidget } from "@/components/chatbot/ChatbotWidget";
 import { cohortNav, ROLE_LABELS } from "@/components/shell/nav";
 
 interface CohortLayoutProps {
@@ -38,6 +39,7 @@ export default async function CohortLayout({ children, params }: CohortLayoutPro
       studentMode={user.role === Role.STUDENT}
     >
       {children}
+      <ChatbotWidget cohortId={numCohortId} />
     </AppShell>
   );
 }
