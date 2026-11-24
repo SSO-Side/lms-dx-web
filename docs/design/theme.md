@@ -90,7 +90,7 @@
 상태색(success/warning/danger/info/neutral의 fg·bg·solid)은 `--status-success-fg` 같은 **추가 변수**로 정의하고 Tailwind 테마에 `status-success` 등으로 노출한다.
 
 ## 3. 타이포그래피
-- 폰트: **Pretendard 가변 폰트**를 `src/app/fonts/PretendardVariable.woff2`로 직접 호스팅한다(`next/font/local`, 패키지 아님, SIL OFL 라이선스 파일 동봉). 폰트 로딩 전·실패 시 `"Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif`로 대체. 한글은 `word-break: keep-all`(어절 단위 줄바꿈), 자간 -0.01em.
+- 폰트: **Pretendard 가변 폰트**를 `src/app/fonts/PretendardVariable.subset.woff2`(한글 2,350자 서브셋, 약 360KB, 굵기 400~700)로 직접 호스팅한다(`next/font/local`, 패키지 아님, SIL OFL 라이선스 파일 동봉, 만드는 법은 fonts/README.md). 서브셋에 없는 글자는 아래 대체 글꼴로 표시. 폰트 로딩 전·실패 시 `"Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif`로 대체. 한글은 `word-break: keep-all`(어절 단위 줄바꿈), 자간 -0.01em.
 - 크기: 12 / 13 / 14 / 16 / 18 / 20 / 24 / 30px. 본문 기본은 **14px(관리자 화면)**, **16px(수강생 화면)**. 12px 미만은 쓰지 않는다. **PC(≥1024px)에서는 `text-xs`(12px)를 13px로, 페이지 제목을 24px로, 위젯 제목·안쪽 여백을 밀도와 관계없이 16px·16px로 통일**한다(모바일은 그대로). 모바일용 좁은 단일 칼럼 화면(수강생 출결·티켓·서류·팀)은 PC에서 가운데 정렬 대신 **왼쪽 정렬·최대 896px**로 넓힌다. 버튼·선택 상자는 손가락 커서(`cursor: pointer`).
 - 굵기: 400(본문), 500(라벨·표 헤더), 600(제목). 700 이상은 쓰지 않는다.
 - 줄 간격: 한글 본문 1.6, 제목 1.35. 숫자 열은 `tabular-nums`.

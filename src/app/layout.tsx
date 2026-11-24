@@ -3,12 +3,11 @@ import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
 
-/** Pretendard 가변 폰트(SIL OFL, 라이선스는 fonts/PRETENDARD-LICENSE.txt). 직접 호스팅하며 굵기 45~920 전부 지원. 파일이 커서 미리 불러오기(preload)는 끈다. */
+/** Pretendard 가변 폰트 한글 서브셋(약 360KB, SIL OFL, 만드는 법·라이선스는 fonts/ 폴더). 굵기 400~700, 서브셋에 없는 글자는 폰트 스택의 다음 글꼴로 표시된다. */
 const pretendard = localFont({
-  src: "./fonts/PretendardVariable.woff2",
-  weight: "45 920",
+  src: "./fonts/PretendardVariable.subset.woff2",
+  weight: "400 700",
   display: "swap",
-  preload: false,
   variable: "--font-pretendard",
 });
 
