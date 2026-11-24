@@ -62,7 +62,7 @@ export default async function ResumePage({ params, searchParams }: Props) {
     const tab = sp.tab === "guide" ? "guide" : "mine";
     const documents = tab === "mine" ? await listMyDocuments(ctx.cohortId, ctx.user.id) : [];
     return (
-      <div className="mx-auto max-w-3xl">
+      <div className="mx-auto max-w-3xl lg:mx-0 lg:max-w-4xl">
         <PageHeader back={{ href: `/app/c/${ctx.cohortId}`, label: "반 홈" }} title="내 서류" description="이력서·자기소개서·포트폴리오를 PDF로 올리고 강사 첨삭을 받습니다." />
         <Tabs
           current={tab}
