@@ -28,13 +28,14 @@ export function Widget({
   className,
   children,
 }: WidgetProps) {
-  const pad = density === "compact" ? "p-3" : "p-4";
+  // 모바일은 밀도별(촘촘/여유), PC(lg)는 한 화면의 카드가 고르게 보이도록 같은 값을 쓴다
+  const pad = density === "compact" ? "p-3 lg:p-4" : "p-4";
 
   return (
     <section className={cn("flex flex-col rounded-xl border border-neutral-200 bg-card", className)}>
       <header className={cn("flex items-start justify-between gap-3 border-b border-neutral-200", pad)}>
         <div className="min-w-0">
-          <h3 className={cn("font-semibold text-neutral-900", density === "compact" ? "text-sm" : "text-base")}>
+          <h3 className={cn("font-semibold text-neutral-900", density === "compact" ? "text-sm lg:text-base" : "text-base")}>
             {title}
           </h3>
           {subtitle && <p className="mt-0.5 text-xs text-neutral-500">{subtitle}</p>}

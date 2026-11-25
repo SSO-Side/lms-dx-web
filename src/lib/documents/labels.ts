@@ -25,5 +25,5 @@ export const DOCUMENT_TRANSITION_LABELS: Record<DocumentStatus, string> = {
   DRAFT: "수정 요청",
 };
 
-/** 파일을 올릴 때 보여 주는 AI 활용 동의 문구 */
+/** 서류 저장·면접 화면에 보여 주는 AI 활용 안내 문구 */
 export const AI_CONSENT_TEXT = "이 서류가 AI 면접 질문 생성에 사용될 수 있습니다. 이름·연락처는 외부 전송 전 제거됩니다.";

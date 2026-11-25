@@ -37,7 +37,7 @@ export default async function TicketsPage({ params, searchParams }: Props) {
       listTrainingDates(ctx.cohortId),
     ]);
     return (
-      <div className="mx-auto max-w-2xl">
+      <div className="mx-auto max-w-2xl lg:mx-0 lg:max-w-4xl">
         <PageHeader back={{ href: `/app/c/${ctx.cohortId}`, label: "반 홈" }} title="티켓" description="병결·휴가 신청과 문의를 접수하고 처리 상태를 확인합니다." />
         <StudentTickets
           cohortId={ctx.cohortId}

@@ -31,7 +31,6 @@ export function ReviewBoard({ cohortId, rows, emptyMessage }: { cohortId: number
           { header: "유형", cell: (r) => DOCUMENT_TYPE_LABELS[r.type], className: "whitespace-nowrap" },
           { header: "제목", cell: (r) => <span className="line-clamp-1">{r.title}</span>, className: "hidden md:table-cell" },
           { header: "상태", cell: (r) => <StatusBadge domain="document" value={r.status} /> },
-          { header: "버전", cell: (r) => `v${r.versionCount}`, align: "right", className: "hidden sm:table-cell tabular-nums" },
           { header: "최종 수정", cell: (r) => r.updatedAt, className: "whitespace-nowrap tabular-nums text-neutral-600" },
         ]}
       />

@@ -4,11 +4,13 @@ import { CheckCircle2 } from "lucide-react";
 // 작성 가이드 (정적 콘텐츠). 학원 자료가 오면 문구만 교체한다.
 
 const RESUME_TEMPLATE = [
-  { title: "기본 정보", body: "이름, 연락처, 이메일, GitHub·포트폴리오 링크. 사진·주소는 요구할 때만." },
-  { title: "한 줄 소개", body: "지원 직무와 강점을 한 문장으로. 예) 데이터로 병목을 찾아 고치는 백엔드 개발자" },
-  { title: "기술 스택", body: "실제로 써 본 기술만, 숙련도 순으로. 프로젝트에서 쓴 기술과 일치시킨다." },
+  { title: "기본정보", body: "이름, 연락처, 이메일, GitHub·포트폴리오 링크. 사진·주소는 요구할 때만." },
+  { title: "희망 직무", body: "지원 직무와 강점을 한 문장으로. 예) 데이터로 병목을 찾아 고치는 백엔드 개발자" },
+  { title: "학력", body: "학교, 전공, 재학 기간, 졸업 여부." },
+  { title: "교육 이수 (KDT)", body: "훈련 과정명과 기간, 배운 내용. 수료 예정이면 예정일을 적는다." },
   { title: "프로젝트", body: "기간·인원·내 역할 → 문제 → 해결 → 결과(수치). 가장 강한 프로젝트를 맨 위에." },
-  { title: "교육·자격", body: "훈련 과정명과 기간, 관련 자격증. 수료 예정이면 예정일을 적는다." },
+  { title: "기술 스택", body: "실제로 써 본 기술만, 숙련도 순으로. 프로젝트에서 쓴 기술과 일치시킨다." },
+  { title: "자격·수상", body: "관련 자격증, 수상 경력, 어학 점수." },
 ];
 
 const STAR = [
@@ -19,10 +21,10 @@ const STAR = [
 ];
 
 const CHECKLIST = [
-  "파일은 PDF로, 파일명에 이름과 직무를 넣었다 (예: 홍길동_백엔드_이력서.pdf)",
+  "이력서의 모든 항목을 채웠고, 비워 둔 항목이 없는지 확인했다",
   "프로젝트마다 내 역할과 결과 수치가 있다",
   "맞춤법·띄어쓰기를 검사했다",
-  "자기소개서 문항별 글자 수 제한을 지켰다",
+  "자기소개서는 4,000자 이내로 썼다",
   "주민등록번호 등 불필요한 개인정보를 넣지 않았다",
 ];
 
@@ -30,8 +32,8 @@ export function WritingGuide() {
   return (
     <div className="space-y-4">
       <section className="rounded-xl border border-neutral-200 bg-card p-4">
-        <h2 className="font-semibold text-neutral-900">이력서 표준 템플릿</h2>
-        <p className="mt-1 text-sm text-neutral-500">위에서 아래 순서로 작성합니다. 1~2쪽 분량을 권장합니다.</p>
+        <h2 className="font-semibold text-neutral-900">이력서 기본 양식</h2>
+        <p className="mt-1 text-sm text-neutral-500">내 서류 화면의 이력서 양식과 같은 항목입니다.</p>
         <ol className="mt-3 space-y-2">
           {RESUME_TEMPLATE.map((s, i) => (
             <li key={s.title} className="flex gap-3 text-sm">

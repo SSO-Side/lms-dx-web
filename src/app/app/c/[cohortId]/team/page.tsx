@@ -96,7 +96,7 @@ export default async function TeamPage({ params, searchParams }: Props) {
     const [team, schedule] = await Promise.all([getMyTeam(ctx.cohortId, ctx.user.id, today), getTeamSchedule(ctx.cohortId, today)]);
     const showcase = tab === "showcase" && team ? await getTeamShowcase(ctx.cohortId, { teamId: team.id }) : null;
     return (
-      <div className="mx-auto max-w-3xl">
+      <div className="mx-auto max-w-3xl lg:mx-0 lg:max-w-4xl">
         <PageHeader
           back={{ href: `/app/c/${ctx.cohortId}`, label: "반 홈" }}
           title="팀 프로젝트"

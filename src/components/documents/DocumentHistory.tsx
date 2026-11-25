@@ -1,54 +1,27 @@
-// 서류 버전 이력·첨삭 코멘트 목록 컴포넌트(수강생·강사 공용).
-import { ExternalLink, FileText, MessageSquareText, ShieldCheck } from "lucide-react";
-import type { DocumentVersionRow, ReviewNoteRow } from "@/server/document-queries";
+// 서류 내용 보기·첨삭 코멘트 목록 컴포넌트(수강생·강사·면접 화면 공용).
+import { MessageSquareText } from "lucide-react";
+import type { DocumentType } from "@prisma/client";
+import type { ReviewNoteRow } from "@/server/document-queries";
+import { RESUME_FIELDS, type DocumentContent } from "@/lib/documents/forms";
 
-/** 서류 PDF는 권한 확인 라우트로만 연다 (직접 URL 없음). 브라우저 기본 PDF 뷰어로 새 탭에서 열린다. */
-export function documentFileHref(cohortId: number, versionId: number) {
-  return `/api/c/${cohortId}/documents/versions/${versionId}`;
-}
-
-function formatSize(bytes: number) {
-  return bytes >= 1024 * 1024 ? `${(bytes / 1024 / 1024).toFixed(1)}MB` : `${Math.max(1, Math.round(bytes / 1024))}KB`;
-}
-
-/** 서류 버전 이력 목록(버전마다 파일 열기 링크) */
-export function VersionList({ cohortId, versions }: { cohortId: number; versions: DocumentVersionRow[] }) {
-  if (versions.length === 0) {
-    return <p className="rounded-lg bg-neutral-50 px-3 py-3 text-sm text-neutral-500">아직 올린 파일이 없습니다.</p>;
+/** 저장된 서류 내용을 읽기 전용으로 보여 준다 (이력서는 항목별, 자소서는 통으로). */
+export function DocumentContentView({ type, content }: { type: DocumentType; content: DocumentContent | null }) {
+  if (!content) {
+    return <p className="rounded-lg bg-neutral-50 px-3 py-3 text-sm text-neutral-500">아직 저장한 내용이 없습니다.</p>;
   }
+  const sections =
+    type === "COVER_LETTER"
+      ? [{ label: "자기소개서", text: content.body ?? "" }]
+      : RESUME_FIELDS.map((f) => ({ label: f.label, text: content[f.key] ?? "" }));
   return (
-    <ul className="divide-y divide-neutral-200 rounded-lg border border-neutral-200">
-      {versions.map((v, i) => (
-        <li key={v.id}>
-          <a
-            href={documentFileHref(cohortId, v.id)}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex min-h-12 items-center gap-3 px-3 py-2 hover:bg-neutral-50"
-          >
-            <FileText className="size-5 shrink-0 text-neutral-400" aria-hidden />
-            <div className="min-w-0 flex-1">
-              <p className="flex items-center gap-1.5 text-sm font-medium text-neutral-900">
-                v{v.versionNo}
-                {i === 0 && <span className="rounded-full bg-primary-50 px-1.5 text-xs font-medium text-primary-700">최신</span>}
-                <span className="truncate font-normal text-neutral-600">{v.fileName}</span>
-              </p>
-              <p className="flex flex-wrap items-center gap-x-2 text-xs text-neutral-500 tabular-nums">
-                {v.createdAt} · {formatSize(v.size)}
-                {v.aiConsent && (
-                  <span className="inline-flex items-center gap-0.5">
-                    <ShieldCheck className="size-3" aria-hidden /> AI 활용 동의
-                  </span>
-                )}
-              </p>
-            </div>
-            <span className="inline-flex shrink-0 items-center gap-1 text-sm text-primary-500">
-              열기 <ExternalLink className="size-3.5" aria-hidden />
-            </span>
-          </a>
-        </li>
+    <div className="space-y-3">
+      {sections.map((sec) => (
+        <section key={sec.label} className="rounded-lg border border-neutral-200 p-3">
+          <h4 className="text-xs font-semibold text-neutral-500">{sec.label}</h4>
+          <p className="mt-1 whitespace-pre-wrap break-words text-sm text-neutral-800">{sec.text.trim() || "—"}</p>
+        </section>
       ))}
-    </ul>
+    </div>
   );
 }
 

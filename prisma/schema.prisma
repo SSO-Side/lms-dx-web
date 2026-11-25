@@ -133,8 +133,9 @@ model Academy {
   status    ActiveStatus @default(ACTIVE)
   createdAt DateTime     @default(now())
 
-  users   User[]
-  cohorts Cohort[]
+  users            User[]
+  cohorts          Cohort[]
+  chatbotDocuments ChatbotDocument[]
 }
 
 model User {
@@ -178,6 +179,7 @@ model User {
   showcasesReviewed   Showcase[]           @relation("ShowcaseReviewer")
   showcasesApproved   Showcase[]           @relation("ShowcaseApprover")
   showcaseConsents    ShowcaseConsent[]
+  chatbotDocuments    ChatbotDocument[]
 
   @@index([academyId, role])
 }
@@ -237,6 +239,7 @@ model Cohort {
   projectLogs         ProjectLog[]
   showcases           Showcase[]
   inboundLeads        InboundLead[]
+  chatbotDocuments    ChatbotDocument[]
 
   @@index([academyId, status])
 }
@@ -541,7 +544,8 @@ model Document {
   ownerId          Int
   type             DocumentType
   title            String         @db.VarChar(200)
-  currentVersionId Int? // 최신 DocumentVersion.id (순환 FK를 피하려고 관계 없이 둔다)
+  currentVersionId Int? // 폐지: PDF 버전 방식 (2026-11-24 입력 양식으로 전환). 새 서류는 쓰지 않는다
+  content          Json? // 입력 양식 내용 (src/lib/documents/forms.ts 형식). 이력서·자소서 공통
   status           DocumentStatus @default(DRAFT)
   createdAt        DateTime       @default(now())
   updatedAt        DateTime       @updatedAt
@@ -552,10 +556,12 @@ model Document {
   versions    DocumentVersion[]
   reviewNotes DocumentReviewNote[]
 
+  @@unique([cohortId, ownerId, type]) // 반마다 유형당 1개
   @@index([cohortId, status])
   @@index([ownerId])
 }
 
+// 폐지: PDF 업로드 버전. 새 서류는 쓰지 않는다(테이블은 유지, 기존 가상 데이터는 초기화)
 model DocumentVersion {
   id          Int       @id @default(autoincrement())
   documentId  Int
@@ -773,4 +779,32 @@ model InboundLead {
 
   @@index([cohortId, createdAt])
   @@index([showcaseId])
+}
+
+// ───────── 챗봇(M4): 관리자 매뉴얼 문서 ─────────
+
+enum ChatAudience {
+  STUDENT
+  INSTRUCTOR
+  ALL
+}
+
+// 챗봇 응답 근거 PDF. cohortId가 null이면 학원 공통 문서(학원 관리자만 관리), 값이 있으면 그 반 문서.
+model ChatbotDocument {
+  id         Int          @id @default(autoincrement())
+  academyId  Int
+  cohortId   Int?
+  title      String       @db.VarChar(200)
+  audience   ChatAudience @default(ALL)
+  filePath   String       @db.VarChar(255)
+  fileName   String       @db.VarChar(255)
+  fileSize   Int
+  uploadedBy Int
+  createdAt  DateTime     @default(now())
+
+  academy  Academy @relation(fields: [academyId], references: [id])
+  cohort   Cohort? @relation(fields: [cohortId], references: [id])
+  uploader User    @relation(fields: [uploadedBy], references: [id])
+
+  @@index([academyId, cohortId])
 }

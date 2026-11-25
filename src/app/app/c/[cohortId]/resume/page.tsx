@@ -62,8 +62,8 @@ export default async function ResumePage({ params, searchParams }: Props) {
     const tab = sp.tab === "guide" ? "guide" : "mine";
     const documents = tab === "mine" ? await listMyDocuments(ctx.cohortId, ctx.user.id) : [];
     return (
-      <div className="mx-auto max-w-3xl">
-        <PageHeader back={{ href: `/app/c/${ctx.cohortId}`, label: "반 홈" }} title="내 서류" description="이력서·자기소개서·포트폴리오를 PDF로 올리고 강사 첨삭을 받습니다." />
+      <div className="mx-auto max-w-3xl lg:mx-0 lg:max-w-4xl">
+        <PageHeader back={{ href: `/app/c/${ctx.cohortId}`, label: "반 홈" }} title="내 서류" description="이력서·자기소개서를 양식에 맞춰 작성하고 강사 첨삭을 받습니다." />
         <Tabs
           current={tab}
           items={[
@@ -90,7 +90,7 @@ export default async function ResumePage({ params, searchParams }: Props) {
         <PageHeader
           back={{ href: `/app/c/${ctx.cohortId}`, label: "반 홈" }}
           title="서류 첨삭"
-          description="같은 반 수강생의 서류입니다. 행을 누르면 PDF 열람, 코멘트, 상태 변경을 할 수 있습니다."
+          description="같은 반 수강생의 서류입니다. 행을 누르면 작성 내용 열람, 코멘트, 상태 변경을 할 수 있습니다."
         />
         <Tabs
           current={status ?? "ALL"}
@@ -113,7 +113,7 @@ export default async function ResumePage({ params, searchParams }: Props) {
     );
   }
 
-  // 매니저·슈퍼어드민: 상태 현황만 (파일 열람 불가)
+  // 매니저·슈퍼어드민: 상태 현황만 (내용 열람 불가)
   const ctx = await tryCohortAccess(cohortId, "resume:readOthers");
   if (!ctx) return <AccessDenied />;
   const [{ rows, stages }, academyId] = await Promise.all([getCohortDocumentStatus(ctx.cohortId), getCohortAcademyId(ctx.cohortId)]);
@@ -125,11 +125,11 @@ export default async function ResumePage({ params, searchParams }: Props) {
       <PageHeader
         back={{ href: `/app/c/${ctx.cohortId}`, label: "반 홈" }}
         title="서류 현황"
-        description="수강생별 이력서·자기소개서·포트폴리오 진행 상태입니다. 진행 단계는 가장 덜 진행된 서류 기준입니다."
+        description="수강생별 이력서·자기소개서 진행 상태입니다. 진행 단계는 가장 덜 진행된 서류 기준입니다."
       />
       <div className="space-y-5">
         <StageSummary stages={stages} total={rows.length} />
-        <Alert tone="info">파일 내용은 본인과 담당 강사만 열람합니다. 이 화면에서는 상태만 확인할 수 있습니다.</Alert>
+        <Alert tone="info">작성 내용은 본인과 담당 강사만 열람합니다. 이 화면에서는 상태만 확인할 수 있습니다.</Alert>
         {academyRows && (
           <section className="space-y-2">
             <h2 className="font-semibold text-neutral-900">반별 현황</h2>

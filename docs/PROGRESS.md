@@ -12,7 +12,8 @@
 - [x] M7 이력서·자소서 가이드 및 수합 (UI 완성형 MVP)
 - [x] M5 팀 프로젝트 빌딩·가이드 (UI 완성형 MVP)
 - [x] M10 마켓플레이스·쇼케이스·기업 문의 (UI 완성형 MVP)
-- [ ] 챗봇·면접 질문 연동
+- [x] M4 챗봇 위젯·매뉴얼 PDF 관리 (목 응답, 2026-11-24)
+- [ ] 챗봇 실서비스·면접 질문 연동
 
 ## 현재 작업
 - M3·M2·M1·M11 완료 (2026-10-15), M7·M5·M10 완료 (2026-10-16), M1 후속(파일 업로드) 완료 (2026-10-17)
@@ -21,9 +22,12 @@
 - 챗봇·면접 질문 연동 (외부 서비스 규격 확정 후)
 - M5 후속: 팀원 참여 신청·팀장 승인, 팀 간 이동·팀 수정/해산, 알림, 단계 승인 되돌리기
 - M10 후속: 리드 이메일 알림, B2B 아웃바운드 패키징(학원 협의 후), 리드 읽음 표시, 레이트 리밋 DB/공유 저장소화, 검색 노출(SEO) 결정, 공개 이미지 재인코딩
+- M7 서류 정책 변경 후속: 이력서 양식 7항목 학원 확정 [TBD], 면접 질문 생성(외부 서비스 규격 후), 서류 삭제
+- 챗봇 후속: 실서비스 연동(외부 규격 확정 후 USE_AI_MOCK=false, 문서 인제스트·삭제 API 연동), 질의 로그 보관 기간·일일 호출 한도 결정
 - M7 후속: 서류 파일 열람 접근 로그, 업로드 PDF 악성 내용 검사, 서류 삭제, 강사-수강생 배정 개념(도입 시 resume:review 범위 축소)
 
 ## 결정 사항 (한 줄씩)
+- 2026-11-24: M4 챗봇 — 위젯은 반 레이아웃 전체(전 역할), 매뉴얼은 PDF만(10MB)·반/학원 공통·대상(전체/수강생/교직원). 반 문서는 매니저 이상, 학원 공통 문서는 학원 관리자만 등록·삭제(권한표보다 보수적). 실서비스 호출은 질의응답만 구현, 인제스트 연동은 보류
 - 2026-10-15: 스택 고정 — Next 15, Prisma 6, npm, vitest, bcryptjs, 서버 저장형 세션
 - 2026-10-15: 학원 협의 전에는 가상 데이터만 사용
 - 2026-10-15: S0 스캐폴드, Prisma 6 마이그레이션(init) 및 가상 데이터 시드 완료
@@ -57,6 +61,9 @@
 - 2026-10-16: M10 리드 — 로그인 없는 서버 액션, zod 길이 제한 + 허니팟(website) + IP당 1시간 5건(기존 메모리 레이트 리밋에 횟수·기간 옵션 추가), cohortId는 쇼케이스에서 꺼냄, 메일 없음(문의 화면·홈 위젯), "신규" = 최근 7일
 - 2026-10-16: M10 메뉴 — 기업 문의는 "서류·프로젝트" 상단 전환의 세 번째 화면(lead:read 역할만)으로 두어 메뉴 5개 유지
 - 2026-10-20: src/app의 직접 DB 호출(17개 파일)을 src/server 조회 함수로 이동 — shell-queries(반 레이아웃·진입 반), academy-queries, cohort-queries 신설, 파일 전달 조회는 각 모듈 queries에 추가. src/app에서 db import는 api/health(DB 연결 확인용)만 남김
+- 2026-11-24: PC 화면 추가 정리 — 모바일용 좁은 중앙 정렬 화면(수강생 출결·티켓·서류·팀)을 PC에서 왼쪽 정렬·최대 896px로, 버튼·선택 상자에 손가락 커서(Tailwind v4 기본은 화살표)
+- 2026-11-24: Pretendard 가변 폰트를 src/app/fonts에 직접 호스팅(next/font/local, 패키지 추가 없음, OFL 라이선스 동봉, 원본 2MB). PC(≥1024px)는 text-xs 13px·페이지 제목 24px·위젯 제목/여백 통일, 한글 keep-all·자간 -0.01em. 
+- 2026-11-24: 폰트를 한글 서브셋으로 축소(2.06MB → 361KB, KS X 1001 2,350자·굵기 400~700, 없는 글자는 맑은 고딕 등으로 대체), 재생성 방법은 src/app/fonts/README.md
 - 2026-10-30: 섀도 DB 쓰지 않음 — `migrate dev` 대신 `npm run db:diff -- -o <마이그레이션 폴더>/migration.sql` → `npm run db:migrate`(migrate deploy). schema의 shadowDatabaseUrl 제거
 - 2026-10-30: 스테이징 배포 — Dockerfile(runner·tools 단계 분리, node:22-slim, uid 1000), deploy/ compose는 서버의 기존 MariaDB 컨테이너를 외부 네트워크(DB_NETWORK)로 사용, 파일은 호스트 경로 바인드. 절차는 user-tasks 3-0
 - 2026-10-30: 배포 전 전체 검수 — 보안 헤더(nosniff·X-Frame-Options DENY·Referrer-Policy, X-Powered-By 끔, HSTS는 Nginx), shadcn CLI는 devDependencies로. npm audit 잔여(next 16·prisma 7 필요)는 스택 고정으로 보류
@@ -64,6 +71,7 @@
 - 2026-10-17: M1 파일 — 저장소를 드라이버 구조로 분리(src/lib/storage: types·local·validators·serve, STORAGE_DRIVER=local), 공통 전달 fileResponse에 Nginx X-Accel-Redirect 선택 지원(STORAGE_ACCEL_PREFIX), 기존 파일 라우트 4개도 통일
 - 2026-10-17: M1 파일 — Material·Submission에 filePath·fileName·fileMime·fileSize(마이그레이션 m1_files, Material.url nullable), 허용 형식 PDF·오피스·한글·이미지·ZIP·텍스트 20MB(시그니처 검사), 다시 제출 시 새 파일만 교체·이전 파일 삭제, 제출 파일 열람은 본인·같은 반 교직원(canViewSubmissionFilePure)
 - 2026-10-16: M10 이미지 — png·jpg·webp 시그니처 검사 5MB, 공개 라우트는 PUBLISHED만, 응답에 nosniff·CSP default-src 'none'. 시드 이미지는 시드 코드가 단색 PNG를 직접 생성
+- 2026-11-24: M7 서류 정책 변경 — 이력서·자소서 반당 유형별 1개(DB 유니크), PDF 업로드·포트폴리오 폐지, 이력서 7항목·자소서 단일 칸 4,000자 입력 양식(Document.content JSON), 첨삭 흐름 유지, 면접 화면(/interview)+getInterviewDocuments 신설. 마이그레이션 20261124120000_m7_document_form
 ## 막힘·확인 필요 (사람이 처리)
 > 절차·명령은 `docs/user-tasks.md`에 모아 두었다. 여기는 남은 항목만 한 줄씩.
 - 로그인 후 화면을 브라우저·모바일에서 눈으로 확인 (에이전트는 임시 세션으로 주요 흐름만 확인)
@@ -73,3 +81,4 @@
 - M10 운영 배포 전: Nginx가 X-Forwarded-For를 실제 클라이언트 IP로 덮어쓰게 설정(리드 요청 제한 위조 방지), 검색 노출 원할 때만 MARKET_INDEXABLE=true
 - M1 파일 업로드·다운로드를 로그인 후 브라우저에서 확인 (에이전트는 비로그인 403과 검증 함수만 확인)
 - M7 시드 확인용: STORAGE_DIR(기본 .storage)/seed/sample-resume.pdf 에 가상 PDF 1개 배치 후 서류 시드 실행
+- (완료 2026-11-24) M7 마이그레이션 적용·기존 서류 초기화·서류 시드 재실행 끝남(터널 DB lms_kdt). 스테이징 서버에는 새 코드 배포 필요

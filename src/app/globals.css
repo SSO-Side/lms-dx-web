@@ -48,7 +48,7 @@
 }
 
 @theme inline {
-  --font-sans: "Pretendard Variable", "Pretendard", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
+  --font-sans: var(--font-pretendard), "Pretendard Variable", "Pretendard", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
 
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -101,6 +101,14 @@
   --radius-xl: calc(var(--radius) + 4px);
 }
 
+/* PC(1024px 이상)에서는 12px 보조 글자를 13px로 키운다. 모바일은 그대로 둔다. */
+@media (min-width: 1024px) {
+  :root {
+    --text-xs: 0.8125rem;
+    --text-xs--line-height: 1.5;
+  }
+}
+
 /* Tailwind 기본 팔레트를 theme.md 토큰으로 교체한다 (primary-*, neutral-*). */
 @theme {
   --color-primary-50: #f0f3ff;
@@ -136,9 +144,23 @@
   body {
     @apply bg-background text-foreground text-sm antialiased;
     line-height: 1.6;
+    /* 한글은 어절 단위로 줄바꿈(단어 중간에서 끊기지 않게), 아주 긴 문자열만 강제로 끊는다 */
+    word-break: keep-all;
+    overflow-wrap: break-word;
+    /* Pretendard는 본문 크기에서 약간 좁힐 때 가장 단정하다 */
+    letter-spacing: -0.01em;
   }
   h1, h2, h3, h4 {
     line-height: 1.35;
+  }
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]),
+  select:not(:disabled),
+  summary {
+    cursor: pointer;
+  }
+  button:disabled {
+    cursor: not-allowed;
   }
   :focus-visible {
     @apply outline-2 outline-offset-2 outline-primary-500;

@@ -24,6 +24,7 @@ import {
   Ellipsis,
   UsersRound,
   Briefcase,
+  MessagesSquare,
   type LucideIcon,
 } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetBody } from "@/components/ui/sheet";
@@ -44,6 +45,7 @@ const ICONS = {
   documents: FileText,
   team: UsersRound,
   career: Briefcase,
+  interview: MessagesSquare,
 } satisfies Record<string, LucideIcon>;
 
 export type NavIcon = keyof typeof ICONS;

@@ -32,11 +32,12 @@ export function cohortNav(role: Role, cohortId: number): NavItem[] {
   // 메뉴 5개 이내: 교직원은 서류와 팀 프로젝트를 한 메뉴로 묶고 화면 상단 전환으로 오간다
   const career: NavItem = { label: "서류·프로젝트", href: `${c}/resume`, icon: "career", alsoMatch: [`${c}/team`, `${c}/leads`] };
   const team: NavItem = { label: "팀 프로젝트", href: `${c}/team`, icon: "team" };
+  const interview: NavItem = { label: "면접", href: `${c}/interview`, icon: "interview" };
 
   switch (role) {
     case Role.STUDENT:
       // 모바일 하단 탭은 앞 4개 + 더보기 (AppShell)
-      return [home, attendance, tickets, { label: "자료·과제", href: `${c}/curriculum`, icon: "curriculum" }, { ...documents, label: "내 서류" }, team];
+      return [home, attendance, tickets, { label: "자료·과제", href: `${c}/curriculum`, icon: "curriculum" }, { ...documents, label: "내 서류" }, team, interview];
     case Role.INSTRUCTOR:
       return [home, { label: "수업·자료", href: `${c}/curriculum`, icon: "curriculum" }, attendance, tickets, career];
     case Role.MANAGER:

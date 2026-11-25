@@ -144,7 +144,7 @@ async function StudentView({ cohortId, studentId, periodParam }: { cohortId: num
   const events = period ? await getStudentEvents(cohortId, studentId, period) : [];
 
   return (
-    <div className="mx-auto max-w-2xl">
+    <div className="mx-auto max-w-2xl lg:mx-0 lg:max-w-4xl">
       <PageHeader back={{ href: `/app/c/${cohortId}`, label: "반 홈" }} title="내 출결" description="입력·수정은 담당 매니저가 합니다. 이상이 있으면 티켓으로 문의해 주세요." />
       <AttendanceBanner lastClosedDate={base.lastClosedDate} unclosedDates={[]} />
       <div className="space-y-4">
