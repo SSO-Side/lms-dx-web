@@ -1,51 +1,51 @@
 # HANDOFF — lms-dx-web (lms_kdt)
-갱신: 2026-11-26 17:39 (KST) · PC: DESKTOP-D7TTIN2 · 브랜치: main
+갱신: 2026-11-26 18:31 (KST) · PC: DESKTOP-D7TTIN2 · 브랜치: main
 
 ## 목표
-매니저 계정을 포함한 담당 구조·UI 개선(1~3)과 챗봇 문서 구조 정리. 코드는 끝났고 사용자 화면 확인이 남았다.
+매니저·학원 관리자를 슈퍼어드민 1명 + 서브 관리자 여러 명 구조로 합치고, 관리자 첫 화면을 학원 전체 대시보드로 바꾼다. 코드는 끝났고 사용자 화면 확인이 남았다.
 
 ## 현재 상태
-- 완료: 계정 관리의 담당 교직원 배정·해제·주담당 변경 (커밋 0d16f9e)
-- 완료: 반 전환 시 같은 메뉴 유지, `담당 반 요약` 링크, 요약 항목 바로가기 (커밋 4470072)
-- 완료: 매니저 메뉴 `명부` → `반 관리` (커밋 01ab97d)
-- 완료: 교직원 계정 비활성화 시 주담당 해제·미완료 티켓 인계, 담당자는 활성 주담당만 (커밋 7dbde19)
-- 완료: 챗봇 문서는 학원 공통만 사용. `/app/academy/chatbot-docs`(학원 문서)에서만 관리하고, 반 `챗봇 매뉴얼` 화면·반 문서 기능·`chatDoc:manage` 권한은 삭제 (커밋 3c3a64f → 7a29fb3). `반 관리` 탭은 명부 / 반 설정.
-- 2026-11-26 17:33 기준 lint·tsc·vitest(259개) 통과. 로그인 후 동작은 에이전트가 확인하지 않았다. 사용자는 매니저 홈 화면에서 `반 관리` 메뉴를 본 것까지 확인(탭 제거 전).
-- 개발 DB의 챗봇 문서는 학원 공통 1건, 반 문서 0건.
-- T6 챗봇 실제 연동은 로컬 완료. 스테이징에는 마이그레이션 `20261126150000_m4_chatbot_service_link`와 코드가 미적용(스테이징 문서 데이터는 확인하지 않음).
-- push 안 한 로컬 커밋이 있다 (이 인수인계 커밋 포함 16개).
+- 완료: 병합 + 전체 대시보드 (커밋 263b2e1). DB 스키마 변경·새 의존성 없음.
+  - MANAGER = 서브 관리자: 배정과 무관하게 같은 학원 전체 반, 동작 권한은 ACADEMY_ADMIN과 같음(`account:manage` 포함 — 반 개설·반 설정·수강생/강사 계정·담당 배정).
+  - 슈퍼어드민 전용: 서브 계정 발급·재설정·비활성화(`/app/academy/sub-accounts`), 학원 문서.
+  - 반 명부 CSV는 STUDENT·INSTRUCTOR만. 반 계정 관리 화면의 서브 관리자 행은 버튼 없이 "서브 계정에서 관리".
+  - 관리자(슈퍼·서브·ADMIN)는 로그인하면 `/app/academy`로 감. 요약 숫자 5개, 전체 반 처리 대기 티켓·위험 학생, 반별 현황 표. `/app/overview`는 강사만.
+  - 역할 표시: ACADEMY_ADMIN "슈퍼어드민", MANAGER "서브 관리자".
+- lint·tsc·vitest(290개) 통과. 로그인 후 화면은 에이전트가 확인하지 않았다(브라우저 접근이 자동 권한 분류기에 막힘, 시드 비밀번호는 사람이 관리).
+- 이전 작업(담당 구조·학원 문서)의 화면 확인도 아직 남아 있다.
+- push 안 한 로컬 커밋이 있다 (이 인수인계 커밋 포함 18개).
 
 ## 다음 할 일 (우선순위 순)
-1. 사용자 화면 확인 (담당 구조): 학원 관리자로 계정 관리에서 `mgr_a`를 반 B에도 배정 → `mgr_a`로 반 전환, 담당 반 요약 바로가기, `반 관리` 탭(명부 / 반 설정) 확인 → 담당 해제·주담당 계정 비활성화 후 티켓 담당자 확인. 비활성화한 계정을 다시 켜는 기능은 보지 못했으니 시험용 가상 계정으로 한다.
-2. 사용자 화면 확인 (학원 문서): `acad_admin`의 `학원 문서`에서 기존 문서 열기, 가상 PDF 등록·삭제. 실제 연동은 챗봇 서비스가 켜져 있어야 한다.
+1. 사용자 화면 확인 (병합): `acad_admin`으로 로그인 → 학원 홈 대시보드 숫자·위젯 → `서브 계정`에서 시험용 가상 서브 관리자 발급 → 그 계정으로 로그인(비밀번호 변경) → 학원 홈으로 가는지, 배정 안 된 반 B도 열리는지, `서브 계정`·`학원 문서` 메뉴가 안 보이는지, 반 개설·반 설정 저장이 되는지.
+2. `mgr_a`로 로그인해 같은 확인. 반 계정 관리에서 서브 관리자 행에 버튼이 없는지.
+3. 이전 작업 확인: 담당 교직원 배정·주담당·비활성화 후 티켓 담당자, `학원 문서` 등록·삭제.
 
 ## 결정 사항
-- 담당 해제 시 미완료 티켓은 남은 주담당에게, 없으면 비움. 주담당 본인을 해제하면 비운다(자동 승격 없음).
-- 교직원 계정 비활성화는 맡은 모든 반의 주담당을 풀고 티켓을 넘긴다. 담당 배정은 남긴다.
-- 담당 반 요약 링크는 강사·매니저의 반 전환 목록에만 둔다.
-- 챗봇 문서는 학원 공통만 — 이유: 사용자가 학원 문서는 반별로 두는 것이 아니라고 판단. 매니저는 문서를 관리하지 않는다.
-- 학원에 속하지 않은 시스템 관리자(ADMIN)는 학원 문서를 관리할 수 없다.
-- DB 스키마 변경·새 의존성 없음. `ChatbotDocument.cohortId` 컬럼은 남기고 새 문서는 항상 null.
+- 서브 관리자 범위는 학원 전체 반 — 이유: 사용자 선택, 전체 대시보드와 맞춤. `CohortStaff`의 매니저 배정은 주담당(티켓 자동 배정)에만 씀.
+- 슈퍼어드민 전용은 서브 계정 관리·학원 문서만 — 이유: 사용자 선택. 반 개설·반 설정·수강생/강사 계정은 서브도 가능.
+- DB 역할 값 MANAGER 유지, 이름만 서브 관리자 — 이유: 사용자 선택, 마이그레이션 불필요.
+- 학원당 슈퍼어드민 1명은 코드로 강제하지 않음 — 이유: ACADEMY_ADMIN 발급 화면이 없고 시드로만 만든다(`/admin` 화면은 존재하지 않음).
+- 서브 계정 재활성화 기능은 만들지 않음 (요청 범위 밖).
+- 티켓 인계(`handOffOpenTickets`, `deactivateUserWithHandOff`)는 `src/server/staff-handoff.ts`로 옮김 — "use server" 파일에서 export하면 권한 검사 없이 클라이언트가 부를 수 있기 때문.
 
 ## 주의 · 막힌 점
+- 강사(INSTRUCTOR)는 여전히 배정된 반만 본다. 학생용 문구의 "담당 매니저"는 그대로 둠.
 - 7dbde19 이전에 비활성화한 계정에 이미 배정된 미완료 티켓은 옮기지 않았다.
-- 스테이징 반영 때 반 번호가 있는 챗봇 문서가 있는지 먼저 확인한다. 있으면 화면에서 지울 수 없는데 챗봇 서비스에는 남는다.
-- 담당 반 요약의 `대기 티켓` 수는 대기+검토 중 합계인데, 누르면 `대기` 탭이 열린다.
+- 스테이징 반영 때 반 번호가 있는 챗봇 문서가 있는지 먼저 확인한다(T6 마이그레이션 `20261126150000_m4_chatbot_service_link` 미적용).
 - `docs/sync-status.md` 9장의 T1~T5와 D2~D5는 요청받지 않았다. 임의로 시작하지 않는다.
-- `docs/ai-integration.md` 3.2의 파일 크기 항목과 4절(면접 질문 HTTP 규격)은 갱신 전이다.
-- `.env`는 사람이 관리한다.
+- `.env`는 사람이 관리한다. 개발 서버(포트 3333)가 켜져 있을 수 있다. 켜진 채로 `next build`를 하지 않는다.
 - 형제 저장소 `../chatbot`에도 push 안 한 커밋이 1개 있다.
-- 개발 서버(포트 3333)가 켜져 있을 수 있다. 켜진 채로 `next build`를 하지 않는다.
 
 ## 핵심 파일
-- `src/server/academy.ts` — `assignStaffAction`, `removeStaffAction`, `setPrimaryManagerAction`, `handOffOpenTickets`, `deactivateAccountAction`
-- `src/server/cohort-queries.ts` — `findActivePrimaryManagerId`
-- `src/app/app/academy/cohorts/[cohortId]/accounts/staff-manager.tsx` — 담당 교직원 화면
-- `src/lib/access/checker.ts` — `canAssignCohortStaffPure`, `canManageAcademyChatDocsPure`
-- `src/components/shell/` — `AppShell.tsx`(`CohortSwitcher`, `switchCohortHref`), `nav.ts`, `SectionSwitch.tsx`(`manageSections`)
-- `src/app/app/overview/page.tsx` — 담당 반 요약
-- `src/app/app/academy/chatbot-docs/page.tsx`, `src/components/chatbot/ChatDocsManager.tsx` — 학원 문서 화면
-- `src/server/chatbot.ts`, `chatbot-queries.ts`, `chatbot-sync.ts` — 챗봇 질문·학원 문서
+- `src/lib/access/checker.ts` — `canAccessCohortPure`(서브 관리자 학원 범위), `canManageSubAccountsPure`, `isAcademyStaffRole`, `canManageCohortAccountPure`
+- `src/lib/access/permissions.ts` — 권한표 (`account:manage` MANAGER 허용)
+- `src/server/sub-accounts.ts` — 서브 계정 발급·재설정·비활성화 액션
+- `src/server/staff-handoff.ts` — 티켓 인계·비활성화 공통 처리 (서버 액션 아님)
+- `src/server/dashboard-queries.ts` — `getAcademyDashboard`, `listAcademyPendingTickets`
+- `src/app/app/academy/page.tsx`, `src/components/widgets/AcademyWidgets.tsx` — 학원 전체 대시보드
+- `src/app/app/academy/sub-accounts/` — 서브 계정 화면
+- `src/components/shell/nav.ts` — 역할 라벨, `academyNav(role)`, `cohortNav`
+- `tests/cohort-isolation.test.ts`, `tests/permissions-matrix.test.ts` — 서브 관리자 범위·서브=슈퍼 권한 동일성
 
 ## 확인 방법
 - `npm run lint` · `npx tsc --noEmit` · `npx vitest run`
