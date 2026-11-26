@@ -36,6 +36,7 @@ export default async function CohortLayout({ children, params }: CohortLayoutPro
       user={{ name: user.name, roleLabel: ROLE_LABELS[user.role] }}
       cohorts={userCohorts}
       currentCohortId={numCohortId}
+      overviewHref={user.role === Role.INSTRUCTOR || user.role === Role.MANAGER ? "/app/overview" : undefined}
       studentMode={user.role === Role.STUDENT}
     >
       {children}

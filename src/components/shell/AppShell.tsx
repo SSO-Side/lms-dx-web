@@ -69,6 +69,8 @@ export interface AppShellProps {
   user: { name: string; roleLabel: string };
   cohorts?: Array<{ id: number; name: string }>;
   currentCohortId?: number;
+  /** 있으면 반 전환 목록 아래에 "담당 반 요약" 링크를 둔다(강사·매니저) */
+  overviewHref?: string;
   /** 수강생: 모바일 하단 탭바, 여유 밀도 */
   studentMode?: boolean;
   children: React.ReactNode;
@@ -86,6 +88,7 @@ export function AppShell({
   user,
   cohorts = [],
   currentCohortId,
+  overviewHref,
   studentMode = false,
   children,
 }: AppShellProps) {
@@ -118,7 +121,7 @@ export function AppShell({
               /
             </span>
             {cohorts.length >= 2 && currentCohortId ? (
-              <CohortSwitcher title={title} cohorts={cohorts} currentCohortId={currentCohortId} />
+              <CohortSwitcher title={title} cohorts={cohorts} currentCohortId={currentCohortId} overviewHref={overviewHref} />
             ) : (
               <div className="min-w-0">
                 <p className="truncate font-semibold text-neutral-900">{title}</p>
@@ -301,15 +304,26 @@ const popupClass =
 const itemClass =
   "flex h-9 cursor-default items-center gap-2 rounded-md px-2.5 text-neutral-700 outline-none select-none data-highlighted:bg-neutral-100 data-highlighted:text-neutral-900";
 
+/** 반을 바꿔도 보던 메뉴에 머문다. 메뉴 아래 세부 경로·쿼리는 그 반에만 있는 값이라 버린다. */
+function switchCohortHref(pathname: string, fromId: number, toId: number) {
+  const prefix = `/app/c/${fromId}/`;
+  const section = pathname.startsWith(prefix) ? pathname.slice(prefix.length).split("/")[0] : "";
+  return section ? `/app/c/${toId}/${section}` : `/app/c/${toId}`;
+}
+
 function CohortSwitcher({
   title,
   cohorts,
   currentCohortId,
+  overviewHref,
 }: {
   title: string;
   cohorts: Array<{ id: number; name: string }>;
   currentCohortId: number;
+  overviewHref?: string;
 }) {
+  const pathname = usePathname();
+
   return (
     <Menu.Root>
       <Menu.Trigger
@@ -324,11 +338,24 @@ function CohortSwitcher({
           <Menu.Popup className={popupClass}>
             <p className="px-2.5 py-1.5 text-xs text-neutral-500">반 전환</p>
             {cohorts.map((c) => (
-              <Menu.LinkItem key={c.id} render={<Link href={`/app/c/${c.id}`} />} className={itemClass}>
+              <Menu.LinkItem
+                key={c.id}
+                render={<Link href={switchCohortHref(pathname, currentCohortId, c.id)} />}
+                className={itemClass}
+              >
                 <Check className={cn("size-4", c.id === currentCohortId ? "text-primary-500" : "invisible")} aria-hidden />
                 <span className="truncate">{c.name}</span>
               </Menu.LinkItem>
             ))}
+            {overviewHref && (
+              <>
+                <Menu.Separator className="my-1 h-px bg-neutral-200" />
+                <Menu.LinkItem render={<Link href={overviewHref} />} className={itemClass}>
+                  <LayoutGrid className="size-4" aria-hidden />
+                  담당 반 요약
+                </Menu.LinkItem>
+              </>
+            )}
           </Menu.Popup>
         </Menu.Positioner>
       </Menu.Portal>
