@@ -19,7 +19,7 @@ export interface UserCohortMembership {
   staffCohortIds: number[];
 }
 
-/** 이 사용자가 이 반에 들어올 수 있는지(수강생은 재적, 교직원은 배정, 학원 관리자는 같은 학원). */
+/** 이 사용자가 이 반에 들어올 수 있는지(수강생은 재적, 강사는 배정, 슈퍼어드민·서브 관리자는 같은 학원). */
 export function canAccessCohortPure(
   user: UserAccessInfo,
   cohort: CohortAccessInfo | null,
@@ -41,7 +41,8 @@ export function canAccessCohortPure(
     return true;
   }
 
-  if (user.role === Role.ACADEMY_ADMIN) {
+  // 슈퍼어드민(ACADEMY_ADMIN)과 서브 관리자(MANAGER)는 같은 학원의 모든 반
+  if (user.role === Role.ACADEMY_ADMIN || user.role === Role.MANAGER) {
     return user.academyId !== null && user.academyId === cohort.academyId;
   }
 
@@ -49,7 +50,7 @@ export function canAccessCohortPure(
     return membership.enrolledCohortIds.includes(cohort.id);
   }
 
-  if (user.role === Role.INSTRUCTOR || user.role === Role.MANAGER) {
+  if (user.role === Role.INSTRUCTOR) {
     return membership.staffCohortIds.includes(cohort.id);
   }
 
@@ -68,10 +69,11 @@ export interface ManagedAccountInfo {
 /**
  * 반 단위 계정 관리(비밀번호 재설정·비활성화)의 대상이 될 수 있는지 판정한다.
  * 대상은 같은 학원 소속이면서 이 반의 재적 수강생이나 배정 교직원이어야 하고,
- * 학원 관리자·시스템 관리자 계정은 반 단위 관리 대상이 아니다.
+ * 슈퍼어드민·서브 관리자·시스템 관리자 계정은 반 단위 관리 대상이 아니다.
  */
 export function canManageCohortAccountPure(target: ManagedAccountInfo, cohort: CohortAccessInfo): boolean {
-  if (target.role === Role.ACADEMY_ADMIN || target.role === Role.ADMIN) {
+  // 서브 관리자(MANAGER)는 반 단위가 아니라 서브 계정 화면에서 슈퍼어드민만 관리한다
+  if (target.role === Role.ACADEMY_ADMIN || target.role === Role.ADMIN || target.role === Role.MANAGER) {
     return false;
   }
   if (target.academyId === null || target.academyId !== cohort.academyId) {
@@ -104,6 +106,21 @@ export function canManageAcademyChatDocsPure<T extends UserAccessInfo>(user: T):
   if (user.status !== "ACTIVE" || user.mustChangePassword) return false;
   if (user.role !== Role.ACADEMY_ADMIN && user.role !== Role.ADMIN) return false;
   return user.academyId !== null;
+}
+
+/**
+ * 서브 관리자(MANAGER) 계정의 발급·재설정·비활성화를 할 수 있는지. 같은 학원의 활성 슈퍼어드민(ACADEMY_ADMIN)만.
+ * 대상 학원은 항상 이 계정의 academyId다.
+ */
+export function canManageSubAccountsPure<T extends UserAccessInfo>(user: T): user is T & { academyId: number } {
+  if (user.status !== "ACTIVE" || user.mustChangePassword) return false;
+  if (user.role !== Role.ACADEMY_ADMIN) return false;
+  return user.academyId !== null;
+}
+
+/** 학원 관리 화면(/app/academy)에 들어올 수 있는지. 슈퍼어드민·서브 관리자·시스템 관리자. */
+export function isAcademyStaffRole(role: Role): boolean {
+  return role === Role.ACADEMY_ADMIN || role === Role.MANAGER || role === Role.ADMIN;
 }
 
 export interface DocumentAccessInfo {

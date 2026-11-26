@@ -77,12 +77,34 @@ export async function getCohortStaffing(cohortId: number) {
 
 const overviewSelect = { id: true, name: true, room: true, startDate: true, endDate: true, status: true } as const;
 
-/** 전체 반 요약 대상: 학원 관리자·슈퍼어드민은 학원 전체 반, 강사·매니저는 배정된 반 */
+/** 전체 반 요약 대상: 슈퍼어드민·서브 관리자·시스템 관리자는 학원 전체 반, 강사는 배정된 반 */
 export async function listOverviewCohorts(user: Pick<User, "id" | "role" | "academyId">) {
-  if (user.role === Role.ACADEMY_ADMIN || user.role === Role.ADMIN) {
+  if (user.role === Role.ACADEMY_ADMIN || user.role === Role.MANAGER || user.role === Role.ADMIN) {
     return db.cohort.findMany({ where: user.academyId ? { academyId: user.academyId } : {}, orderBy: { id: "asc" }, select: overviewSelect });
   }
   const rows = await db.cohortStaff.findMany({ where: { userId: user.id }, select: { cohort: { select: overviewSelect } } });
   return rows.map((s) => s.cohort);
 }
 
+
+/** 서브 계정 화면용: 이 학원의 서브 관리자(MANAGER) 계정과 담당 반 수(활성 먼저, 이름순). 호출 측이 canManageSubAccountsPure로 확인한다. */
+export async function listSubAccounts(academyId: number) {
+  const rows = await db.user.findMany({
+    where: { academyId, role: Role.MANAGER },
+    select: {
+      id: true,
+      name: true,
+      loginId: true,
+      phone: true,
+      status: true,
+      lastLoginAt: true,
+      staffAssignments: { select: { isPrimary: true } },
+    },
+    orderBy: [{ status: "asc" }, { name: "asc" }],
+  });
+  return rows.map(({ staffAssignments, ...u }) => ({
+    ...u,
+    cohortCount: staffAssignments.length,
+    primaryCount: staffAssignments.filter((a) => a.isPrimary).length,
+  }));
+}

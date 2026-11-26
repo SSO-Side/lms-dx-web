@@ -12,7 +12,7 @@ import { SettingsForms } from "./settings-forms";
 
 export default async function SettingsPage({ params }: { params: Promise<{ cohortId: string }> }) {
   const { cohortId } = await params;
-  // 반 설정: MANAGER 읽기, ACADEMY_ADMIN 수정 (ia.md §1)
+  // 반 설정: 슈퍼어드민·서브 관리자 수정(account:manage), 그 밖은 읽기 (ia.md §1)
   const ctx = await tryCohortAccess(cohortId, "attendance:write");
   if (!ctx) return <AccessDenied />;
   const canEdit = hasActionPermission(ctx.role, "account:manage");
@@ -26,7 +26,7 @@ export default async function SettingsPage({ params }: { params: Promise<{ cohor
   return (
     <>
       <SectionSwitch items={manageSections(ctx.cohortId)} current="settings" />
-      <PageHeader back={{ href: `/app/c/${ctx.cohortId}`, label: "반 홈" }}title="반 설정" description={canEdit ? "변경 사항은 저장 전에 확인합니다." : "읽기 전용입니다. 변경은 학원 관리자에게 요청해 주세요."} />
+      <PageHeader back={{ href: `/app/c/${ctx.cohortId}`, label: "반 홈" }}title="반 설정" description={canEdit ? "변경 사항은 저장 전에 확인합니다." : "읽기 전용입니다. 변경은 관리자에게 요청해 주세요."} />
       <SettingsForms
         cohortId={ctx.cohortId}
         canEdit={canEdit}

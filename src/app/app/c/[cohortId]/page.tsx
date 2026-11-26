@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Role, EnrollmentStatus } from "@prisma/client";
 import { FilePlus2 } from "lucide-react";
 import { tryCohortAccess } from "@/lib/access/pageAccess";
+import { isAcademyStaffRole } from "@/lib/access/checker";
 import { getCohortInfo, countEnrollmentsByStatus } from "@/server/cohort-queries";
 import { listStaffCohortIds } from "@/server/shell-queries";
 import { formatDate } from "@/lib/utils";
@@ -59,11 +60,11 @@ export default async function CohortHomePage({ params }: CohortHomePageProps) {
   if (!cohort) return <AccessDenied />;
 
   const period = `${formatDate(cohort.startDate)} ~ ${formatDate(cohort.endDate)}`;
-  // 상위 화면: 학원 관리자는 학원 홈, 여러 반을 맡은 교사는 담당 반 목록
+  // 상위 화면: 슈퍼어드민·서브 관리자는 학원 홈, 여러 반을 맡은 강사는 담당 반 목록
   const back =
-    ctx.role === Role.ACADEMY_ADMIN || ctx.role === Role.ADMIN
+    isAcademyStaffRole(ctx.role)
       ? { href: "/app/academy", label: "학원 홈" }
-      : (ctx.role === Role.INSTRUCTOR || ctx.role === Role.MANAGER) &&
+      : ctx.role === Role.INSTRUCTOR &&
           (await listStaffCohortIds(ctx.user.id)).length > 1
         ? { href: "/app/overview", label: "담당 반" }
         : undefined;

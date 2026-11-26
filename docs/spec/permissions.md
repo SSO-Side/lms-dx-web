@@ -8,8 +8,9 @@
 | 역할 | 접근 가능한 반 |
 | :-- | :-- |
 | STUDENT | `Enrollment`가 ENROLLED인 본인 반 1개 |
-| INSTRUCTOR, MANAGER | `CohortStaff`로 배정된 반 |
-| ACADEMY_ADMIN | 자기 `academyId`에 속한 모든 반 (MANAGER와 같은 권한 + 계정·반·명부 관리) |
+| INSTRUCTOR | `CohortStaff`로 배정된 반 |
+| MANAGER (서브 관리자) | 자기 `academyId`에 속한 모든 반. `CohortStaff` 배정은 접근 범위가 아니라 주담당(티켓 자동 배정)에만 쓴다 |
+| ACADEMY_ADMIN (슈퍼어드민) | 자기 `academyId`에 속한 모든 반. 서브 관리자와 같은 권한 + 서브 계정·학원 문서 관리 |
 | ADMIN | 전체 (시스템 관리 콘솔 용도) |
 
 처리 순서: ① 로그인·`status=ACTIVE`·`mustChangePassword` 확인 → ② 위 표로 반 접근 판정 → ③ 역할×액션 판정(§2) → ④ 통과 시 `ctx = { user, cohortId, role }` 반환. 하나라도 실패하면 403 (반의 존재 여부를 알려주지 않도록 존재하지 않는 반도 같은 응답).
@@ -40,15 +41,16 @@
 | `team:write` (M5 본인 팀 기획안·체크·URL·주간 로그) | 본인 팀 | X | X | X | O |
 | `showcase:apply·review·approve` (M10) | 신청(본인 팀) | 검토(같은 반) | 승인 | 승인 | O |
 | `lead:read` (M10) | X | X | O | O | O |
-| `account:manage` (계정 발급·반 개설·명부·담당 배정) | X | X | X | O | O |
+| `account:manage` (반 개설·반 설정·명부·수강생·강사 계정·담당 배정) | X | X | O | O | O |
 
 - 지금 단계(M0~M3, M11)에서 구현하는 액션은 `material`~`attendance`, `chat`, `account`까지다. 나머지 행은 키와 값만 데이터에 두고 기능은 해당 모듈 작업 때 붙인다.
 - M5: 팀 수정은 `canEditTeamProjectPure`(본인 팀·같은 반), 열람은 `canViewTeamProjectPure`(수강생은 본인 팀, 교직원은 반 전체)로 리소스 단위 검사한다. 매니저·슈퍼어드민은 열람만.
 - M10: 쇼케이스 상태 전이는 `src/lib/showcase/transitions.ts` 전이표가 단일 기준. 공개 승인은 팀원 전원 동의 + 강사 검토가 있을 때만. 공개 영역(`/market`, `/api/market/*`, 리드 접수)은 반 권한의 예외로, PUBLISHED + 공개 DTO(`src/lib/showcase/public.ts`)로만 노출한다.
 - M7: 강사 "배정된 수강생" 개념이 없어 "같은 반 수강생"으로 단순화했다. 서류 파일은 본인(`resume:own`)과 같은 반 강사(`resume:review`)만 열람한다.
 - "본인만", "배정된 수강생", "상태만" 같은 조건부 값은 `requireCohortAccess` 뒤에 **리소스 단위 검사**(`ctx.user.id === ticket.requesterId` 등)로 처리한다.
-- 계정 발급 대상 범위: ACADEMY_ADMIN은 **자기 학원** 안의 STUDENT·INSTRUCTOR·MANAGER 계정만 만들 수 있다. ACADEMY_ADMIN 계정과 학원 생성은 ADMIN만.
-- 담당 교직원 배정·주담당 지정 대상 범위: 반과 **같은 학원의 활성** MANAGER·INSTRUCTOR만(`canAssignCohortStaffPure`). 주담당은 이 반에 배정된 매니저 중 반당 1명. 담당을 해제하면 그 사람의 미완료 티켓은 남은 주담당에게 넘기고, 없으면 담당자를 비운다. 교직원 계정을 비활성화하면 맡은 모든 반에서 주담당을 풀고 같은 방식으로 티켓을 넘긴다. 티켓 담당자는 활성 주담당만 지정한다.
+- 매니저·학원 관리자 병합(2026-11-26): 학원은 슈퍼어드민(ACADEMY_ADMIN) 1명과 서브 관리자(MANAGER) 여러 명으로 운영한다. 서브 관리자는 모든 동작 키에서 슈퍼어드민과 같다(표 기반 테스트로 고정). 슈퍼어드민 전용은 동작 키가 아니라 학원 단위 검사로 막는다: 서브 계정 발급·재설정·비활성화(`canManageSubAccountsPure`, `/app/academy/sub-accounts`), 학원 문서(`canManageAcademyChatDocsPure`).
+- 계정 발급 대상 범위: 반 명부 CSV(`account:manage`)로는 **자기 학원**의 STUDENT·INSTRUCTOR만 발급한다. 서브 관리자 계정은 슈퍼어드민이 서브 계정 화면에서만 발급·재설정·비활성화하며, 반 계정 관리 화면에서는 손대지 않는다(`canManageCohortAccountPure`). ACADEMY_ADMIN 계정과 학원 생성은 ADMIN만(지금은 시드로만 만든다).
+- 담당 교직원 배정·주담당 지정 대상 범위(서브 관리자도 할 수 있다): 반과 **같은 학원의 활성** MANAGER·INSTRUCTOR만(`canAssignCohortStaffPure`). 주담당은 이 반에 배정된 매니저 중 반당 1명. 담당을 해제하면 그 사람의 미완료 티켓은 남은 주담당에게 넘기고, 없으면 담당자를 비운다. 교직원 계정을 비활성화하면 맡은 모든 반에서 주담당을 풀고 같은 방식으로 티켓을 넘긴다. 티켓 담당자는 활성 주담당만 지정한다.
 - 챗봇 문서는 학원 공통만 있다. 반 권한과 별개로 학원에 속한 ACADEMY_ADMIN·ADMIN만 등록·삭제·열람하며(`canManageAcademyChatDocsPure`), 대상 학원은 로그인 계정의 `academyId`다. 매니저는 문서를 관리하지 않는다.
 
 ## 3. 반 간 접근 차단 테스트 (필수, 표 기반 약 10행)
@@ -56,8 +58,9 @@
 
 | 행위자 | 대상 | 기대 |
 | :-- | :-- | :-- |
-| `mgr_a` | 반 B의 출결 조회·입력 | 거부 |
-| `mgr_a` | 반 B 수강생의 티켓·증빙 | 거부 |
+| `mgr_a`(서브 관리자) | 배정되지 않은 같은 학원 반 B의 출결 조회·입력 | 허용 |
+| `mgr_a`(서브 관리자) | 다른 학원 반의 티켓·증빙 | 거부 |
+| `mgr_a`(서브 관리자) | 서브 계정 관리·학원 문서 관리 | 거부 |
 | `inst_a` | 반 B의 자료 조회 | 거부 |
 | `s01` | 반 B의 어떤 데이터 | 거부 |
 | `s01` | `s02`의 출결·티켓·증빙 | 거부 (같은 반이어도 본인만) |
@@ -65,4 +68,4 @@
 | `inst_a` | 반 A 출결 입력 | 거부 |
 | `acad_admin` | 반 A, 반 B 전체 조회 | 허용 |
 | `acad_admin` | 다른 학원의 반 | 거부 (다른 학원은 테스트 안에서 최소 데이터로 생성) |
-| `mgr_a` | URL의 cohortId를 B로 바꾸고 body에 cohortId=A를 넣은 요청 | 거부 (URL 값이 기준) |
+| `inst_a` | URL의 cohortId를 B로 바꾸고 body에 cohortId=A를 넣은 요청 | 거부 (URL 값이 기준) |

@@ -21,7 +21,8 @@ export async function getCohortShell(
   if (user.role === Role.ADMIN) {
     allowed = true;
     cohorts = await db.cohort.findMany({ select: { id: true, name: true }, orderBy: { id: "asc" } });
-  } else if (user.role === Role.ACADEMY_ADMIN) {
+  } else if (user.role === Role.ACADEMY_ADMIN || user.role === Role.MANAGER) {
+    // 슈퍼어드민·서브 관리자: 같은 학원의 모든 반
     allowed = user.academyId === cohort.academyId;
     if (user.academyId) {
       cohorts = await db.cohort.findMany({ where: { academyId: user.academyId }, select: { id: true, name: true }, orderBy: { id: "asc" } });
@@ -34,7 +35,7 @@ export async function getCohortShell(
     cohorts = enrollments.map((e) => e.cohort);
     allowed = canAccessCohortPure(user, cohort, { enrolledCohortIds: enrollments.map((e) => e.cohortId), staffCohortIds: [] });
   } else {
-    // INSTRUCTOR, MANAGER
+    // INSTRUCTOR
     const staffList = await db.cohortStaff.findMany({ where: { userId: user.id }, include: { cohort: { select: { id: true, name: true } } } });
     cohorts = staffList.map((s) => s.cohort);
     allowed = canAccessCohortPure(user, cohort, { enrolledCohortIds: [], staffCohortIds: staffList.map((s) => s.cohortId) });
@@ -49,7 +50,7 @@ export async function getEnrolledCohortId(studentId: number): Promise<number | n
   return e?.cohortId ?? null;
 }
 
-/** 강사·매니저가 배정된 반 id 목록 */
+/** 강사가 배정된 반 id 목록 */
 export async function listStaffCohortIds(userId: number): Promise<number[]> {
   const rows = await db.cohortStaff.findMany({ where: { userId }, select: { cohortId: true } });
   return rows.map((r) => r.cohortId);

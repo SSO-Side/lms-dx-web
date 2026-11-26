@@ -56,10 +56,8 @@ const roleMap: Record<string, Role> = {
   INSTRUCTOR: Role.INSTRUCTOR,
   강사: Role.INSTRUCTOR,
   교사: Role.INSTRUCTOR,
-  MANAGER: Role.MANAGER,
-  매니저: Role.MANAGER,
-  담임: Role.MANAGER,
 };
+// 서브 관리자(MANAGER)는 반 명부가 아니라 학원 관리 > 서브 계정 화면에서 슈퍼어드민이 발급한다.
 
 const rowSchema = z.object({
   name: z.string().min(1, "이름을 입력해 주세요.").max(50),
@@ -69,7 +67,7 @@ const rowSchema = z.object({
     .max(50)
     .regex(/^[a-zA-Z0-9_-]+$/, "로그인ID는 영문, 숫자, _, - 만 가능합니다."),
   phone: z.string().optional(),
-  role: z.nativeEnum(Role, { message: "역할은 STUDENT, INSTRUCTOR, MANAGER 중 하나여야 합니다." }),
+  role: z.enum([Role.STUDENT, Role.INSTRUCTOR], { message: "역할은 STUDENT, INSTRUCTOR 중 하나여야 합니다." }),
 });
 
 /** 명부 CSV를 계정 발급용 행으로 검증한다(필수 칸·형식·중복). */

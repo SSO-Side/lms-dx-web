@@ -102,7 +102,7 @@ export function TicketDrawer({ cohortId, ticketId, onClose }: { cohortId: number
                   {detail.requester.name} <span className="text-neutral-500">({detail.requester.loginId})</span>
                 </dd>
                 <dt className="text-neutral-500">담당</dt>
-                <dd className="text-neutral-900">{detail.assigneeName ?? "미지정 (학원 관리자)"}</dd>
+                <dd className="text-neutral-900">{detail.assigneeName ?? "미지정 (관리자 누구나 처리)"}</dd>
                 {detail.absence && (
                   <>
                     <dt className="text-neutral-500">결석 일자</dt>

@@ -201,10 +201,11 @@ export const ROLE_PERMISSIONS: Record<Action, Record<Role, boolean>> = {
     ACADEMY_ADMIN: true,
     ADMIN: true,
   },
+  // 서브 관리자(MANAGER)도 반 개설·명부·계정 관리를 한다. 서브 계정 자체의 관리는 canManageSubAccountsPure로 슈퍼어드민만.
   "account:manage": {
     STUDENT: false,
     INSTRUCTOR: false,
-    MANAGER: false,
+    MANAGER: true,
     ACADEMY_ADMIN: true,
     ADMIN: true,
   },

@@ -21,7 +21,7 @@ async function wrap(fn: () => Promise<Result>): Promise<Result> {
 }
 const firstError = (e: z.ZodError) => e.issues[0]?.message ?? "입력값을 확인해 주세요.";
 
-/** 명부: 수강생 재적 상태 변경 (MANAGER·ACADEMY_ADMIN — attendance:write 역할 범위와 같다) */
+/** 명부: 수강생 재적 상태 변경 (서브 관리자·슈퍼어드민 — attendance:write 역할 범위와 같다) */
 export async function updateEnrollmentStatusAction(cohortId: number, studentId: number, status: EnrollmentStatus): Promise<Result> {
   return wrap(async () => {
     const ctx = await requireCohortAccess(cohortId, "attendance:write");
@@ -40,7 +40,7 @@ const infoSchema = z.object({
   status: z.enum(["ACTIVE", "ENDED"]),
 });
 
-/** 반 설정: 기본 정보 (ACADEMY_ADMIN만) */
+/** 반 설정: 기본 정보 (슈퍼어드민·서브 관리자, account:manage) */
 export async function updateCohortInfoAction(cohortId: number, input: z.input<typeof infoSchema>): Promise<Result> {
   return wrap(async () => {
     const ctx = await requireCohortAccess(cohortId, "account:manage");
@@ -64,7 +64,7 @@ const configSchema = z.object({
   warnMinRemaining: z.number().int().min(0).max(30),
 });
 
-/** 반 설정: 출결 규칙 (attendanceConfig). ACADEMY_ADMIN만. */
+/** 반 설정: 출결 규칙 (attendanceConfig). 슈퍼어드민·서브 관리자(account:manage). */
 export async function updateAttendanceConfigAction(cohortId: number, input: z.input<typeof configSchema>): Promise<Result> {
   return wrap(async () => {
     const ctx = await requireCohortAccess(cohortId, "account:manage");

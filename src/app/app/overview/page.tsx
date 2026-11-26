@@ -1,4 +1,4 @@
-// 전체 반 요약(/app/overview): 강사·매니저는 담당 반, 학원 관리자는 학원 전체 반의 출결·티켓 요약.
+// 담당 반 요약(/app/overview): 여러 반을 맡은 강사의 반별 출결·티켓 요약. 관리자는 학원 홈(/app/academy)을 쓴다.
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
 import { requireAuthUser } from "@/lib/auth/session";

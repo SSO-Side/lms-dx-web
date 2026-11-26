@@ -1,6 +1,6 @@
 // 반 개설 페이지(/app/academy/cohorts/new). 입력 단계는 new-cohort-form.tsx.
-import { Role } from "@prisma/client";
 import { requireAuthUser } from "@/lib/auth/session";
+import { isAcademyStaffRole } from "@/lib/access/checker";
 import { AccessDenied } from "@/components/shell/AccessDenied";
 import { PageHeader } from "@/components/shell/PageHeader";
 import { listStaffOptions } from "@/server/academy-queries";
@@ -8,7 +8,7 @@ import { NewCohortForm } from "./new-cohort-form";
 
 export default async function NewCohortPage() {
   const user = await requireAuthUser();
-  if (user.role !== Role.ACADEMY_ADMIN && user.role !== Role.ADMIN) {
+  if (!isAcademyStaffRole(user.role)) {
     return <AccessDenied />;
   }
 

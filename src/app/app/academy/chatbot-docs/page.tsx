@@ -21,7 +21,7 @@ export default async function AcademyChatDocsPage() {
     return (
       <>
         {header}
-        <Widget title="학원 문서" empty={{ message: "학원에 속한 학원 관리자 계정으로 관리할 수 있습니다." }} />
+        <Widget title="학원 문서" empty={{ message: "학원 슈퍼어드민 계정으로 관리할 수 있습니다." }} />
       </>
     );
   }

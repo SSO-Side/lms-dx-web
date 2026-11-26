@@ -20,7 +20,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 
-const ROLE_LABEL: Record<StaffRole, string> = { MANAGER: "매니저", INSTRUCTOR: "강사" };
+const ROLE_LABEL: Record<StaffRole, string> = { MANAGER: "서브 관리자", INSTRUCTOR: "강사" };
 const selectCls = "h-10 w-full rounded-md border border-neutral-300 bg-card px-3 text-sm text-neutral-900";
 
 interface AssignedStaff {
@@ -115,12 +115,12 @@ export function StaffManager({
   ];
 
   return (
-    <Widget title="담당 교직원" subtitle="같은 학원의 매니저·강사를 배정합니다. 새 계정은 아래 명부 CSV로 발급합니다.">
+    <Widget title="담당 교직원" subtitle="같은 학원의 서브 관리자·강사를 배정합니다. 주담당은 이 반의 티켓을 자동으로 받습니다. 강사 계정은 아래 명부 CSV로, 서브 관리자는 서브 계정 화면에서 발급합니다.">
       <div className="space-y-3">
         {error && <Alert tone="danger">{error}</Alert>}
         {notice && <Alert tone="success">{notice}</Alert>}
         {!hasPrimary && (
-          <Alert tone="warning">주담당 매니저가 없습니다. 새 티켓은 담당자 없이 접수되어 학원 관리자가 처리합니다.</Alert>
+          <Alert tone="warning">주담당이 없습니다. 새 티켓은 담당자 없이 접수되어 관리자 누구나 처리합니다.</Alert>
         )}
         <DataTable columns={columns} data={assigned} getRowKey={(s) => s.userId} emptyMessage="아직 배정된 담당자가 없습니다." />
         {candidates.length > 0 ? (
@@ -147,7 +147,7 @@ export function StaffManager({
             </Button>
           </div>
         ) : (
-          <p className="text-sm text-neutral-500">추가할 수 있는 매니저·강사가 없습니다.</p>
+          <p className="text-sm text-neutral-500">추가할 수 있는 서브 관리자·강사가 없습니다.</p>
         )}
       </div>
 
@@ -158,8 +158,8 @@ export function StaffManager({
             <DialogDescription>
               {removing?.name} ({removing?.loginId}) — 해제하면 이 반에 들어올 수 없습니다. 맡고 있던 미완료 티켓은{" "}
               {hasPrimary && !removing?.isPrimary
-                ? "주담당 매니저에게 넘어갑니다."
-                : "담당자가 비워져 학원 관리자가 처리합니다. 다른 매니저에게 넘기려면 먼저 주담당을 바꿔 주세요."}
+                ? "주담당에게 넘어갑니다."
+                : "담당자가 비워져 관리자 누구나 처리합니다. 다른 서브 관리자에게 넘기려면 먼저 주담당을 바꿔 주세요."}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>

@@ -21,6 +21,12 @@ describe("권한 매트릭스 표 순회 테스트", () => {
     }
   });
 
+  // 매니저·학원 관리자 병합: 서브 관리자(MANAGER)는 모든 동작에서 슈퍼어드민(ACADEMY_ADMIN)과 같다.
+  // 슈퍼어드민 전용(서브 계정·학원 문서)은 동작 키가 아니라 canManageSubAccountsPure·canManageAcademyChatDocsPure로 막는다.
+  it.each(actions)("액션 [%s]: 서브 관리자 = 슈퍼어드민", (action) => {
+    expect(hasActionPermission(Role.MANAGER, action)).toBe(hasActionPermission(Role.ACADEMY_ADMIN, action));
+  });
+
   it("정의되지 않은 임의의 액션/역할 조합은 false 반환", () => {
     expect(hasActionPermission(Role.STUDENT, "invalid:action" as Action)).toBe(false);
   });

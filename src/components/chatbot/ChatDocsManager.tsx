@@ -95,7 +95,7 @@ export function ChatDocsManager({ docs }: { docs: ChatDocItem[] }) {
             <select id="cd-audience" name="audience" defaultValue="ALL" className={selectCls}>
               <option value="ALL">전체</option>
               <option value="STUDENT">수강생</option>
-              <option value="INSTRUCTOR">교직원(강사·매니저·관리자)</option>
+              <option value="INSTRUCTOR">교직원(강사·관리자)</option>
             </select>
           </div>
           <Button type="submit" disabled={pending} className="cursor-pointer">

@@ -5,6 +5,7 @@ import {
   canManageCohortAccountPure,
   canAssignCohortStaffPure,
   canManageAcademyChatDocsPure,
+  canManageSubAccountsPure,
   canViewDocumentPure,
   canViewSubmissionFilePure,
   canEditTeamProjectPure,
@@ -30,7 +31,7 @@ describe("반 간 접근 차단 테스트 (permissions.md §3)", () => {
   };
   const mgrAMembership: UserCohortMembership = {
     enrolledCohortIds: [],
-    staffCohortIds: [1], // 반 A만 담당
+    staffCohortIds: [1], // 반 A만 주담당 배정(서브 관리자는 배정과 무관하게 학원 전체 반)
   };
 
   const instA: UserAccessInfo = {
@@ -98,16 +99,29 @@ describe("반 간 접근 차단 테스트 (permissions.md §3)", () => {
   });
 
   const testCases = [
+    // 서브 관리자(MANAGER): 배정과 무관하게 같은 학원의 모든 반, 다른 학원은 거부
     {
-      actorName: "mgr_a",
-      desc: "반 B의 출결 조회·입력",
-      fn: () => canAccessCohortPure(mgrA, cohortB, mgrAMembership),
+      actorName: "mgr_a(서브 관리자)",
+      desc: "배정되지 않은 같은 학원 반 B의 출결 조회·입력",
+      fn: () => canAccessCohortPure(mgrA, cohortB, mgrAMembership) && hasActionPermission(mgrA.role, "attendance:write"),
+      expected: true,
+    },
+    {
+      actorName: "mgr_a(서브 관리자)",
+      desc: "다른 학원 반의 티켓·증빙",
+      fn: () => canAccessCohortPure(mgrA, cohortOtherAcademy, { enrolledCohortIds: [], staffCohortIds: [3] }),
       expected: false,
     },
     {
-      actorName: "mgr_a",
-      desc: "반 B 수강생의 티켓·증빙",
-      fn: () => canAccessCohortPure(mgrA, cohortB, mgrAMembership),
+      actorName: "학원 없는 서브 관리자",
+      desc: "반 A 조회",
+      fn: () => canAccessCohortPure({ ...mgrA, academyId: null }, cohortA, mgrAMembership),
+      expected: false,
+    },
+    {
+      actorName: "비활성 서브 관리자",
+      desc: "반 A 조회",
+      fn: () => canAccessCohortPure({ ...mgrA, status: "INACTIVE" }, cohortA, mgrAMembership),
       expected: false,
     },
     {
@@ -184,8 +198,8 @@ describe("반 간 접근 차단 테스트 (permissions.md §3)", () => {
     },
     {
       actorName: "acad_admin",
-      desc: "반 A 경로로 다른 반(B) 매니저 비활성화",
-      fn: () => canManageCohortAccountPure({ role: Role.MANAGER, academyId: 10, enrolledInCohort: false, staffInCohort: false }, cohortA),
+      desc: "반 A 경로로 서브 관리자 비활성화 (서브 계정 화면에서만)",
+      fn: () => canManageCohortAccountPure({ role: Role.MANAGER, academyId: 10, enrolledInCohort: false, staffInCohort: true }, cohortA),
       expected: false,
     },
     {
@@ -226,9 +240,34 @@ describe("반 간 접근 차단 테스트 (permissions.md §3)", () => {
       expected: false,
     },
     {
-      actorName: "mgr_a",
-      desc: "담당 교직원 배정 (account:manage 없음)",
-      fn: () => canAccessCohortPure(mgrA, cohortA, mgrAMembership) && hasActionPermission(mgrA.role, "account:manage"),
+      actorName: "mgr_a(서브 관리자)",
+      desc: "반 B 담당 교직원 배정·수강생 계정 관리 (account:manage)",
+      fn: () => canAccessCohortPure(mgrA, cohortB, mgrAMembership) && hasActionPermission(mgrA.role, "account:manage"),
+      expected: true,
+    },
+    // 서브 계정(서브 관리자) 발급·재설정·비활성화: 학원에 속한 활성 슈퍼어드민만
+    {
+      actorName: "acad_admin(슈퍼어드민)",
+      desc: "서브 계정 관리",
+      fn: () => canManageSubAccountsPure(acadAdmin),
+      expected: true,
+    },
+    {
+      actorName: "mgr_a(서브 관리자)",
+      desc: "서브 계정 관리",
+      fn: () => canManageSubAccountsPure(mgrA),
+      expected: false,
+    },
+    {
+      actorName: "시스템 관리자(ADMIN)",
+      desc: "서브 계정 관리",
+      fn: () => canManageSubAccountsPure({ ...acadAdmin, role: Role.ADMIN }),
+      expected: false,
+    },
+    {
+      actorName: "비밀번호 변경 전 슈퍼어드민",
+      desc: "서브 계정 관리",
+      fn: () => canManageSubAccountsPure({ ...acadAdmin, mustChangePassword: true }),
       expected: false,
     },
     // 학원 공통 챗봇 문서: 반이 아니라 계정의 학원 단위로 관리한다
@@ -239,7 +278,7 @@ describe("반 간 접근 차단 테스트 (permissions.md §3)", () => {
       expected: true,
     },
     {
-      actorName: "mgr_a",
+      actorName: "mgr_a(서브 관리자)",
       desc: "학원 공통 문서 관리",
       fn: () => canManageAcademyChatDocsPure(mgrA),
       expected: false,

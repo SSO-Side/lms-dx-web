@@ -113,11 +113,12 @@ export default async function ResumePage({ params, searchParams }: Props) {
     );
   }
 
-  // 매니저·슈퍼어드민: 상태 현황만 (내용 열람 불가)
+  // 서브 관리자·슈퍼어드민: 상태 현황만 (내용 열람 불가)
   const ctx = await tryCohortAccess(cohortId, "resume:readOthers");
   if (!ctx) return <AccessDenied />;
   const [{ rows, stages }, academyId] = await Promise.all([getCohortDocumentStatus(ctx.cohortId), getCohortAcademyId(ctx.cohortId)]);
-  const academyRows = ctx.role === Role.ACADEMY_ADMIN && academyId ? await getAcademyDocumentStatus(academyId) : null;
+  // 슈퍼어드민·서브 관리자는 학원 전체 반의 표도 본다
+  const academyRows = (ctx.role === Role.ACADEMY_ADMIN || ctx.role === Role.MANAGER) && academyId ? await getAcademyDocumentStatus(academyId) : null;
 
   return (
     <>

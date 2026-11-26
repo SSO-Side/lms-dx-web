@@ -48,7 +48,7 @@ export default async function MembersPage({ params }: { params: Promise<{ cohort
       <PageHeader
         back={{ href: `/app/c/${ctx.cohortId}`, label: "반 홈" }}
         title="명부"
-        description={`수강생 ${enrolled}명 재적 · 교사 ${staff.length}명. 계정 발급·재설정과 담당 교직원 배정은 학원 관리자의 계정 관리 화면에서 합니다.`}
+        description={`수강생 ${enrolled}명 재적 · 교사 ${staff.length}명. 계정 발급·재설정과 담당 교직원 배정은 계정 관리 화면에서 합니다.`}
       />
       <MemberTable cohortId={ctx.cohortId} rows={rows} />
     </>

@@ -6,20 +6,19 @@ import type { NavItem } from "./AppShell";
 export const ROLE_LABELS: Record<Role, string> = {
   STUDENT: "수강생",
   INSTRUCTOR: "강사",
-  MANAGER: "매니저",
-  ACADEMY_ADMIN: "학원 관리자",
+  MANAGER: "서브 관리자",
+  ACADEMY_ADMIN: "슈퍼어드민",
   ADMIN: "시스템 관리자",
 };
 
-const ACADEMY_NAV: NavItem[] = [
-  { label: "학원 홈", href: "/app/academy", icon: "academy", exact: true },
-  { label: "반 개설", href: "/app/academy/cohorts/new", icon: "newCohort" },
-  { label: "학원 문서", href: "/app/academy/chatbot-docs", icon: "documents" },
-];
+const ACADEMY_HOME: NavItem = { label: "학원 홈", href: "/app/academy", icon: "academy", exact: true };
 
-/** 학원 관리 화면 메뉴 */
-export function academyNav(): NavItem[] {
-  return ACADEMY_NAV;
+/** 학원 관리 화면 메뉴. 서브 계정은 슈퍼어드민만, 학원 문서는 슈퍼어드민·시스템 관리자만(서버에서도 다시 검사). */
+export function academyNav(role: Role): NavItem[] {
+  const items: NavItem[] = [ACADEMY_HOME, { label: "반 개설", href: "/app/academy/cohorts/new", icon: "newCohort" }];
+  if (role === Role.ACADEMY_ADMIN) items.push({ label: "서브 계정", href: "/app/academy/sub-accounts", icon: "accounts" });
+  if (role === Role.ACADEMY_ADMIN || role === Role.ADMIN) items.push({ label: "학원 문서", href: "/app/academy/chatbot-docs", icon: "documents" });
+  return items;
 }
 
 /** ia.md §2 역할별 메뉴. */
@@ -42,12 +41,12 @@ export function cohortNav(role: Role, cohortId: number): NavItem[] {
       return [home, attendance, tickets, { label: "자료·과제", href: `${c}/curriculum`, icon: "curriculum" }, { ...documents, label: "내 서류" }, team, interview];
     case Role.INSTRUCTOR:
       return [home, { label: "수업·자료", href: `${c}/curriculum`, icon: "curriculum" }, attendance, tickets, career];
+    // 서브 관리자는 슈퍼어드민과 같은 반 메뉴를 쓴다
     case Role.MANAGER:
-      return [home, attendance, tickets, manage, career];
     case Role.ACADEMY_ADMIN:
     case Role.ADMIN:
       return [
-        ACADEMY_NAV[0],
+        ACADEMY_HOME,
         home,
         attendance,
         tickets,

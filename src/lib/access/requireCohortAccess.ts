@@ -67,7 +67,7 @@ export async function requireCohortAccess(
     if (enrollment?.status === EnrollmentStatus.ENROLLED) {
       enrolledCohortIds = [numCohortId];
     }
-  } else if (user.role === Role.INSTRUCTOR || user.role === Role.MANAGER) {
+  } else if (user.role === Role.INSTRUCTOR) {
     const staff = await db.cohortStaff.findUnique({
       where: {
         cohortId_userId: {

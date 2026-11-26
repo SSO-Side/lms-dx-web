@@ -2,6 +2,7 @@
 import { redirect } from "next/navigation";
 import { Role } from "@prisma/client";
 import { requireAuthUser } from "@/lib/auth/session";
+import { isAcademyStaffRole } from "@/lib/access/checker";
 import { getEnrolledCohortId, listStaffCohortIds } from "@/server/shell-queries";
 import { logoutAction } from "@/server/auth";
 import { Button } from "@/components/ui/button";
@@ -10,7 +11,8 @@ import { AuthCard } from "@/components/shell/AuthCard";
 export default async function AppRootPage() {
   const user = await requireAuthUser();
 
-  if (user.role === Role.ACADEMY_ADMIN || user.role === Role.ADMIN) {
+  // 슈퍼어드민·서브 관리자·시스템 관리자는 학원 전체 대시보드
+  if (isAcademyStaffRole(user.role)) {
     redirect("/app/academy");
   }
 
@@ -21,7 +23,7 @@ export default async function AppRootPage() {
     }
   }
 
-  if (user.role === Role.INSTRUCTOR || user.role === Role.MANAGER) {
+  if (user.role === Role.INSTRUCTOR) {
     const cohortIds = await listStaffCohortIds(user.id);
     if (cohortIds.length === 1) {
       redirect(`/app/c/${cohortIds[0]}`);

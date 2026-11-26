@@ -28,7 +28,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 
-const ROLE_LABEL: Partial<Record<Role, string>> = { STUDENT: "수강생", INSTRUCTOR: "강사", MANAGER: "매니저" };
+const ROLE_LABEL: Partial<Record<Role, string>> = { STUDENT: "수강생", INSTRUCTOR: "강사", MANAGER: "서브 관리자" };
 
 interface MemberItem {
   id: number;
@@ -54,7 +54,7 @@ function downloadCsv(content: string, filename: string) {
 }
 
 const SAMPLE_CSV =
-  "﻿이름,로그인ID,연락처,역할\n홍길동,hong_kdt,010-0000-0001,STUDENT\n김강사,kim_inst,010-0000-0002,INSTRUCTOR\n이매니저,lee_mgr,010-0000-0003,MANAGER\n";
+  "﻿이름,로그인ID,연락처,역할\n홍길동,hong_kdt,010-0000-0001,STUDENT\n김강사,kim_inst,010-0000-0002,INSTRUCTOR\n";
 
 export function AccountsManager({ cohortId, members }: { cohortId: number; members: MemberItem[] }) {
   const router = useRouter();
@@ -179,7 +179,11 @@ export function AccountsManager({ cohortId, members }: { cohortId: number; membe
     {
       header: <span className="sr-only">관리</span>,
       align: "right",
-      cell: (m) => (
+      cell: (m) =>
+        // 서브 관리자 계정은 학원 관리 > 서브 계정에서 슈퍼어드민만 관리한다
+        m.role === "MANAGER" ? (
+          <span className="text-xs text-neutral-500">서브 계정에서 관리</span>
+        ) : (
         <div className="flex justify-end gap-1.5">
           <Button variant="outline" size="xs" onClick={() => setPending({ kind: "reset", member: m })}>
             비밀번호 재설정
@@ -190,7 +194,7 @@ export function AccountsManager({ cohortId, members }: { cohortId: number; membe
             </Button>
           )}
         </div>
-      ),
+        ),
     },
   ];
 
@@ -200,7 +204,7 @@ export function AccountsManager({ cohortId, members }: { cohortId: number; membe
 
       <Widget
         title="명부 CSV로 계정 일괄 발급"
-        subtitle="헤더: 이름,로그인ID,연락처,역할 (역할은 STUDENT, INSTRUCTOR, MANAGER)"
+        subtitle="헤더: 이름,로그인ID,연락처,역할 (역할은 STUDENT, INSTRUCTOR). 서브 관리자는 학원 관리 > 서브 계정에서 발급합니다."
         action={
           <Button variant="ghost" size="xs" onClick={() => downloadCsv(SAMPLE_CSV, "roster_sample.csv")}>
             <Download aria-hidden />
