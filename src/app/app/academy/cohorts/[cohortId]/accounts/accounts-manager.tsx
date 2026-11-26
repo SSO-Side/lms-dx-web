@@ -298,7 +298,9 @@ export function AccountsManager({ cohortId, members }: { cohortId: number; membe
               {pending?.member.name} ({pending?.member.loginId})
               {pending?.kind === "reset"
                 ? " — 기존 비밀번호는 더 이상 쓸 수 없습니다."
-                : " — 비활성화하면 로그인할 수 없습니다."}
+                : pending?.member.role === "STUDENT"
+                  ? " — 비활성화하면 로그인할 수 없습니다."
+                  : " — 비활성화하면 로그인할 수 없습니다. 맡은 모든 반에서 주담당이 풀리고 미완료 티켓은 담당자가 바뀝니다."}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>

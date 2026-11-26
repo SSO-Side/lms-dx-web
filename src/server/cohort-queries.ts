@@ -1,6 +1,16 @@
 // 반 정보 조회 함수: 반 홈 머리글, 반 설정, 명부, 재적 상태별 인원.
 // 호출 측이 먼저 requireCohortAccess(tryCohortAccess)로 권한을 확인하고 ctx.cohortId만 넘긴다.
+import type { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
+
+/** 티켓을 맡길 주담당 매니저 id. 비활성 계정은 제외하며, 없으면 null(학원 관리자가 처리). */
+export async function findActivePrimaryManagerId(cohortId: number, client: Prisma.TransactionClient = db): Promise<number | null> {
+  const staff = await client.cohortStaff.findFirst({
+    where: { cohortId, staffRole: "MANAGER", isPrimary: true, user: { status: "ACTIVE" } },
+    select: { userId: true },
+  });
+  return staff?.userId ?? null;
+}
 
 /** 반 홈 머리글용 반 정보(과정명·훈련 유형·강의실·기간·상태) */
 export async function getCohortInfo(cohortId: number) {

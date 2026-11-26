@@ -49,7 +49,7 @@
 - M7: 강사 "배정된 수강생" 개념이 없어 "같은 반 수강생"으로 단순화했다. 서류 파일은 본인(`resume:own`)과 같은 반 강사(`resume:review`)만 열람한다.
 - "본인만", "배정된 수강생", "상태만" 같은 조건부 값은 `requireCohortAccess` 뒤에 **리소스 단위 검사**(`ctx.user.id === ticket.requesterId` 등)로 처리한다.
 - 계정 발급 대상 범위: ACADEMY_ADMIN은 **자기 학원** 안의 STUDENT·INSTRUCTOR·MANAGER 계정만 만들 수 있다. ACADEMY_ADMIN 계정과 학원 생성은 ADMIN만.
-- 담당 교직원 배정·주담당 지정 대상 범위: 반과 **같은 학원의 활성** MANAGER·INSTRUCTOR만(`canAssignCohortStaffPure`). 주담당은 이 반에 배정된 매니저 중 반당 1명. 담당을 해제하면 그 사람의 미완료 티켓은 남은 주담당에게 넘기고, 없으면 담당자를 비운다.
+- 담당 교직원 배정·주담당 지정 대상 범위: 반과 **같은 학원의 활성** MANAGER·INSTRUCTOR만(`canAssignCohortStaffPure`). 주담당은 이 반에 배정된 매니저 중 반당 1명. 담당을 해제하면 그 사람의 미완료 티켓은 남은 주담당에게 넘기고, 없으면 담당자를 비운다. 교직원 계정을 비활성화하면 맡은 모든 반에서 주담당을 풀고 같은 방식으로 티켓을 넘긴다. 티켓 담당자는 활성 주담당만 지정한다.
 
 ## 3. 반 간 접근 차단 테스트 (필수, 표 기반 약 10행)
 시드 기준: 반 A(담임 `mgr_a`, 강사 `inst_a`, 수강생 `s01~s08`), 반 B(담임 `mgr_b`, 수강생 `b01·b02`).

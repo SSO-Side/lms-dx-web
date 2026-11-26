@@ -3,7 +3,8 @@
 // 학원 관리 서버 액션: 반 개설, 명부 CSV 검증, 계정 일괄 발급, 담당 교직원 배정, 비밀번호 재설정, 계정 비활성화.
 import crypto from "crypto";
 import bcrypt from "bcryptjs";
-import { Role, StaffRole, EnrollmentStatus, ActiveStatus } from "@prisma/client";
+import { Role, StaffRole, EnrollmentStatus, ActiveStatus, type Prisma } from "@prisma/client";
+import { findActivePrimaryManagerId } from "./cohort-queries";
 import { db } from "@/lib/db";
 import { requireAuthUser } from "@/lib/auth/session";
 import { requireCohortAccess } from "@/lib/access/requireCohortAccess";
@@ -296,16 +297,18 @@ export async function removeStaffAction(cohortId: number, targetUserId: number):
     const removed = await tx.cohortStaff.deleteMany({ where: { cohortId: ctx.cohortId, userId: targetUserId } });
     if (removed.count === 0) return { ok: false, error: "이 반의 담당자가 아닙니다." };
 
-    const primary = await tx.cohortStaff.findFirst({
-      where: { cohortId: ctx.cohortId, staffRole: StaffRole.MANAGER, isPrimary: true },
-      select: { userId: true },
-    });
-    const moved = await tx.ticket.updateMany({
-      where: { cohortId: ctx.cohortId, assigneeId: targetUserId, status: { notIn: TERMINAL_STATUSES } },
-      data: { assigneeId: primary?.userId ?? null },
-    });
-    return { ok: true, movedTickets: moved.count };
+    return { ok: true, movedTickets: await handOffOpenTickets(tx, ctx.cohortId, targetUserId) };
   });
+}
+
+/** 이 사람이 맡던 이 반의 미완료 티켓을 활성 주담당에게(없으면 담당자 없음) 넘기고 건수를 돌려준다. */
+async function handOffOpenTickets(tx: Prisma.TransactionClient, cohortId: number, fromUserId: number) {
+  const primaryId = await findActivePrimaryManagerId(cohortId, tx);
+  const moved = await tx.ticket.updateMany({
+    where: { cohortId, assigneeId: fromUserId, status: { notIn: TERMINAL_STATUSES } },
+    data: { assigneeId: primaryId },
+  });
+  return moved.count;
 }
 
 /**
@@ -372,14 +375,23 @@ export async function deactivateAccountAction(cohortId: number, targetUserId: nu
     return { error: "이 반에서 관리할 수 있는 계정이 아닙니다." };
   }
 
-  await db.user.update({
-    where: { id: targetUser.id },
-    data: { status: ActiveStatus.INACTIVE },
-  });
+  await db.$transaction(async (tx) => {
+    await tx.user.update({
+      where: { id: targetUser.id },
+      data: { status: ActiveStatus.INACTIVE },
+    });
 
-  // 해당 계정의 활성 세션 모두 삭제
-  await db.authSession.deleteMany({
-    where: { userId: targetUser.id },
+    // 해당 계정의 활성 세션 모두 삭제
+    await tx.authSession.deleteMany({
+      where: { userId: targetUser.id },
+    });
+
+    // 비활성화는 계정 전체에 걸리므로, 맡은 모든 반에서 주담당을 풀고 미완료 티켓을 넘긴다(담당 배정은 남긴다).
+    const assignments = await tx.cohortStaff.findMany({ where: { userId: targetUser.id }, select: { cohortId: true } });
+    for (const { cohortId: staffCohortId } of assignments) {
+      await tx.cohortStaff.updateMany({ where: { cohortId: staffCohortId, userId: targetUser.id }, data: { isPrimary: false } });
+      await handOffOpenTickets(tx, staffCohortId, targetUser.id);
+    }
   });
 
   return { success: true };

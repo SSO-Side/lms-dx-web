@@ -11,6 +11,7 @@ import { isYmd, ymdToDate, dateToYmd } from "@/lib/dates";
 import { canTransition } from "@/lib/tickets/transitions";
 import { PROOF_MAX_BYTES, PROOF_TYPES, resolveProofMime, saveFile, deleteFile } from "@/lib/storage";
 import { getTicketDetail, type TicketDetail } from "./ticket-queries";
+import { findActivePrimaryManagerId } from "./cohort-queries";
 
 type Result = { ok: true; ticketId?: number } | { ok: false; error: string };
 
@@ -56,12 +57,6 @@ async function storeProofs(cohortId: number, files: File[]): Promise<StoredFile[
   return stored;
 }
 
-/** 주담당 매니저 (없으면 null → 슈퍼어드민 처리) */
-async function primaryManagerId(cohortId: number): Promise<number | null> {
-  const staff = await db.cohortStaff.findFirst({ where: { cohortId, staffRole: "MANAGER", isPrimary: true }, select: { userId: true } });
-  return staff?.userId ?? null;
-}
-
 const absenceSchema = z.object({
   absentDate: z.string().refine(isYmd, "날짜를 선택해 주세요."),
   // 수강생 신청은 서류가 필요한 병결·휴가만. 지각·조퇴·일반 결석은 매니저가 출결 화면에서 체크한다.
@@ -104,7 +99,7 @@ export async function createAbsenceAction(cohortId: number, formData: FormData):
     if (typeof stored === "string") return { ok: false, error: stored };
     if (stored.length === 0) return { ok: false, error: "증빙 서류를 1개 이상 첨부해 주세요." };
 
-    const assigneeId = await primaryManagerId(ctx.cohortId);
+    const assigneeId = await findActivePrimaryManagerId(ctx.cohortId);
     const ticket = await db.ticket.create({
       data: {
         cohortId: ctx.cohortId,
@@ -139,7 +134,7 @@ export async function createInquiryAction(cohortId: number, formData: FormData):
       body: (formData.get("body") as string) || undefined,
     });
     if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "입력값 오류" };
-    const assigneeId = await primaryManagerId(ctx.cohortId);
+    const assigneeId = await findActivePrimaryManagerId(ctx.cohortId);
     const ticket = await db.ticket.create({
       data: {
         cohortId: ctx.cohortId,

@@ -57,7 +57,7 @@ export function StaffManager({
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
 
-  const hasPrimary = assigned.some((s) => s.isPrimary);
+  const hasPrimary = assigned.some((s) => s.isPrimary && s.status === "ACTIVE");
 
   const run = (fn: () => Promise<ActionResult>, done: (movedTickets: number) => string) => {
     setError(null);
