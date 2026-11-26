@@ -41,6 +41,40 @@ export async function getCohortAccounts(cohortId: number) {
   return { cohort, members: [...staffList.map((s) => s.user), ...enrollments.map((e) => e.student)] };
 }
 
+/** 담당 교직원 관리용: 이 반 담당자와, 아직 배정되지 않은 같은 학원의 활성 매니저·강사. 반이 없으면 null. */
+export async function getCohortStaffing(cohortId: number) {
+  const cohort = await db.cohort.findUnique({ where: { id: cohortId }, select: { academyId: true } });
+  if (!cohort) return null;
+  const [assigned, candidates] = await Promise.all([
+    db.cohortStaff.findMany({
+      where: { cohortId },
+      select: { userId: true, staffRole: true, isPrimary: true, user: { select: { name: true, loginId: true, status: true } } },
+      orderBy: [{ staffRole: "asc" }, { user: { name: "asc" } }],
+    }),
+    db.user.findMany({
+      where: {
+        academyId: cohort.academyId,
+        role: { in: [Role.MANAGER, Role.INSTRUCTOR] },
+        status: ActiveStatus.ACTIVE,
+        staffAssignments: { none: { cohortId } },
+      },
+      select: { id: true, name: true, loginId: true, role: true },
+      orderBy: [{ role: "desc" }, { name: "asc" }],
+    }),
+  ]);
+  return {
+    assigned: assigned.map((s) => ({
+      userId: s.userId,
+      staffRole: s.staffRole,
+      isPrimary: s.isPrimary,
+      name: s.user.name,
+      loginId: s.user.loginId,
+      status: s.user.status,
+    })),
+    candidates,
+  };
+}
+
 const overviewSelect = { id: true, name: true, room: true, startDate: true, endDate: true, status: true } as const;
 
 /** 전체 반 요약 대상: 학원 관리자·슈퍼어드민은 학원 전체 반, 강사·매니저는 배정된 반 */

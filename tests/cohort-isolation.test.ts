@@ -3,6 +3,7 @@ import { Role } from "@prisma/client";
 import {
   canAccessCohortPure,
   canManageCohortAccountPure,
+  canAssignCohortStaffPure,
   canViewDocumentPure,
   canViewSubmissionFilePure,
   canEditTeamProjectPure,
@@ -196,6 +197,37 @@ describe("반 간 접근 차단 테스트 (permissions.md §3)", () => {
       actorName: "acad_admin",
       desc: "반 A 경로로 학원 관리자 계정 재설정",
       fn: () => canManageCohortAccountPure({ role: acadAdmin.role, academyId: 10, enrolledInCohort: false, staffInCohort: true }, cohortA),
+      expected: false,
+    },
+    // 담당 교직원 배정 대상 검사: 같은 학원의 활성 매니저·강사만
+    {
+      actorName: "acad_admin",
+      desc: "반 A에 같은 학원 매니저 배정",
+      fn: () => canAssignCohortStaffPure({ role: Role.MANAGER, academyId: 10, status: "ACTIVE" }, cohortA),
+      expected: true,
+    },
+    {
+      actorName: "acad_admin",
+      desc: "반 A에 다른 학원 강사 배정",
+      fn: () => canAssignCohortStaffPure({ role: Role.INSTRUCTOR, academyId: 99, status: "ACTIVE" }, cohortA),
+      expected: false,
+    },
+    {
+      actorName: "acad_admin",
+      desc: "반 A 담당자로 수강생 배정",
+      fn: () => canAssignCohortStaffPure({ role: Role.STUDENT, academyId: 10, status: "ACTIVE" }, cohortA),
+      expected: false,
+    },
+    {
+      actorName: "acad_admin",
+      desc: "반 A에 비활성 매니저 배정",
+      fn: () => canAssignCohortStaffPure({ role: Role.MANAGER, academyId: 10, status: "INACTIVE" }, cohortA),
+      expected: false,
+    },
+    {
+      actorName: "mgr_a",
+      desc: "담당 교직원 배정 (account:manage 없음)",
+      fn: () => canAccessCohortPure(mgrA, cohortA, mgrAMembership) && hasActionPermission(mgrA.role, "account:manage"),
       expected: false,
     },
     // M7 서류 내용 열람 (반 접근 → resume:review 권한 → 리소스 단위 검사)

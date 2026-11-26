@@ -83,6 +83,19 @@ export function canManageCohortAccountPure(target: ManagedAccountInfo, cohort: C
   return target.staffInCohort;
 }
 
+/**
+ * 이 반의 담당 교직원으로 배정(또는 주담당 지정)할 수 있는 계정인지 판정한다.
+ * 같은 학원의 활성 매니저·강사만 허용한다.
+ */
+export function canAssignCohortStaffPure(
+  target: { role: Role; academyId: number | null; status: ActiveStatus | string },
+  cohort: CohortAccessInfo
+): boolean {
+  if (target.role !== Role.MANAGER && target.role !== Role.INSTRUCTOR) return false;
+  if (target.status !== "ACTIVE") return false;
+  return target.academyId !== null && target.academyId === cohort.academyId;
+}
+
 export interface DocumentAccessInfo {
   /** 서류가 속한 반 */
   cohortId: number;

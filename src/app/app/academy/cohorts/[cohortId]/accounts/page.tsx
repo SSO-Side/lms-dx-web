@@ -3,8 +3,9 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { tryCohortAccess } from "@/lib/access/pageAccess";
 import { AccessDenied } from "@/components/shell/AccessDenied";
-import { getCohortAccounts } from "@/server/academy-queries";
+import { getCohortAccounts, getCohortStaffing } from "@/server/academy-queries";
 import { AccountsManager } from "./accounts-manager";
+import { StaffManager } from "./staff-manager";
 import { buttonVariants } from "@/components/ui/button";
 import { PageHeader } from "@/components/shell/PageHeader";
 
@@ -22,8 +23,8 @@ export default async function AccountsPage({ params }: AccountsPageProps) {
   const ctx = await tryCohortAccess(numCohortId, "account:manage");
   if (!ctx) return <AccessDenied />;
 
-  const accounts = await getCohortAccounts(ctx.cohortId);
-  if (!accounts) {
+  const [accounts, staffing] = await Promise.all([getCohortAccounts(ctx.cohortId), getCohortStaffing(ctx.cohortId)]);
+  if (!accounts || !staffing) {
     notFound();
   }
   const { cohort, members } = accounts;
@@ -40,7 +41,10 @@ export default async function AccountsPage({ params }: AccountsPageProps) {
           </Link>
         }
       />
-      <AccountsManager cohortId={cohort.id} initialMembers={members} />
+      <div className="space-y-5">
+        <StaffManager cohortId={cohort.id} assigned={staffing.assigned} candidates={staffing.candidates} />
+        <AccountsManager cohortId={cohort.id} members={members} />
+      </div>
     </>
   );
 }

@@ -56,9 +56,8 @@ function downloadCsv(content: string, filename: string) {
 const SAMPLE_CSV =
   "﻿이름,로그인ID,연락처,역할\n홍길동,hong_kdt,010-0000-0001,STUDENT\n김강사,kim_inst,010-0000-0002,INSTRUCTOR\n이매니저,lee_mgr,010-0000-0003,MANAGER\n";
 
-export function AccountsManager({ cohortId, initialMembers }: { cohortId: number; initialMembers: MemberItem[] }) {
+export function AccountsManager({ cohortId, members }: { cohortId: number; members: MemberItem[] }) {
   const router = useRouter();
-  const [members, setMembers] = useState(initialMembers);
   const [step, setStep] = useState<"upload" | "preview" | "issued">("upload");
   const [csvText, setCsvText] = useState("");
   const [rows, setRows] = useState<ParsedAccountRow[]>([]);
@@ -126,7 +125,7 @@ export function AccountsManager({ cohortId, initialMembers }: { cohortId: number
     } else {
       const res = await run(() => deactivateAccountAction(cohortId, member.id));
       if (res && "success" in res && res.success) {
-        setMembers((prev) => prev.map((m) => (m.id === member.id ? { ...m, status: "INACTIVE" } : m)));
+        router.refresh();
       } else if (res && "error" in res && res.error) {
         setError(res.error);
       }

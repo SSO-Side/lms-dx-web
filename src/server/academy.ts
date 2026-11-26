@@ -1,13 +1,14 @@
 "use server";
 
-// 학원 관리 서버 액션: 반 개설, 명부 CSV 검증, 계정 일괄 발급, 비밀번호 재설정, 계정 비활성화.
+// 학원 관리 서버 액션: 반 개설, 명부 CSV 검증, 계정 일괄 발급, 담당 교직원 배정, 비밀번호 재설정, 계정 비활성화.
 import crypto from "crypto";
 import bcrypt from "bcryptjs";
 import { Role, StaffRole, EnrollmentStatus, ActiveStatus } from "@prisma/client";
 import { db } from "@/lib/db";
 import { requireAuthUser } from "@/lib/auth/session";
 import { requireCohortAccess } from "@/lib/access/requireCohortAccess";
-import { canManageCohortAccountPure } from "@/lib/access/checker";
+import { canAssignCohortStaffPure, canManageCohortAccountPure } from "@/lib/access/checker";
+import { TERMINAL_STATUSES } from "@/lib/tickets/transitions";
 import { parseRosterCSV, type ParsedAccountRow } from "@/lib/csv";
 import { z } from "zod";
 import { isYmd, ymdToDate } from "@/lib/dates";
@@ -228,6 +229,83 @@ export async function bulkIssueAccountsAction(cohortId: number, validRows: Parse
     csvContent,
     skipped,
   };
+}
+
+type StaffResult = { ok: true; movedTickets?: number } | { ok: false; error: string };
+
+const userIdSchema = z.number().int().positive();
+
+/** 담당 교직원 후보: 이 반과 같은 학원의 활성 매니저·강사인지 확인한다. 아니면 null. */
+async function findAssignableStaff(cohortId: number, targetUserId: number) {
+  if (!userIdSchema.safeParse(targetUserId).success) return null;
+  const [cohort, target] = await Promise.all([
+    db.cohort.findUnique({ where: { id: cohortId }, select: { id: true, academyId: true } }),
+    db.user.findUnique({ where: { id: targetUserId }, select: { id: true, role: true, academyId: true, status: true } }),
+  ]);
+  if (!cohort || !target || !canAssignCohortStaffPure(target, cohort)) return null;
+  return target;
+}
+
+/** 같은 학원의 기존 매니저·강사를 이 반 담당자로 추가한다. */
+export async function assignStaffAction(cohortId: number, targetUserId: number): Promise<StaffResult> {
+  const ctx = await requireCohortAccess(cohortId, "account:manage");
+
+  const target = await findAssignableStaff(ctx.cohortId, targetUserId);
+  if (!target) return { ok: false, error: "배정할 수 없는 담당자입니다." };
+
+  const created = await db.cohortStaff.createMany({
+    data: [
+      {
+        cohortId: ctx.cohortId,
+        userId: target.id,
+        staffRole: target.role === Role.MANAGER ? StaffRole.MANAGER : StaffRole.INSTRUCTOR,
+      },
+    ],
+    skipDuplicates: true,
+  });
+  if (created.count === 0) return { ok: false, error: "이미 이 반의 담당자입니다." };
+  return { ok: true };
+}
+
+/** 이 반의 주담당 매니저를 바꾼다(반당 1명). */
+export async function setPrimaryManagerAction(cohortId: number, targetUserId: number): Promise<StaffResult> {
+  const ctx = await requireCohortAccess(cohortId, "account:manage");
+
+  const target = await findAssignableStaff(ctx.cohortId, targetUserId);
+  const assigned = target
+    ? await db.cohortStaff.findFirst({
+        where: { cohortId: ctx.cohortId, userId: target.id, staffRole: StaffRole.MANAGER },
+        select: { id: true },
+      })
+    : null;
+  if (!assigned) return { ok: false, error: "이 반에 배정된 활성 매니저만 주담당이 될 수 있습니다." };
+
+  await db.$transaction([
+    db.cohortStaff.updateMany({ where: { cohortId: ctx.cohortId, isPrimary: true }, data: { isPrimary: false } }),
+    db.cohortStaff.updateMany({ where: { id: assigned.id, cohortId: ctx.cohortId }, data: { isPrimary: true } }),
+  ]);
+  return { ok: true };
+}
+
+/** 담당을 해제한다. 그 사람이 맡던 미완료 티켓은 남은 주담당에게 넘기고, 없으면 담당자를 비운다. */
+export async function removeStaffAction(cohortId: number, targetUserId: number): Promise<StaffResult> {
+  const ctx = await requireCohortAccess(cohortId, "account:manage");
+  if (!userIdSchema.safeParse(targetUserId).success) return { ok: false, error: "이 반의 담당자가 아닙니다." };
+
+  return db.$transaction(async (tx): Promise<StaffResult> => {
+    const removed = await tx.cohortStaff.deleteMany({ where: { cohortId: ctx.cohortId, userId: targetUserId } });
+    if (removed.count === 0) return { ok: false, error: "이 반의 담당자가 아닙니다." };
+
+    const primary = await tx.cohortStaff.findFirst({
+      where: { cohortId: ctx.cohortId, staffRole: StaffRole.MANAGER, isPrimary: true },
+      select: { userId: true },
+    });
+    const moved = await tx.ticket.updateMany({
+      where: { cohortId: ctx.cohortId, assigneeId: targetUserId, status: { notIn: TERMINAL_STATUSES } },
+      data: { assigneeId: primary?.userId ?? null },
+    });
+    return { ok: true, movedTickets: moved.count };
+  });
 }
 
 /**
