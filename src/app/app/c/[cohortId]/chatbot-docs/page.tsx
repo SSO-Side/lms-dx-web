@@ -2,6 +2,7 @@
 import { tryCohortAccess } from "@/lib/access/pageAccess";
 import { AccessDenied } from "@/components/shell/AccessDenied";
 import { PageHeader } from "@/components/shell/PageHeader";
+import { SectionSwitch, manageSections } from "@/components/shell/SectionSwitch";
 import { getCohortAcademyId, listManageChatDocs } from "@/server/chatbot-queries";
 import { syncChatDocStatus } from "@/server/chatbot-sync";
 import { env } from "@/lib/config";
@@ -33,7 +34,8 @@ export default async function ChatbotDocsPage({ params }: { params: Promise<{ co
 
   return (
     <>
-      <PageHeader title="챗봇 매뉴얼" description="챗봇이 답변 근거로 쓰는 PDF 문서를 관리합니다. 학원 전체 문서는 학원 관리자만 등록·삭제할 수 있습니다." />
+      <SectionSwitch items={manageSections(ctx.cohortId)} current="chatbot-docs" />
+      <PageHeader back={{ href: `/app/c/${ctx.cohortId}`, label: "반 홈" }} title="챗봇 매뉴얼"description="챗봇이 답변 근거로 쓰는 PDF 문서를 관리합니다. 학원 전체 문서는 학원 관리자만 등록·삭제할 수 있습니다." />
       <ChatbotDocsClient cohortId={ctx.cohortId} docs={docs} canAcademyWide={isAdmin} />
     </>
   );

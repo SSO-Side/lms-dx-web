@@ -41,7 +41,7 @@
 | `team:write` (M5 본인 팀 기획안·체크·URL·주간 로그) | 본인 팀 | X | X | X | O |
 | `showcase:apply·review·approve` (M10) | 신청(본인 팀) | 검토(같은 반) | 승인 | 승인 | O |
 | `lead:read` (M10) | X | X | O | O | O |
-| `account:manage` (계정 발급·반 개설·명부) | X | X | X | O | O |
+| `account:manage` (계정 발급·반 개설·명부·담당 배정) | X | X | X | O | O |
 
 - 지금 단계(M0~M3, M11)에서 구현하는 액션은 `material`~`attendance`, `chat`, `account`까지다. 나머지 행은 키와 값만 데이터에 두고 기능은 해당 모듈 작업 때 붙인다.
 - M5: 팀 수정은 `canEditTeamProjectPure`(본인 팀·같은 반), 열람은 `canViewTeamProjectPure`(수강생은 본인 팀, 교직원은 반 전체)로 리소스 단위 검사한다. 매니저·슈퍼어드민은 열람만.
@@ -49,6 +49,7 @@
 - M7: 강사 "배정된 수강생" 개념이 없어 "같은 반 수강생"으로 단순화했다. 서류 파일은 본인(`resume:own`)과 같은 반 강사(`resume:review`)만 열람한다.
 - "본인만", "배정된 수강생", "상태만" 같은 조건부 값은 `requireCohortAccess` 뒤에 **리소스 단위 검사**(`ctx.user.id === ticket.requesterId` 등)로 처리한다.
 - 계정 발급 대상 범위: ACADEMY_ADMIN은 **자기 학원** 안의 STUDENT·INSTRUCTOR·MANAGER 계정만 만들 수 있다. ACADEMY_ADMIN 계정과 학원 생성은 ADMIN만.
+- 담당 교직원 배정·주담당 지정 대상 범위: 반과 **같은 학원의 활성** MANAGER·INSTRUCTOR만(`canAssignCohortStaffPure`). 주담당은 이 반에 배정된 매니저 중 반당 1명. 담당을 해제하면 그 사람의 미완료 티켓은 남은 주담당에게 넘기고, 없으면 담당자를 비운다.
 
 ## 3. 반 간 접근 차단 테스트 (필수, 표 기반 약 10행)
 시드 기준: 반 A(담임 `mgr_a`, 강사 `inst_a`, 수강생 `s01~s08`), 반 B(담임 `mgr_b`, 수강생 `b01·b02`).

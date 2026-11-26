@@ -5,6 +5,7 @@ import { getCohortSettings } from "@/server/cohort-queries";
 import { dateToYmd } from "@/lib/dates";
 import { AccessDenied } from "@/components/shell/AccessDenied";
 import { PageHeader } from "@/components/shell/PageHeader";
+import { SectionSwitch, manageSections } from "@/components/shell/SectionSwitch";
 import { getAttendanceBase } from "@/server/attendance-queries";
 import { computeAttendance } from "@/lib/attendance/compute";
 import { SettingsForms } from "./settings-forms";
@@ -24,7 +25,8 @@ export default async function SettingsPage({ params }: { params: Promise<{ cohor
 
   return (
     <>
-      <PageHeader back={{ href: `/app/c/${ctx.cohortId}/members`, label: "명부" }} title="반 설정" description={canEdit ? "변경 사항은 저장 전에 확인합니다." : "읽기 전용입니다. 변경은 학원 관리자에게 요청해 주세요."} />
+      <SectionSwitch items={manageSections(ctx.cohortId)} current="settings" />
+      <PageHeader back={{ href: `/app/c/${ctx.cohortId}`, label: "반 홈" }}title="반 설정" description={canEdit ? "변경 사항은 저장 전에 확인합니다." : "읽기 전용입니다. 변경은 학원 관리자에게 요청해 주세요."} />
       <SettingsForms
         cohortId={ctx.cohortId}
         canEdit={canEdit}

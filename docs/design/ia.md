@@ -11,7 +11,7 @@
 | | `/market`, `/market/[slug]` | 마켓플레이스(공개, 로그인 없음): 공개 승인된 쇼케이스 목록·상세·기업 문의 폼. 기본 noindex(`MARKET_INDEXABLE=true`로 해제), 슬러그는 난수 12자 | 누구나 |
 | 인증 | `/app` | 역할별 홈으로 리다이렉트 | 로그인 |
 | | `/app/password` | 비밀번호 변경. `mustChangePassword`이면 모든 `/app/*`이 여기로 강제 이동 | 로그인 |
-| | `/app/overview` | 여러 반을 맡은 교사·매니저의 반 목록·요약 | INSTRUCTOR, MANAGER |
+| | `/app/overview` | 여러 반을 맡은 교사·매니저의 반 목록·요약(반 전환 목록의 `담당 반 요약`으로 진입) | INSTRUCTOR, MANAGER |
 | 반 | `/app/c/[cohortId]` | 반 홈 대시보드 (역할별 위젯, `screens.md`) | 반 접근 가능자 |
 | | `/app/c/[cohortId]/attendance` | 출결 (역할별: 오늘 출결·명부 카운터 / 열람 목록 / 내 출결) | 반 접근 가능자 |
 | | `/app/c/[cohortId]/tickets` | 티켓·병결 신청 (역할별: 처리 목록 / 내 티켓과 신청) | 반 접근 가능자 |
@@ -19,11 +19,12 @@
 | | `/app/c/[cohortId]/resume` | 서류 (역할별: 내 서류·작성 가이드 / 첨삭 목록 / 상태 현황) | 반 접근 가능자 |
 | | `/app/c/[cohortId]/team` | 팀 프로젝트 (역할별: 내 팀·단계 가이드 / 팀 목록·팀 만들기·상세 드로어 / 현황 열람). `?tab=showcase`: 쇼케이스(수강생 초안·신청·동의 / 강사 검토 / 매니저·슈퍼어드민 공개 승인) | 반 접근 가능자 |
 | | `/app/c/[cohortId]/leads` | 기업 문의(마켓플레이스 리드) 표·드로어 | MANAGER, ACADEMY_ADMIN |
-| | `/app/c/[cohortId]/members` | 명부(수강생·교사 목록, 상태). 계정 발급은 슈퍼어드민 화면에서 | MANAGER, ACADEMY_ADMIN |
-| | `/app/c/[cohortId]/settings` | 반 설정: 훈련 일정·휴강일, 단위기간, 출결 규칙(`attendanceConfig`), 기능 사용 여부 | MANAGER(읽기), ACADEMY_ADMIN(수정) |
+| | `/app/c/[cohortId]/members` | 반 관리 > 명부(수강생·교사 목록, 상태). 계정 발급·담당 배정은 슈퍼어드민 화면에서 | MANAGER, ACADEMY_ADMIN |
+| | `/app/c/[cohortId]/chatbot-docs` | 반 관리 > 챗봇 매뉴얼: 챗봇 답변 근거 PDF 등록·삭제 | MANAGER, ACADEMY_ADMIN |
+| | `/app/c/[cohortId]/settings` | 반 관리 > 반 설정: 훈련 일정·휴강일, 단위기간, 출결 규칙(`attendanceConfig`), 기능 사용 여부 | MANAGER(읽기), ACADEMY_ADMIN(수정) |
 | 학원 | `/app/academy` | 학원 홈: 반 목록과 반별 요약 | ACADEMY_ADMIN |
 | | `/app/academy/cohorts/new` | 반 개설 마법사 (아래 §3) | ACADEMY_ADMIN |
-| | `/app/academy/cohorts/[cohortId]/accounts` | 명부 CSV 업로드·계정 일괄 발급·임시 비밀번호 1회 다운로드·재설정·비활성화 | ACADEMY_ADMIN |
+| | `/app/academy/cohorts/[cohortId]/accounts` | 담당 교직원 배정·해제·주담당 지정, 명부 CSV 업로드·계정 일괄 발급·임시 비밀번호 1회 다운로드·재설정·비활성화 | ACADEMY_ADMIN |
 | 시스템 | `/admin` | 학원 생성, 슈퍼어드민 발급 (개발팀 전용) | ADMIN |
 
 쇼케이스 이미지: LMS 안에서는 `/api/c/[cohortId]/showcases/[id]/images/[cover|architecture]`(같은 반 팀원·강사·매니저만), 공개 영역은 `/api/market/[slug]/images/[kind]`(PUBLISHED만).
@@ -37,13 +38,13 @@
 | :-- | :-- | :-- |
 | STUDENT | 홈 · 출결 · 티켓 · 자료·과제 · 내 서류 · 팀 프로젝트 · 면접 | 모바일 하단 탭바(앞 4개 + `더보기` 드로어, 내 서류·팀 프로젝트·면접은 더보기 안) / 데스크톱 좌측 사이드바(전부 노출) |
 | INSTRUCTOR | 홈 · 수업·자료 · 출결 · 티켓 · 서류·프로젝트 | 좌측 사이드바. `서류·프로젝트`는 `/resume`·`/team` 두 화면을 묶고 화면 상단 전환(서류 / 팀 프로젝트)으로 오간다 |
-| MANAGER | 홈 · 출결 · 티켓 · 명부 · 서류·프로젝트 | 좌측 사이드바. 반 설정은 명부 화면 우상단 `[반 설정]` 버튼, 서류·프로젝트는 강사와 같은 상단 전환에 `기업 문의`가 하나 더 붙는다(lead:read 역할만, 메뉴 5개 유지) |
+| MANAGER | 홈 · 출결 · 티켓 · 반 관리 · 서류·프로젝트 | 좌측 사이드바. `반 관리`는 `/members`·`/chatbot-docs`·`/settings`를 묶고 화면 상단 전환(명부 / 챗봇 매뉴얼 / 반 설정)으로 오간다. 서류·프로젝트는 강사와 같은 상단 전환에 `기업 문의`가 하나 더 붙는다(lead:read 역할만, 메뉴 5개 유지) |
 | ACADEMY_ADMIN | 학원 홈 · (반 선택 시) MANAGER 메뉴 + 계정 관리 | 좌측 사이드바 |
 
 - 수강생 하단 탭은 최대 4개 + `더보기`. 5번째 이후 메뉴는 더보기(하단 드로어)에 둔다.
 
 - **상단 바**: 현재 반 이름과 **반 전환 드롭다운**(접근 가능한 반이 2개 이상일 때만), 사용자 메뉴(비밀번호 변경, 로그아웃).
-- 반 전환은 URL 이동(`/app/c/{id}`)이므로 같은 메뉴 위치를 유지한다.
+- 반 전환은 URL 이동(`/app/c/{id}`)이므로 같은 메뉴 위치를 유지한다(메뉴 아래 세부 경로·쿼리는 버린다). 강사·매니저의 전환 목록 아래에는 `담당 반 요약`(`/app/overview`) 링크가 있다.
 - 담당 반이 1개인 교사·매니저는 로그인 직후 그 반 홈으로, 여러 개면 `/app/overview`로 간다.
 
 ## 3. 핵심 흐름과 드로어·모달 규칙

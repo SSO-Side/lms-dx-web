@@ -26,6 +26,15 @@ export function SectionSwitch({ items, current }: { items: Array<{ key: string; 
   );
 }
 
+/** 매니저·학원 관리자의 "반 관리" 메뉴 아래 화면 */
+export function manageSections(cohortId: number) {
+  return [
+    { key: "members", label: "명부", href: `/app/c/${cohortId}/members` },
+    { key: "chatbot-docs", label: "챗봇 매뉴얼", href: `/app/c/${cohortId}/chatbot-docs` },
+    { key: "settings", label: "반 설정", href: `/app/c/${cohortId}/settings` },
+  ];
+}
+
 /** 강사·매니저·슈퍼어드민의 "서류·프로젝트" 메뉴 아래 화면. withLeads: 기업 문의(lead:read 역할만, 메뉴 5개 이내 유지) */
 export function careerSections(cohortId: number, withLeads = false) {
   return [

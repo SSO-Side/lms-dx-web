@@ -1,7 +1,5 @@
 // 명부 페이지: 반 수강생 목록과 재적 상태(매니저·학원 관리자).
-import Link from "next/link";
-import { Bot, Settings } from "lucide-react";
-import { buttonVariants } from "@/components/ui/button";
+import { SectionSwitch, manageSections } from "@/components/shell/SectionSwitch";
 import { tryCohortAccess } from "@/lib/access/pageAccess";
 import { listCohortMembers } from "@/server/cohort-queries";
 import { formatDateTime } from "@/lib/dates";
@@ -46,20 +44,11 @@ export default async function MembersPage({ params }: { params: Promise<{ cohort
 
   return (
     <>
+      <SectionSwitch items={manageSections(ctx.cohortId)} current="members" />
       <PageHeader
         back={{ href: `/app/c/${ctx.cohortId}`, label: "반 홈" }}
         title="명부"
-        description={`수강생 ${enrolled}명 재적 · 교사 ${staff.length}명. 계정 발급·재설정은 학원 관리자의 계정 관리 화면에서 합니다.`}
-        actions={
-          <div className="flex gap-2">
-            <Link href={`/app/c/${ctx.cohortId}/chatbot-docs`} className={buttonVariants({ variant: "outline", size: "sm" })}>
-              <Bot aria-hidden /> 챗봇 매뉴얼
-            </Link>
-            <Link href={`/app/c/${ctx.cohortId}/settings`} className={buttonVariants({ variant: "outline", size: "sm" })}>
-              <Settings aria-hidden /> 반 설정
-            </Link>
-          </div>
-        }
+        description={`수강생 ${enrolled}명 재적 · 교사 ${staff.length}명. 계정 발급·재설정과 담당 교직원 배정은 학원 관리자의 계정 관리 화면에서 합니다.`}
       />
       <MemberTable cohortId={ctx.cohortId} rows={rows} />
     </>

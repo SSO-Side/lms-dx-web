@@ -27,7 +27,8 @@ export function cohortNav(role: Role, cohortId: number): NavItem[] {
   const home: NavItem = { label: "홈", href: c, icon: "home", exact: true };
   const attendance: NavItem = { label: "출결", href: `${c}/attendance`, icon: "attendance" };
   const tickets: NavItem = { label: "티켓", href: `${c}/tickets`, icon: "tickets" };
-  const members: NavItem = { label: "명부", href: `${c}/members`, icon: "members" };
+  // 명부·챗봇 매뉴얼·반 설정은 한 메뉴로 묶고 화면 상단 전환으로 오간다
+  const manage: NavItem = { label: "반 관리", href: `${c}/members`, icon: "members", alsoMatch: [`${c}/chatbot-docs`, `${c}/settings`] };
   const documents: NavItem = { label: "서류", href: `${c}/resume`, icon: "documents" };
   // 메뉴 5개 이내: 교직원은 서류와 팀 프로젝트를 한 메뉴로 묶고 화면 상단 전환으로 오간다
   const career: NavItem = { label: "서류·프로젝트", href: `${c}/resume`, icon: "career", alsoMatch: [`${c}/team`, `${c}/leads`] };
@@ -41,8 +42,7 @@ export function cohortNav(role: Role, cohortId: number): NavItem[] {
     case Role.INSTRUCTOR:
       return [home, { label: "수업·자료", href: `${c}/curriculum`, icon: "curriculum" }, attendance, tickets, career];
     case Role.MANAGER:
-      // 메뉴 5개 이내: 반 설정은 명부 화면 우상단 버튼으로 진입
-      return [home, attendance, tickets, members, career];
+      return [home, attendance, tickets, manage, career];
     case Role.ACADEMY_ADMIN:
     case Role.ADMIN:
       return [
@@ -50,7 +50,7 @@ export function cohortNav(role: Role, cohortId: number): NavItem[] {
         home,
         attendance,
         tickets,
-        members,
+        manage,
         career,
         { label: "계정 관리", href: `/app/academy/cohorts/${cohortId}/accounts`, icon: "accounts" },
       ];
