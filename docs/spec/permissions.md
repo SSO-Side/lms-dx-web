@@ -32,7 +32,6 @@
 | `attendance:readCohort` | X | O | O | O | O |
 | `attendance:readOwn` | O | X | X | X | O |
 | `chat:ask` | O | O | O | O | O |
-| `chatDoc:manage` | X | X | O | O | O |
 | `resume:own` | O | X | X | X | O |
 | `resume:readOthers` (M7 서류 현황) | X | 같은 반 수강생 | 상태만 | 상태만 | O |
 | `resume:review` (M7 파일 열람·코멘트·상태 변경) | X | O (같은 반) | X | X | O |
@@ -50,7 +49,7 @@
 - "본인만", "배정된 수강생", "상태만" 같은 조건부 값은 `requireCohortAccess` 뒤에 **리소스 단위 검사**(`ctx.user.id === ticket.requesterId` 등)로 처리한다.
 - 계정 발급 대상 범위: ACADEMY_ADMIN은 **자기 학원** 안의 STUDENT·INSTRUCTOR·MANAGER 계정만 만들 수 있다. ACADEMY_ADMIN 계정과 학원 생성은 ADMIN만.
 - 담당 교직원 배정·주담당 지정 대상 범위: 반과 **같은 학원의 활성** MANAGER·INSTRUCTOR만(`canAssignCohortStaffPure`). 주담당은 이 반에 배정된 매니저 중 반당 1명. 담당을 해제하면 그 사람의 미완료 티켓은 남은 주담당에게 넘기고, 없으면 담당자를 비운다. 교직원 계정을 비활성화하면 맡은 모든 반에서 주담당을 풀고 같은 방식으로 티켓을 넘긴다. 티켓 담당자는 활성 주담당만 지정한다.
-- 챗봇 문서: 반 문서는 `chatDoc:manage`(반 접근 범위 안)로 등록·삭제한다. 학원 공통 문서는 반 권한과 별개로 학원에 속한 ACADEMY_ADMIN·ADMIN만 등록·삭제하며(`canManageAcademyChatDocsPure`), 대상 학원은 로그인 계정의 `academyId`다. 매니저는 반 화면에서 읽기 전용으로 연다.
+- 챗봇 문서는 학원 공통만 있다. 반 권한과 별개로 학원에 속한 ACADEMY_ADMIN·ADMIN만 등록·삭제·열람하며(`canManageAcademyChatDocsPure`), 대상 학원은 로그인 계정의 `academyId`다. 매니저는 문서를 관리하지 않는다.
 
 ## 3. 반 간 접근 차단 테스트 (필수, 표 기반 약 10행)
 시드 기준: 반 A(담임 `mgr_a`, 강사 `inst_a`, 수강생 `s01~s08`), 반 B(담임 `mgr_b`, 수강생 `b01·b02`).

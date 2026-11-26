@@ -1,10 +1,10 @@
 "use client";
 
-// 챗봇 매뉴얼 관리(클라이언트): PDF 등록 폼, 목록, 삭제 확인. 반 문서 화면과 학원 문서 화면이 함께 쓴다.
+// 학원 문서 관리(클라이언트): 챗봇 근거 PDF 등록 폼, 목록, 삭제 확인.
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { FileText, RefreshCw, Trash2 } from "lucide-react";
-import { uploadChatDocAction, deleteChatDocAction, uploadAcademyChatDocAction, deleteAcademyChatDocAction } from "@/server/chatbot";
+import { uploadAcademyChatDocAction, deleteAcademyChatDocAction } from "@/server/chatbot";
 import type { ChatDocItem } from "@/server/chatbot-queries";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -41,29 +41,9 @@ function DocRow({ doc: d, fileHref, action }: { doc: ChatDocItem; fileHref: stri
   );
 }
 
-/** 반 화면에서 보여 주는 학원 공통 문서 목록(읽기 전용). 파일은 반 경로로 연다. */
-export function SharedChatDocs({ cohortId, docs, manageLink }: { cohortId: number; docs: ChatDocItem[]; manageLink?: React.ReactNode }) {
-  return (
-    <Widget
-      title="학원 문서 (모든 반 공통)"
-      subtitle="이 반 챗봇도 근거로 씁니다. 등록·삭제는 학원 관리자가 학원 문서 화면에서 합니다."
-      action={manageLink}
-      empty={docs.length === 0 ? { message: "아직 등록된 학원 문서가 없습니다." } : false}
-    >
-      <ul className="divide-y divide-neutral-200">
-        {docs.map((d) => (
-          <DocRow key={d.id} doc={d} fileHref={`/api/c/${cohortId}/chatbot-docs/${d.id}/file`} />
-        ))}
-      </ul>
-    </Widget>
-  );
-}
-
-/** 문서 등록·삭제 화면. cohortId가 null이면 학원 공통 문서를 관리한다. */
-export function ChatDocsManager({ cohortId, docs }: { cohortId: number | null; docs: ChatDocItem[] }) {
+/** 학원 문서 등록·삭제 화면 */
+export function ChatDocsManager({ docs }: { docs: ChatDocItem[] }) {
   const router = useRouter();
-  const isAcademy = cohortId === null;
-  const fileHref = (id: number) => (isAcademy ? `/api/academy/chatbot-docs/${id}/file` : `/api/c/${cohortId}/chatbot-docs/${id}/file`);
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState<string | null>(null);
   const [target, setTarget] = useState<ChatDocItem | null>(null);
@@ -76,7 +56,7 @@ export function ChatDocsManager({ cohortId, docs }: { cohortId: number | null; d
     setError(null);
     setSaved(null);
     startTransition(async () => {
-      const res = cohortId === null ? await uploadAcademyChatDocAction(fd) : await uploadChatDocAction(cohortId, fd);
+      const res = await uploadAcademyChatDocAction(fd);
       if (!res.ok) return setError(res.error);
       form.reset();
       setSaved(res.status === "PROCESSING" ? "문서를 등록했습니다. 챗봇이 처리 중이라 잠시 후부터 답변에 쓰입니다." : "문서를 등록했습니다.");
@@ -87,7 +67,7 @@ export function ChatDocsManager({ cohortId, docs }: { cohortId: number | null; d
   const remove = () => {
     if (!target) return;
     startTransition(async () => {
-      const res = cohortId === null ? await deleteAcademyChatDocAction(target.id) : await deleteChatDocAction(cohortId, target.id);
+      const res = await deleteAcademyChatDocAction(target.id);
       if (!res.ok) setError(res.error);
       else setSaved("문서를 삭제했습니다.");
       setTarget(null);
@@ -100,7 +80,7 @@ export function ChatDocsManager({ cohortId, docs }: { cohortId: number | null; d
       {saved && <Alert tone="success" className="lg:col-span-2">{saved}</Alert>}
       {error && <Alert tone="danger" className="lg:col-span-2">{error}</Alert>}
 
-      <Widget title="매뉴얼 PDF 등록" subtitle={`${isAcademy ? "모든 반의 챗봇이" : "이 반 챗봇이"} 답변 근거로 쓰는 문서입니다. PDF만, 10MB 이하.`}>
+      <Widget title="매뉴얼 PDF 등록" subtitle="모든 반의 챗봇이 답변 근거로 쓰는 문서입니다. PDF만, 10MB 이하.">
         <form onSubmit={onSubmit} className="space-y-3">
           <div className="space-y-1.5">
             <Label htmlFor="cd-title">문서 제목</Label>
@@ -124,7 +104,7 @@ export function ChatDocsManager({ cohortId, docs }: { cohortId: number | null; d
         </form>
       </Widget>
 
-      <Widget title={isAcademy ? "등록된 학원 문서" : "이 반 문서"} subtitle={`${docs.length}개`} empty={docs.length === 0 ? { message: "아직 등록된 매뉴얼이 없습니다. 왼쪽에서 PDF를 등록해 주세요." } : false}>
+      <Widget title="등록된 학원 문서" subtitle={`${docs.length}개`} empty={docs.length === 0 ? { message: "아직 등록된 매뉴얼이 없습니다. 왼쪽에서 PDF를 등록해 주세요." } : false}>
         {docs.some((d) => d.status === "PROCESSING") && (
           <Button variant="outline" size="sm" onClick={() => router.refresh()} className="mb-2 cursor-pointer">
             <RefreshCw />
@@ -136,7 +116,7 @@ export function ChatDocsManager({ cohortId, docs }: { cohortId: number | null; d
             <DocRow
               key={d.id}
               doc={d}
-              fileHref={fileHref(d.id)}
+              fileHref={`/api/academy/chatbot-docs/${d.id}/file`}
               action={
                 <Button variant="destructive-outline" size="sm" onClick={() => setTarget(d)} aria-label={`${d.title} 삭제`} className="cursor-pointer">
                   <Trash2 />

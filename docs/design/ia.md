@@ -20,8 +20,6 @@
 | | `/app/c/[cohortId]/team` | 팀 프로젝트 (역할별: 내 팀·단계 가이드 / 팀 목록·팀 만들기·상세 드로어 / 현황 열람). `?tab=showcase`: 쇼케이스(수강생 초안·신청·동의 / 강사 검토 / 매니저·슈퍼어드민 공개 승인) | 반 접근 가능자 |
 | | `/app/c/[cohortId]/leads` | 기업 문의(마켓플레이스 리드) 표·드로어 | MANAGER, ACADEMY_ADMIN |
 | | `/app/c/[cohortId]/members` | 반 관리 > 명부(수강생·교사 목록, 상태). 계정 발급·담당 배정은 슈퍼어드민 화면에서 | MANAGER, ACADEMY_ADMIN |
-| | `/app/c/[cohortId]/chatbot-docs` | 반 관리 > 챗봇 매뉴얼: 이 반 챗봇 근거 PDF 등록·삭제, 학원 문서는 읽기 전용 | MANAGER, ACADEMY_ADMIN |
-| | `/app/c/[cohortId]/settings` | 반 관리 > 반 설정: 훈련 일정·휴강일, 단위기간, 출결 규칙(`attendanceConfig`), 기능 사용 여부 | MANAGER(읽기), ACADEMY_ADMIN(수정) |
 | 학원 | `/app/academy` | 학원 홈: 반 목록과 반별 요약 | ACADEMY_ADMIN |
 | | `/app/academy/chatbot-docs` | 학원 문서: 모든 반의 챗봇이 함께 쓰는 학원 공통 PDF 등록·삭제. 파일은 `/api/academy/chatbot-docs/[docId]/file` | ACADEMY_ADMIN |
 | | `/app/academy/cohorts/new` | 반 개설 마법사 (아래 §3) | ACADEMY_ADMIN |
@@ -39,7 +37,7 @@
 | :-- | :-- | :-- |
 | STUDENT | 홈 · 출결 · 티켓 · 자료·과제 · 내 서류 · 팀 프로젝트 · 면접 | 모바일 하단 탭바(앞 4개 + `더보기` 드로어, 내 서류·팀 프로젝트·면접은 더보기 안) / 데스크톱 좌측 사이드바(전부 노출) |
 | INSTRUCTOR | 홈 · 수업·자료 · 출결 · 티켓 · 서류·프로젝트 | 좌측 사이드바. `서류·프로젝트`는 `/resume`·`/team` 두 화면을 묶고 화면 상단 전환(서류 / 팀 프로젝트)으로 오간다 |
-| MANAGER | 홈 · 출결 · 티켓 · 반 관리 · 서류·프로젝트 | 좌측 사이드바. `반 관리`는 `/members`·`/chatbot-docs`·`/settings`를 묶고 화면 상단 전환(명부 / 챗봇 매뉴얼 / 반 설정)으로 오간다. 서류·프로젝트는 강사와 같은 상단 전환에 `기업 문의`가 하나 더 붙는다(lead:read 역할만, 메뉴 5개 유지) |
+| MANAGER | 홈 · 출결 · 티켓 · 반 관리 · 서류·프로젝트 | 좌측 사이드바. `반 관리`는 `/members`·`/settings`를 묶고 화면 상단 전환(명부 / 반 설정)으로 오간다. 챗봇 문서는 반 화면에 두지 않는다(학원 관리 > 학원 문서). 서류·프로젝트는 강사와 같은 상단 전환에 `기업 문의`가 하나 더 붙는다(lead:read 역할만, 메뉴 5개 유지) |
 | ACADEMY_ADMIN | 학원 관리 화면: 학원 홈 · 반 개설 · 학원 문서 / 반 화면: 학원 홈 · (반 선택 시) MANAGER 메뉴 + 계정 관리 | 좌측 사이드바 |
 
 - 수강생 하단 탭은 최대 4개 + `더보기`. 5번째 이후 메뉴는 더보기(하단 드로어)에 둔다.

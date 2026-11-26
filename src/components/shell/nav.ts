@@ -28,8 +28,8 @@ export function cohortNav(role: Role, cohortId: number): NavItem[] {
   const home: NavItem = { label: "홈", href: c, icon: "home", exact: true };
   const attendance: NavItem = { label: "출결", href: `${c}/attendance`, icon: "attendance" };
   const tickets: NavItem = { label: "티켓", href: `${c}/tickets`, icon: "tickets" };
-  // 명부·챗봇 매뉴얼·반 설정은 한 메뉴로 묶고 화면 상단 전환으로 오간다
-  const manage: NavItem = { label: "반 관리", href: `${c}/members`, icon: "members", alsoMatch: [`${c}/chatbot-docs`, `${c}/settings`] };
+  // 명부·반 설정은 한 메뉴로 묶고 화면 상단 전환으로 오간다
+  const manage: NavItem = { label: "반 관리", href: `${c}/members`, icon: "members", alsoMatch: [`${c}/settings`] };
   const documents: NavItem = { label: "서류", href: `${c}/resume`, icon: "documents" };
   // 메뉴 5개 이내: 교직원은 서류와 팀 프로젝트를 한 메뉴로 묶고 화면 상단 전환으로 오간다
   const career: NavItem = { label: "서류·프로젝트", href: `${c}/resume`, icon: "career", alsoMatch: [`${c}/team`, `${c}/leads`] };

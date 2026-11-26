@@ -14,7 +14,7 @@ export default async function AcademyChatDocsPage() {
     <PageHeader
       back={{ href: "/app/academy", label: "학원 홈" }}
       title="학원 문서"
-      description="모든 반의 챗봇이 답변 근거로 쓰는 PDF 문서를 관리합니다. 특정 반에만 쓰는 문서는 그 반의 반 관리 > 챗봇 매뉴얼에서 등록합니다."
+      description="모든 반의 챗봇이 답변 근거로 쓰는 PDF 문서를 관리합니다."
     />
   );
   if (!canManageAcademyChatDocsPure(user)) {
@@ -26,13 +26,13 @@ export default async function AcademyChatDocsPage() {
     );
   }
 
-  await syncChatDocStatus(user.academyId, null);
+  await syncChatDocStatus(user.academyId);
   const rows = await listAcademyChatDocs(user.academyId);
 
   return (
     <>
       {header}
-      <ChatDocsManager cohortId={null} docs={rows.map((r) => toChatDocItem(r, env.USE_AI_MOCK))} />
+      <ChatDocsManager docs={rows.map((r) => toChatDocItem(r, env.USE_AI_MOCK))} />
     </>
   );
 }

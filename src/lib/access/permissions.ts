@@ -16,7 +16,6 @@ export type Action =
   | "attendance:readCohort"
   | "attendance:readOwn"
   | "chat:ask"
-  | "chatDoc:manage"
   | "resume:own"
   | "resume:readOthers"
   | "resume:review"
@@ -125,13 +124,6 @@ export const ROLE_PERMISSIONS: Record<Action, Record<Role, boolean>> = {
   "chat:ask": {
     STUDENT: true,
     INSTRUCTOR: true,
-    MANAGER: true,
-    ACADEMY_ADMIN: true,
-    ADMIN: true,
-  },
-  "chatDoc:manage": {
-    STUDENT: false,
-    INSTRUCTOR: false,
     MANAGER: true,
     ACADEMY_ADMIN: true,
     ADMIN: true,

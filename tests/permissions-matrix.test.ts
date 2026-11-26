@@ -27,12 +27,8 @@ describe("권한 매트릭스 표 순회 테스트", () => {
 });
 
 describe("챗봇 권한·문서 대상 (permissions.md)", () => {
-  it("chat:ask는 모든 역할, chatDoc:manage는 매니저 이상만", () => {
+  it("chat:ask는 모든 역할", () => {
     for (const r of Object.values(Role)) expect(hasActionPermission(r, "chat:ask")).toBe(true);
-    expect(hasActionPermission(Role.STUDENT, "chatDoc:manage")).toBe(false);
-    expect(hasActionPermission(Role.INSTRUCTOR, "chatDoc:manage")).toBe(false);
-    expect(hasActionPermission(Role.MANAGER, "chatDoc:manage")).toBe(true);
-    expect(hasActionPermission(Role.ACADEMY_ADMIN, "chatDoc:manage")).toBe(true);
   });
 
   it("강사 전용 문서는 수강생에게 검색되지 않는다", () => {

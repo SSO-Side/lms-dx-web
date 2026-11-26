@@ -71,7 +71,7 @@ const STATUS_MAP: Record<StatusDomain, Record<string, { tone: Tone; label: strin
     PUBLISHED: { tone: "success", label: "공개 중" },
     UNPUBLISHED: { tone: "warning", label: "비공개 전환" },
   },
-  // M4 챗봇 매뉴얼: 서비스 처리 상태. UNSYNCED는 목 모드에서 등록해 서비스에 없는 문서
+  // M4 학원 문서(챗봇 근거): 서비스 처리 상태. UNSYNCED는 목 모드에서 등록해 서비스에 없는 문서
   chatDoc: {
     PROCESSING: { tone: "info", label: "처리 중" },
     READY: { tone: "success", label: "사용 가능" },

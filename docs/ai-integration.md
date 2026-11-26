@@ -64,9 +64,9 @@
 | Method | Path | 설명 | LMS 쪽 권한 |
 | :-- | :-- | :-- | :-- |
 | POST | `/api/chat` | 질의응답 | `chat:ask` (모든 역할) |
-| POST | `/api/chat/documents` | 문서 인제스트 | `chatDoc:manage` (매니저·학원 관리자) |
-| GET | `/api/chat/documents` | 인제스트된 문서 목록 | `chatDoc:manage` |
-| DELETE | `/api/chat/documents/{id}` | 문서 삭제 | `chatDoc:manage` |
+| POST | `/api/chat/documents` | 문서 인제스트 | 학원 문서 관리 (학원 관리자) |
+| GET | `/api/chat/documents` | 인제스트된 문서 목록 | 학원 문서 관리 |
+| DELETE | `/api/chat/documents/{id}` | 문서 삭제 | 학원 문서 관리 |
 | GET | `/api/chat/health` | 상태 (인증 없음) | — |
 
 ### 3.1 질의응답 `POST /api/chat`
@@ -128,7 +128,7 @@ academyId : 1
 ```
 
 - 처리가 오래 걸리면 `status: "PROCESSING"`으로 먼저 응답하고, 목록 조회에서 `READY` 또는 `FAILED`로 바뀌게 합니다.
-- `GET /api/chat/documents?academyId=1&cohortId=3`은 위 응답 형식의 배열을 돌려줍니다. LMS는 관리 화면에서 반별·공통 문서를 함께 보여 줍니다.
+- `GET /api/chat/documents?academyId=1&cohortId=3`은 위 응답 형식의 배열을 돌려줍니다. LMS는 학원 공통 문서만 등록하며(`cohortId` 없음), 목록은 `academyId`만 보내 조회합니다.
 - `DELETE`는 성공 시 `204`입니다. 삭제한 문서는 이후 검색에서 바로 빠져야 합니다.
 
 ### 3.3 상태 `GET /api/chat/health`

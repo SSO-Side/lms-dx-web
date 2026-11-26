@@ -30,7 +30,6 @@ export function SectionSwitch({ items, current }: { items: Array<{ key: string; 
 export function manageSections(cohortId: number) {
   return [
     { key: "members", label: "명부", href: `/app/c/${cohortId}/members` },
-    { key: "chatbot-docs", label: "챗봇 매뉴얼", href: `/app/c/${cohortId}/chatbot-docs` },
     { key: "settings", label: "반 설정", href: `/app/c/${cohortId}/settings` },
   ];
 }
