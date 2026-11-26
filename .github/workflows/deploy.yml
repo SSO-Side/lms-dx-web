@@ -1,0 +1,79 @@
+# main에 push되면 검사(lint·tsc·vitest) 후 스테이징 서버에 배포한다.
+# 서버 절차는 docs/user-tasks.md 3-0의 8번(업데이트)과 같다: git pull → 마이그레이션 → 앱 재빌드 → 헬스 체크.
+# 접속 정보는 모두 GitHub Secrets에 둔다 (DEPLOY_HOST, DEPLOY_PORT, DEPLOY_USER, DEPLOY_SSH_KEY, DEPLOY_KNOWN_HOSTS, DEPLOY_PATH).
+name: deploy-staging
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-staging
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx prisma generate
+      - run: npm run lint
+      - run: npx tsc --noEmit
+      - run: npx vitest run
+
+  deploy:
+    needs: check
+    runs-on: ubuntu-latest
+    environment: staging
+    steps:
+      - name: SSH 준비
+        env:
+          SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 644 ~/.ssh/known_hosts
+
+      - name: 서버 배포
+        env:
+          HOST: ${{ secrets.DEPLOY_HOST }}
+          PORT: ${{ secrets.DEPLOY_PORT }}
+          USER: ${{ secrets.DEPLOY_USER }}
+          APP_DIR: ${{ secrets.DEPLOY_PATH }}
+        run: |
+          ssh -i ~/.ssh/deploy_key -p "${PORT:-22}" -o StrictHostKeyChecking=yes \
+            "$USER@$HOST" bash -s -- "$APP_DIR" <<'REMOTE'
+          set -euo pipefail
+          cd "$1"
+          git pull --ff-only origin main
+          cd deploy
+          echo "== 마이그레이션 (prisma migrate deploy)"
+          docker compose run --rm --build tools
+          echo "== 앱 재빌드·재시작"
+          docker compose up -d --build app
+          echo "== 헬스 체크"
+          port="$(grep -E '^APP_PORT=' .env | cut -d= -f2 || true)"
+          for i in $(seq 1 30); do
+            if curl -fsS "http://127.0.0.1:${port:-3333}/api/health" | grep -q '"ok":true'; then
+              echo "정상"; exit 0
+            fi
+            sleep 2
+          done
+          echo "헬스 체크 실패"; docker compose logs --tail 100 app; exit 1
+          REMOTE
+
+      - name: 키 정리
+        if: always()
+        run: rm -f ~/.ssh/deploy_key
