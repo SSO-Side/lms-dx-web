@@ -21,6 +21,10 @@
 2. `mgr_a`로 로그인해 같은 확인. 반 계정 관리에서 서브 관리자 행에 버튼이 없는지.
 3. 이전 작업 확인: 담당 교직원 배정·주담당·비활성화 후 티켓 담당자, `학원 문서` 등록·삭제.
 4. 확인 중 문제가 나오면 증상(계정·화면 경로·기대와 실제)을 적어 새 세션에 넘긴다.
+5. (다음 주) main push 자동 배포. 초안은 커밋 b086c43(되돌림 8861ccf)에 있다: `.github/workflows/deploy.yml` + user-tasks 3-0 9번 Secrets 안내. `git revert 8861ccf`로 되살린 뒤 Secrets 등록하고 push. 마이그레이션 자동 적용은 사용자 결정.
+
+## 팀원 로컬 실행
+- 빈 PC 기준 안내는 `docs/setup-guide.md` (Node 22, 각자 Docker MariaDB, `.env` 3개 키, migrate → generate → seed → dev). 계정·역할은 `README.md` 1·2절 (2026-11-26 슈퍼어드민·서브 관리자 기준으로 갱신).
 
 ## 사용자 작업 체크리스트 [사용자 작업]
 - [ ] 위 1~3 화면 확인
