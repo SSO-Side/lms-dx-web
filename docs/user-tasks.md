@@ -83,11 +83,6 @@ npm run db:seed
 6. **앱 실행**: `docker compose up -d --build app` → `curl -s http://127.0.0.1:3333/api/health`가 `{"ok":true}`면 정상
 7. **Nginx·TLS**: `deploy/nginx.conf.example`을 도메인에 맞게 고쳐 등록하고 `sudo certbot --nginx -d <도메인>`. **HTTPS가 아니면 로그인되지 않습니다**(세션 쿠키 secure).
 8. **업데이트할 때**: `git pull` → 4번(새 마이그레이션이 있을 때) → 6번. 로그는 `docker compose logs -f app`.
-9. **자동 배포 (GitHub Actions)**: `.github/workflows/deploy.yml`이 main push 때 lint·tsc·vitest를 통과하면 서버에서 8번(마이그레이션 자동 적용 포함)을 실행하고 헬스 체크까지 한다. 처음 한 번 GitHub 저장소 Settings → Secrets and variables → Actions에 아래를 등록한다 (값은 문서에 적지 않는다).
-   - `DEPLOY_HOST`, `DEPLOY_PORT`(22가 아닐 때), `DEPLOY_USER`, `DEPLOY_PATH`(서버의 저장소 폴더, `deploy/`의 상위)
-   - `DEPLOY_SSH_KEY`: 배포 전용 개인키 (서버 `~/.ssh/authorized_keys`에 공개키 등록, 개인 PC 키 재사용 금지)
-   - `DEPLOY_KNOWN_HOSTS`: `ssh-keyscan -p <포트> <호스트>` 출력
-   - 서버 쪽 `git pull`이 비밀번호 없이 되어야 한다 (서버의 배포 키·자격 증명). 실패 시 Actions 로그와 `docker compose logs app`을 본다. 수동 재실행은 Actions 탭 → deploy-staging → Run workflow.
 
 | 항목 | 할 일 |
 | :-- | :-- |

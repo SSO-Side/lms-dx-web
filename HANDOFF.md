@@ -23,7 +23,6 @@
 4. 확인 중 문제가 나오면 증상(계정·화면 경로·기대와 실제)을 적어 새 세션에 넘긴다.
 
 ## 사용자 작업 체크리스트 [사용자 작업]
-- [ ] 자동 배포용 GitHub Secrets 등록 (`docs/user-tasks.md` 3-0의 9번) → Actions 탭에서 deploy-staging 첫 실행 성공 확인
 - [ ] 위 1~3 화면 확인
 - [ ] 형제 저장소 `../chatbot`의 미푸시 커밋 1개 push
 - [ ] 스테이징 반영 전: 반 번호가 있는 챗봇 문서 존재 여부 확인 후 T6 마이그레이션 적용 (`migrate deploy`는 사람이 실행)
@@ -34,7 +33,6 @@
 - DB 역할 값 MANAGER 유지, 이름만 서브 관리자 — 이유: 사용자 선택, 마이그레이션 불필요.
 - 학원당 슈퍼어드민 1명은 코드로 강제하지 않음 — 이유: ACADEMY_ADMIN 발급 화면이 없고 시드로만 만든다(`/admin` 화면은 존재하지 않음).
 - 서브 계정 재활성화 기능은 만들지 않음 (요청 범위 밖).
-- main push = 스테이징 자동 배포, 마이그레이션 자동 적용 (`.github/workflows/deploy.yml`) — 이유: 사용자 선택. 서드파티 액션 없이 ssh로 실행.
 - 티켓 인계(`handOffOpenTickets`, `deactivateUserWithHandOff`)는 `src/server/staff-handoff.ts`로 옮김 — "use server" 파일에서 export하면 권한 검사 없이 클라이언트가 부를 수 있기 때문.
 
 ## 주의 · 막힌 점

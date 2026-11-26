@@ -73,7 +73,6 @@
 - 2026-11-24: 폰트를 한글 서브셋으로 축소(2.06MB → 361KB, KS X 1001 2,350자·굵기 400~700, 없는 글자는 맑은 고딕 등으로 대체), 재생성 방법은 src/app/fonts/README.md
 - 2026-10-30: 섀도 DB 쓰지 않음 — `migrate dev` 대신 `npm run db:diff -- -o <마이그레이션 폴더>/migration.sql` → `npm run db:migrate`(migrate deploy). schema의 shadowDatabaseUrl 제거
 - 2026-10-30: 스테이징 배포 — Dockerfile(runner·tools 단계 분리, node:22-slim, uid 1000), deploy/ compose는 서버의 기존 MariaDB 컨테이너를 외부 네트워크(DB_NETWORK)로 사용, 파일은 호스트 경로 바인드. 절차는 user-tasks 3-0
-- 2026-11-26: 자동 배포 — `.github/workflows/deploy.yml`, main push 시 lint·tsc·vitest 통과 후 ssh로 pull→migrate deploy(자동)→app 재빌드→헬스 체크. Secrets 등록은 user-tasks 3-0 9번
 - 2026-10-30: 배포 전 전체 검수 — 보안 헤더(nosniff·X-Frame-Options DENY·Referrer-Policy, X-Powered-By 끔, HSTS는 Nginx), shadcn CLI는 devDependencies로. npm audit 잔여(next 16·prisma 7 필요)는 스택 고정으로 보류
 - 2026-10-17: 사람이 하는 일(환경 준비·화면 확인·배포·학원 협의)을 docs/user-tasks.md로 분리
 - 2026-10-17: M1 파일 — 저장소를 드라이버 구조로 분리(src/lib/storage: types·local·validators·serve, STORAGE_DRIVER=local), 공통 전달 fileResponse에 Nginx X-Accel-Redirect 선택 지원(STORAGE_ACCEL_PREFIX), 기존 파일 라우트 4개도 통일
