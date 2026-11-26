@@ -96,6 +96,16 @@ export function canAssignCohortStaffPure(
   return target.academyId !== null && target.academyId === cohort.academyId;
 }
 
+/**
+ * 학원 공통 챗봇 문서(반에 속하지 않는 문서)를 관리할 수 있는지. 반 접근과 무관한 학원 단위 검사.
+ * 학원에 속한 학원 관리자·슈퍼어드민만. 대상 학원은 항상 이 계정의 academyId다.
+ */
+export function canManageAcademyChatDocsPure<T extends UserAccessInfo>(user: T): user is T & { academyId: number } {
+  if (user.status !== "ACTIVE" || user.mustChangePassword) return false;
+  if (user.role !== Role.ACADEMY_ADMIN && user.role !== Role.ADMIN) return false;
+  return user.academyId !== null;
+}
+
 export interface DocumentAccessInfo {
   /** 서류가 속한 반 */
   cohortId: number;

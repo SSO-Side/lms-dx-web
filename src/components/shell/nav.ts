@@ -14,6 +14,7 @@ export const ROLE_LABELS: Record<Role, string> = {
 const ACADEMY_NAV: NavItem[] = [
   { label: "학원 홈", href: "/app/academy", icon: "academy", exact: true },
   { label: "반 개설", href: "/app/academy/cohorts/new", icon: "newCohort" },
+  { label: "학원 문서", href: "/app/academy/chatbot-docs", icon: "documents" },
 ];
 
 /** 학원 관리 화면 메뉴 */

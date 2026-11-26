@@ -18,12 +18,30 @@ export async function listVisibleChatDocs(academyId: number, cohortId: number, r
   });
 }
 
-/** 관리 화면 목록: 이 반 문서 + 학원 공통 문서 */
+const manageSelect = {
+  id: true, title: true, audience: true, cohortId: true, fileName: true, fileSize: true,
+  serviceDocId: true, status: true, error: true, createdAt: true, uploader: { select: { name: true } },
+} as const;
+
+/** 반 관리 화면 목록: 이 반 문서 + 학원 공통 문서(읽기 전용으로 따로 보여 준다) */
 export async function listManageChatDocs(academyId: number, cohortId: number) {
   return db.chatbotDocument.findMany({
     where: { academyId, OR: [{ cohortId }, { cohortId: null }] },
-    select: { id: true, title: true, audience: true, cohortId: true, fileName: true, fileSize: true, serviceDocId: true, status: true, error: true, createdAt: true, uploader: { select: { name: true } } },
+    select: manageSelect,
     orderBy: { id: "desc" },
+  });
+}
+
+/** 학원 문서 화면 목록: 학원 공통 문서만 */
+export async function listAcademyChatDocs(academyId: number) {
+  return db.chatbotDocument.findMany({ where: { academyId, cohortId: null }, select: manageSelect, orderBy: { id: "desc" } });
+}
+
+/** 파일 전달용: 학원 공통 문서만 */
+export async function getAcademyChatDocFile(academyId: number, id: number) {
+  return db.chatbotDocument.findFirst({
+    where: { id, academyId, cohortId: null },
+    select: { filePath: true, fileName: true },
   });
 }
 
@@ -36,3 +54,30 @@ export async function getChatDocFile(academyId: number, cohortId: number, id: nu
 }
 
 export type ChatDocRow = Awaited<ReturnType<typeof listManageChatDocs>>[number];
+
+export type ChatDocItem = {
+  id: number;
+  title: string;
+  audience: ChatDocRow["audience"];
+  fileName: string;
+  sizeLabel: string;
+  dateLabel: string;
+  uploaderName: string;
+  status: ChatDocRow["status"] | "UNSYNCED";
+  error: string | null;
+};
+
+/** 조회 행 → 화면 표시용. mock이 아닌데 서비스 문서 id가 없으면 "챗봇 미반영" */
+export function toChatDocItem(r: ChatDocRow, mock: boolean): ChatDocItem {
+  return {
+    id: r.id,
+    title: r.title,
+    audience: r.audience,
+    fileName: r.fileName,
+    sizeLabel: `${(r.fileSize / 1024 / 1024).toFixed(1)}MB`,
+    dateLabel: r.createdAt.toLocaleDateString("ko-KR", { timeZone: "Asia/Seoul" }),
+    uploaderName: r.uploader.name,
+    status: !mock && r.serviceDocId === null ? "UNSYNCED" : r.status,
+    error: r.error,
+  };
+}

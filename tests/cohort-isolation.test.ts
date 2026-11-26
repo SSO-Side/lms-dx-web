@@ -4,6 +4,7 @@ import {
   canAccessCohortPure,
   canManageCohortAccountPure,
   canAssignCohortStaffPure,
+  canManageAcademyChatDocsPure,
   canViewDocumentPure,
   canViewSubmissionFilePure,
   canEditTeamProjectPure,
@@ -228,6 +229,25 @@ describe("반 간 접근 차단 테스트 (permissions.md §3)", () => {
       actorName: "mgr_a",
       desc: "담당 교직원 배정 (account:manage 없음)",
       fn: () => canAccessCohortPure(mgrA, cohortA, mgrAMembership) && hasActionPermission(mgrA.role, "account:manage"),
+      expected: false,
+    },
+    // 학원 공통 챗봇 문서: 반이 아니라 계정의 학원 단위로 관리한다
+    {
+      actorName: "acad_admin",
+      desc: "학원 공통 문서 관리",
+      fn: () => canManageAcademyChatDocsPure(acadAdmin),
+      expected: true,
+    },
+    {
+      actorName: "mgr_a",
+      desc: "학원 공통 문서 관리",
+      fn: () => canManageAcademyChatDocsPure(mgrA),
+      expected: false,
+    },
+    {
+      actorName: "학원 없는 관리자",
+      desc: "학원 공통 문서 관리",
+      fn: () => canManageAcademyChatDocsPure({ ...acadAdmin, academyId: null }),
       expected: false,
     },
     // M7 서류 내용 열람 (반 접근 → resume:review 권한 → 리소스 단위 검사)

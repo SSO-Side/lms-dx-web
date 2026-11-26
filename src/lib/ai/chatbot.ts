@@ -91,10 +91,11 @@ export async function uploadServiceDoc(input: UploadDocInput): Promise<{ ok: tru
   return parsed.success ? { ok: true, doc: parsed.data } : { ok: false, error: FAIL };
 }
 
-/** 서비스의 문서 목록(이 반 + 학원 공통). 목 모드이거나 실패하면 null */
-export async function listServiceDocs(academyId: number, cohortId: number): Promise<ServiceDoc[] | null> {
+/** 서비스의 문서 목록. cohortId가 있으면 이 반 + 학원 공통, null이면 학원의 전체 문서. 목 모드이거나 실패하면 null */
+export async function listServiceDocs(academyId: number, cohortId: number | null): Promise<ServiceDoc[] | null> {
   if (env.USE_AI_MOCK) return null;
-  const res = await callService(`/api/chat/documents?academyId=${academyId}&cohortId=${cohortId}`, { method: "GET" }, LIST_TIMEOUT_MS);
+  const query = cohortId === null ? `academyId=${academyId}` : `academyId=${academyId}&cohortId=${cohortId}`;
+  const res = await callService(`/api/chat/documents?${query}`, { method: "GET" }, LIST_TIMEOUT_MS);
   if (!res?.ok) return null;
   const parsed = z.array(serviceDocSchema).safeParse(res.body);
   return parsed.success ? parsed.data : null;

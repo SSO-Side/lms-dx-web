@@ -3,11 +3,11 @@ import { db } from "@/lib/db";
 import { listServiceDocs } from "@/lib/ai/chatbot";
 
 /**
- * 이 반·학원 공통 문서 중 PROCESSING이 있을 때만 서비스 목록을 조회한다.
+ * 이 반·학원 공통 문서(cohortId가 null이면 학원 공통만) 중 PROCESSING이 있을 때만 서비스 목록을 조회한다.
  * LMS가 올린 문서(serviceDocId가 일치)만 갱신하고, 서비스에만 있는 문서(챗봇 폴더 문서 등)는 가져오지 않는다.
  * 서비스에 연결하지 못하면 아무것도 바꾸지 않는다.
  */
-export async function syncChatDocStatus(academyId: number, cohortId: number): Promise<void> {
+export async function syncChatDocStatus(academyId: number, cohortId: number | null): Promise<void> {
   const waiting = await db.chatbotDocument.findMany({
     where: { academyId, status: "PROCESSING", serviceDocId: { not: null }, OR: [{ cohortId }, { cohortId: null }] },
     select: { id: true, serviceDocId: true },
