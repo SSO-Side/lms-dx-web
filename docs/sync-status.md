@@ -23,7 +23,7 @@
 | M1 커리큘럼·과제 | 완료 | 파일 업로드 포함 |
 | M2 티켓·결석계 | 완료 | 정책 변경됨 (2-1) |
 | M3 출결 | 완료 | 규칙 값 일부는 기본값 (4장) |
-| M4 챗봇 | 화면·관리 완료, **실서비스 연동 코드 작성** | 실제 호출 시험 전. 목 모드 동작은 유지 (9장 T6) |
+| M4 챗봇 | 화면·관리 완료, **실서비스 연동 코드 작성** | 실제 호출 시험 통과, 화면 시험 전. 목 모드 동작은 유지 (9장 T6) |
 | M5 팀 프로젝트 | 완료 (MVP) | 참여 신청·승인 흐름 없음 |
 | M6 Q&A 게시판 | 미구현 | |
 | M7 이력서·자소서 | 완료 | 정책 변경됨 (2-2) |
@@ -169,6 +169,8 @@
 | T6 | 진행 | **챗봇 서비스 실제 연동 (LMS 쪽).** 챗봇 레포(기준 커밋 `88300fa`)는 규격 엔드포인트를 이미 구현했다. ① `src/lib/ai/types.ts`의 `sources[].page`를 `z.number().nullish()`로 바꾼다(챗봇이 md·txt 출처에 `page:null`을 보내서 지금은 응답 검증이 실패한다. 서비스가 주는 추가 필드 `section`은 무시해도 된다). ② `ChatbotDocument`에 `serviceDocId Int?`, `status`(PROCESSING·READY·FAILED), `error` 칸을 추가한다(마이그레이션은 `db:diff` 방식). ③ `uploadChatDocAction`: LMS 저장 후 `POST {CHATBOT_API_URL}/api/chat/documents`(multipart: file·title·audience·cohortId·academyId)로 넘기고 응답의 `id`·`status`를 저장한다. 서비스 오류(422·503 등)는 사용자 문구로 보여 주고, 실패하면 LMS 행을 남길지 지울지는 질문에 적는다. ④ 목록 화면에서 `PROCESSING`이면 서비스 `GET /api/chat/documents?academyId=&cohortId=`로 상태를 갱신한다. 응답의 `source:"folder"` 문서(챗봇 서버 폴더 문서)는 LMS 목록에 섞지 않는다. ⑤ `deleteChatDocAction`: 서비스 `DELETE /api/chat/documents/{serviceDocId}` 후 LMS 행 삭제. 404는 이미 지워진 것으로 본다. ⑥ `USE_AI_MOCK=true`이면 지금처럼 서비스 호출 없이 동작한다. 로컬 연결값: `CHATBOT_API_URL=http://localhost:3000/service`, `CHATBOT_SERVICE_TOKEN`은 챗봇 `.env`와 같은 값(채팅·커밋에 적지 않음). | 목 해제 상태에서 PDF 등록→READY→질문 답변·출처 표시→삭제 후 검색에서 빠짐, 타입·린트·테스트 통과 |
 
 **T6 진행 (2026-11-26)**: LMS 코드 ①~⑥ 작성, 개발 DB 마이그레이션 적용, 타입·린트·테스트 통과. Q1~Q5는 답이 없어 권장안으로 구현했다. 남은 것은 완료 기준의 실제 흐름 시험(PDF 등록→READY→답변·출처→삭제)이며, LMS `.env` 설정 뒤에 한다.
+
+**T6 실제 호출 시험 (2026-11-26)**: 로컬 챗봇 서비스(chat-v0.2)에 LMS 어댑터 코드(`src/lib/ai/chatbot.ts`)로 가상 PDF를 보내 확인했다. 시험용 학원·반 번호를 썼고 문서는 지웠다. 등록 READY(약 8초) → 목록에 표시 → 답변 근거 있음, 출처 1건(1쪽, 약 7초) → 삭제 → 목록에서 사라짐, 같은 질문은 근거 없음 고정 답변 → 다시 삭제하면 404를 성공으로 처리. 화면(관리 페이지 등록·삭제, 챗봇 위젯)을 통한 확인은 남았다.
 
 ### 사람이 할 일 (코드 세션이 대신하지 않음)
 - 스테이징 서버의 새 DB로 `lms_kdt`를 옮기는 작업(접속 정보 변경, 마이그레이션 적용, 시드)은 이종섭이 직접 한다. 코드 세션은 절차만 `docs/user-tasks.md`에 적는다.
