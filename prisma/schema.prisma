@@ -790,6 +790,13 @@ enum ChatAudience {
 }
 
 // 챗봇 응답 근거 PDF. cohortId가 null이면 학원 공통 문서(학원 관리자만 관리), 값이 있으면 그 반 문서.
+// 챗봇 서비스의 문서 처리 상태 (업로드 응답·목록 조회의 status)
+enum ChatDocStatus {
+  PROCESSING
+  READY
+  FAILED
+}
+
 model ChatbotDocument {
   id         Int          @id @default(autoincrement())
   academyId  Int
@@ -801,6 +808,10 @@ model ChatbotDocument {
   fileSize   Int
   uploadedBy Int
   createdAt  DateTime     @default(now())
+  // 챗봇 서비스가 발급한 문서 id. null이면 서비스에 없는 문서(목 모드에서 등록)
+  serviceDocId Int?
+  status       ChatDocStatus @default(READY)
+  error        String?       @db.VarChar(500)
 
   academy  Academy @relation(fields: [academyId], references: [id])
   cohort   Cohort? @relation(fields: [cohortId], references: [id])

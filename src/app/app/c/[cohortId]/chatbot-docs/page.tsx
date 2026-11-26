@@ -3,6 +3,8 @@ import { tryCohortAccess } from "@/lib/access/pageAccess";
 import { AccessDenied } from "@/components/shell/AccessDenied";
 import { PageHeader } from "@/components/shell/PageHeader";
 import { getCohortAcademyId, listManageChatDocs } from "@/server/chatbot-queries";
+import { syncChatDocStatus } from "@/server/chatbot-sync";
+import { env } from "@/lib/config";
 import { ChatbotDocsClient, type ChatDocItem } from "./chatbot-docs-client";
 
 export default async function ChatbotDocsPage({ params }: { params: Promise<{ cohortId: string }> }) {
@@ -13,6 +15,7 @@ export default async function ChatbotDocsPage({ params }: { params: Promise<{ co
   if (!academyId) return <AccessDenied />;
 
   const isAdmin = ctx.role === "ACADEMY_ADMIN" || ctx.role === "ADMIN";
+  await syncChatDocStatus(academyId, ctx.cohortId);
   const rows = await listManageChatDocs(academyId, ctx.cohortId);
   const docs: ChatDocItem[] = rows.map((r) => ({
     id: r.id,
@@ -24,6 +27,8 @@ export default async function ChatbotDocsPage({ params }: { params: Promise<{ co
     dateLabel: r.createdAt.toLocaleDateString("ko-KR", { timeZone: "Asia/Seoul" }),
     uploaderName: r.uploader.name,
     canDelete: r.cohortId !== null || isAdmin,
+    status: !env.USE_AI_MOCK && r.serviceDocId === null ? "UNSYNCED" : r.status,
+    error: r.error,
   }));
 
   return (

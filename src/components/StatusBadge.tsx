@@ -2,7 +2,7 @@
 import { CheckCircle2, AlertTriangle, AlertCircle, Clock, MinusCircle, type LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-export type StatusDomain = "attendance" | "attendanceEvent" | "enrollment" | "ticket" | "submission" | "userStatus" | "cohortStatus" | "document" | "teamStage" | "teamPace" | "showcase" | "lead";
+export type StatusDomain = "attendance" | "attendanceEvent" | "enrollment" | "ticket" | "submission" | "userStatus" | "cohortStatus" | "document" | "teamStage" | "teamPace" | "showcase" | "lead" | "chatDoc";
 type Tone = "success" | "warning" | "danger" | "info" | "neutral";
 
 // theme.md §1 도메인 상태 → 색 매핑
@@ -70,6 +70,13 @@ const STATUS_MAP: Record<StatusDomain, Record<string, { tone: Tone; label: strin
     IN_REVIEW: { tone: "info", label: "공개 심사 중" },
     PUBLISHED: { tone: "success", label: "공개 중" },
     UNPUBLISHED: { tone: "warning", label: "비공개 전환" },
+  },
+  // M4 챗봇 매뉴얼: 서비스 처리 상태. UNSYNCED는 목 모드에서 등록해 서비스에 없는 문서
+  chatDoc: {
+    PROCESSING: { tone: "info", label: "처리 중" },
+    READY: { tone: "success", label: "사용 가능" },
+    FAILED: { tone: "danger", label: "처리 실패" },
+    UNSYNCED: { tone: "warning", label: "챗봇 미반영" },
   },
   lead: {
     COFFEE_CHAT: { tone: "info", label: "채용 커피챗" },

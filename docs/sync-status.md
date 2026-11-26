@@ -23,7 +23,7 @@
 | M1 커리큘럼·과제 | 완료 | 파일 업로드 포함 |
 | M2 티켓·결석계 | 완료 | 정책 변경됨 (2-1) |
 | M3 출결 | 완료 | 규칙 값 일부는 기본값 (4장) |
-| M4 챗봇 | **화면·관리만 완료** | 답변은 목 응답. 실서비스 미연동 |
+| M4 챗봇 | 화면·관리 완료, **실서비스 연동 코드 작성** | 실제 호출 시험 전. 목 모드 동작은 유지 (9장 T6) |
 | M5 팀 프로젝트 | 완료 (MVP) | 참여 신청·승인 흐름 없음 |
 | M6 Q&A 게시판 | 미구현 | |
 | M7 이력서·자소서 | 완료 | 정책 변경됨 (2-2) |
@@ -62,7 +62,7 @@
 | 범위 | 반 문서(매니저 이상 등록·삭제) / 학원 공통(학원 관리자 이상만) |
 | 열람 대상 | `STUDENT` / `INSTRUCTOR`(교직원 전체) / `ALL` |
 | 질문 | 1~500자. 근거 없으면 티켓 화면 링크 표시 |
-| 외부 호출 | **질의응답만 구현**. 문서 인제스트·목록·삭제 연동 없음 (LMS 문서는 챗봇 서비스로 전달되지 않음) |
+| 외부 호출 | 질의응답, 문서 업로드·상태 목록·삭제 구현(2026-11-26). 실제 서비스 대상 시험 전 |
 | PRD에 있으나 없는 것 | 자주 묻는 질문 칩(응답의 `suggestedChips`도 화면에 표시 안 함), 질의 로그 저장 |
 
 ### 2-4. 마켓플레이스 (M10)
@@ -80,7 +80,7 @@
 - 응답 필수: `answer`, `sources`(항목마다 `docId` 숫자·`title`, `page`는 선택), `grounded`, `engineVersion`. `suggestedChips`는 선택(최대 5개).
 - 개발팀 계정(ADMIN)의 질문은 `role=ACADEMY_ADMIN`으로 보낸다.
 - 타임아웃 30초.
-- **미정**: 문서를 챗봇 서비스에 넘기는 방식, 문서 ID 맞추기.
+- 문서는 LMS가 PDF를 서비스에 넘기고, 서비스가 준 `id`를 LMS가 저장한다(제목 100자 이내).
 
 ### 면접 질문 (담당: 정명주 — 최주원은 이탈, 2026-11-25 확인) — 규격 재합의 필요
 - PRD M8과 연동 가이드 4.1절은 **이력서 PDF의 서명 URL(`resume.fileUrl`)**을 입력으로 한다.
@@ -107,7 +107,7 @@
 
 ## 5. 데이터 구조·환경
 
-- DB 모델 34개, 마이그레이션 7개. 마지막 두 개: `20261124120000_m7_document_form`, `20261124150000_m4_chatbot_docs`.
+- DB 모델 34개, 마이그레이션 8개. 마지막 두 개: `20261124150000_m4_chatbot_docs`, `20261126150000_m4_chatbot_service_link`.
 - 실제 수강생 데이터는 없다. 모두 가상 데이터다.
 - DB는 환경마다 따로라 **내용이 서로 같지 않다.**
 
@@ -166,7 +166,9 @@
 | T3 | 대기 | 6장의 옛 내용 문서(PRD 제외)를 현재 코드에 맞춰 고친다. 우선순위: `docs/design/screens.md`, `docs/design/ia.md`, `docs/PROGRESS.md`. | 6장 표에서 해당 항목 삭제 |
 | T4 | 대기 | `docs/user-tasks.md`에 **로컬 Docker로 개발 DB를 띄우는 절차**를 추가한다: MariaDB 컨테이너(compose), `.env`의 `DATABASE_URL` 예시(로컬 전용 임의 비밀번호), `prisma migrate deploy`, 시드(`ALLOW_SEED`·`SEED_PASSWORD`). 비밀 값은 적지 않는다. 새 환경에서 절차대로 해 보고 막힌 부분을 "질문"에 적는다. | 새 PC에서 문서만 보고 DB와 시드까지 끝낼 수 있음 |
 | T5 | 대기 | **면접 질문 생성을 Next 앱 안에 구현한다 (로컬 Ollama 직접 호출).** ① `src/lib/ai/ollama.ts`: Ollama `POST {LLM_BASE_URL}/api/chat`(`stream:false`, `format`에 JSON 스키마, 낮은 temperature) 호출 함수. 환경변수 `LLM_BASE_URL`(기본 `http://localhost:11434`), `LLM_MODEL`, `LLM_TIMEOUT_MS`를 `.env.example`에 추가(값은 비움/기본값만). ② `src/lib/ai/interview.ts`: 서류 텍스트(이력서 7항목+자소서)로 프롬프트를 만들어 호출하고 결과를 정제한다. **이름·연락처는 프롬프트에 넣지 않는다.** 서류 동의(T1) 확인 전에는 호출하지 않는다. ③ 정제는 순수 함수로 분리: zod 검증 → 질문 앞뒤 공백·번호 제거 → 중복·빈 문장 제거 → 개수 상한 → 카테고리 enum 확인 → `basis.quote`가 원문에 실제로 있는지 확인(공백 정규화 후 부분 일치)하고 없으면 해당 항목 폐기. JSON이 깨지면 1회 재시도 후 사용자용 오류 문구 반환. ④ `USE_AI_MOCK=true`이면 목 결과를 돌려준다(`mock.ts`에 추가). ⑤ 응답이 느리다(7B CPU 1~2분): 요청 때 바로 응답하고 진행 상태를 화면에서 확인하는 방식(백그라운드 + 폴링)으로 만들되, 결과를 어디에 저장·표시할지(새 테이블 필요 여부 포함)는 구현 전에 질문에 적어 승인받는다. ⑥-1 **Qwen3 주의**: 사고(thinking) 모드가 있는 모델이다. 요청에 `think:false`를 넣고(설치한 Ollama 버전이 지원하는지 확인), 지원이 없거나 응답에 `<think>…</think>`가 섞여 오면 정제 함수에서 그 구간을 제거한 뒤 JSON을 파싱한다. 사고를 켜면 시간이 크게 늘어난다. 모델을 바꿔도 코드가 같도록 모델 이름 분기는 넣지 않는다. ⑥ 기존 `src/app/app/c/[cohortId]/interview/page.tsx`에 연결. 서버 액션은 첫 줄 `requireCohortAccess`. | 로컬에서 Ollama 켠 상태로 실제 질문 생성, 끄면 오류 문구, `USE_AI_MOCK=true`면 목 동작, 타입·린트·테스트 통과 |
-| T6 | 대기 | **챗봇 서비스 실제 연동 (LMS 쪽).** 챗봇 레포(기준 커밋 `88300fa`)는 규격 엔드포인트를 이미 구현했다. ① `src/lib/ai/types.ts`의 `sources[].page`를 `z.number().nullish()`로 바꾼다(챗봇이 md·txt 출처에 `page:null`을 보내서 지금은 응답 검증이 실패한다. 서비스가 주는 추가 필드 `section`은 무시해도 된다). ② `ChatbotDocument`에 `serviceDocId Int?`, `status`(PROCESSING·READY·FAILED), `error` 칸을 추가한다(마이그레이션은 `db:diff` 방식). ③ `uploadChatDocAction`: LMS 저장 후 `POST {CHATBOT_API_URL}/api/chat/documents`(multipart: file·title·audience·cohortId·academyId)로 넘기고 응답의 `id`·`status`를 저장한다. 서비스 오류(422·503 등)는 사용자 문구로 보여 주고, 실패하면 LMS 행을 남길지 지울지는 질문에 적는다. ④ 목록 화면에서 `PROCESSING`이면 서비스 `GET /api/chat/documents?academyId=&cohortId=`로 상태를 갱신한다. 응답의 `source:"folder"` 문서(챗봇 서버 폴더 문서)는 LMS 목록에 섞지 않는다. ⑤ `deleteChatDocAction`: 서비스 `DELETE /api/chat/documents/{serviceDocId}` 후 LMS 행 삭제. 404는 이미 지워진 것으로 본다. ⑥ `USE_AI_MOCK=true`이면 지금처럼 서비스 호출 없이 동작한다. 로컬 연결값: `CHATBOT_API_URL=http://localhost:3000/service`, `CHATBOT_SERVICE_TOKEN`은 챗봇 `.env`와 같은 값(채팅·커밋에 적지 않음). | 목 해제 상태에서 PDF 등록→READY→질문 답변·출처 표시→삭제 후 검색에서 빠짐, 타입·린트·테스트 통과 |
+| T6 | 진행 | **챗봇 서비스 실제 연동 (LMS 쪽).** 챗봇 레포(기준 커밋 `88300fa`)는 규격 엔드포인트를 이미 구현했다. ① `src/lib/ai/types.ts`의 `sources[].page`를 `z.number().nullish()`로 바꾼다(챗봇이 md·txt 출처에 `page:null`을 보내서 지금은 응답 검증이 실패한다. 서비스가 주는 추가 필드 `section`은 무시해도 된다). ② `ChatbotDocument`에 `serviceDocId Int?`, `status`(PROCESSING·READY·FAILED), `error` 칸을 추가한다(마이그레이션은 `db:diff` 방식). ③ `uploadChatDocAction`: LMS 저장 후 `POST {CHATBOT_API_URL}/api/chat/documents`(multipart: file·title·audience·cohortId·academyId)로 넘기고 응답의 `id`·`status`를 저장한다. 서비스 오류(422·503 등)는 사용자 문구로 보여 주고, 실패하면 LMS 행을 남길지 지울지는 질문에 적는다. ④ 목록 화면에서 `PROCESSING`이면 서비스 `GET /api/chat/documents?academyId=&cohortId=`로 상태를 갱신한다. 응답의 `source:"folder"` 문서(챗봇 서버 폴더 문서)는 LMS 목록에 섞지 않는다. ⑤ `deleteChatDocAction`: 서비스 `DELETE /api/chat/documents/{serviceDocId}` 후 LMS 행 삭제. 404는 이미 지워진 것으로 본다. ⑥ `USE_AI_MOCK=true`이면 지금처럼 서비스 호출 없이 동작한다. 로컬 연결값: `CHATBOT_API_URL=http://localhost:3000/service`, `CHATBOT_SERVICE_TOKEN`은 챗봇 `.env`와 같은 값(채팅·커밋에 적지 않음). | 목 해제 상태에서 PDF 등록→READY→질문 답변·출처 표시→삭제 후 검색에서 빠짐, 타입·린트·테스트 통과 |
+
+**T6 진행 (2026-11-26)**: LMS 코드 ①~⑥ 작성, 개발 DB 마이그레이션 적용, 타입·린트·테스트 통과. Q1~Q5는 답이 없어 권장안으로 구현했다. 남은 것은 완료 기준의 실제 흐름 시험(PDF 등록→READY→답변·출처→삭제)이며, LMS `.env` 설정 뒤에 한다.
 
 ### 사람이 할 일 (코드 세션이 대신하지 않음)
 - 스테이징 서버의 새 DB로 `lms_kdt`를 옮기는 작업(접속 정보 변경, 마이그레이션 적용, 시드)은 이종섭이 직접 한다. 코드 세션은 절차만 `docs/user-tasks.md`에 적는다.

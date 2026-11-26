@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 
 type Msg =
   | { from: "user"; text: string }
-  | { from: "bot"; text: string; sources: { docId: number; title: string; page?: number }[]; grounded: boolean }
+  | { from: "bot"; text: string; sources: { docId: number; title: string; page?: number | null }[]; grounded: boolean }
   | { from: "error"; text: string };
 
 export function ChatbotWidget({ cohortId }: { cohortId: number }) {

@@ -3,7 +3,7 @@
 // 챗봇 매뉴얼 관리(클라이언트): PDF 등록 폼, 목록, 삭제 확인.
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { FileText, Trash2 } from "lucide-react";
+import { FileText, RefreshCw, Trash2 } from "lucide-react";
 import { uploadChatDocAction, deleteChatDocAction } from "@/server/chatbot";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,6 +11,8 @@ import { Label } from "@/components/ui/label";
 import { Alert } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Widget } from "@/components/Widget";
+import { StatusBadge } from "@/components/StatusBadge";
+import { CHAT_DOC_TITLE_MAX } from "@/lib/ai/types";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 
 const AUDIENCE_LABELS = { ALL: "전체", STUDENT: "수강생", INSTRUCTOR: "교직원" } as const;
@@ -26,6 +28,8 @@ export interface ChatDocItem {
   dateLabel: string;
   uploaderName: string;
   canDelete: boolean;
+  status: "PROCESSING" | "READY" | "FAILED" | "UNSYNCED";
+  error: string | null;
 }
 
 export function ChatbotDocsClient({ cohortId, docs, canAcademyWide }: { cohortId: number; docs: ChatDocItem[]; canAcademyWide: boolean }) {
@@ -45,7 +49,7 @@ export function ChatbotDocsClient({ cohortId, docs, canAcademyWide }: { cohortId
       const res = await uploadChatDocAction(cohortId, fd);
       if (!res.ok) return setError(res.error);
       form.reset();
-      setSaved("문서를 등록했습니다.");
+      setSaved(res.status === "PROCESSING" ? "문서를 등록했습니다. 챗봇이 처리 중이라 잠시 후부터 답변에 쓰입니다." : "문서를 등록했습니다.");
       router.refresh();
     });
   };
@@ -70,7 +74,7 @@ export function ChatbotDocsClient({ cohortId, docs, canAcademyWide }: { cohortId
         <form onSubmit={onSubmit} className="space-y-3">
           <div className="space-y-1.5">
             <Label htmlFor="cd-title">문서 제목</Label>
-            <Input id="cd-title" name="title" required maxLength={200} placeholder="예: 운영 매뉴얼" />
+            <Input id="cd-title" name="title" required maxLength={CHAT_DOC_TITLE_MAX} placeholder="예: 운영 매뉴얼" />
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="cd-file">PDF 파일</Label>
@@ -100,6 +104,12 @@ export function ChatbotDocsClient({ cohortId, docs, canAcademyWide }: { cohortId
       </Widget>
 
       <Widget title="등록된 문서" subtitle={`${docs.length}개`} empty={docs.length === 0 ? { message: "아직 등록된 매뉴얼이 없습니다. 왼쪽에서 PDF를 등록해 주세요." } : false}>
+        {docs.some((d) => d.status === "PROCESSING") && (
+          <Button variant="outline" size="sm" onClick={() => router.refresh()} className="mb-2 cursor-pointer">
+            <RefreshCw />
+            상태 새로고침
+          </Button>
+        )}
         <ul className="divide-y divide-neutral-200">
           {docs.map((d) => (
             <li key={d.id} className="flex items-start justify-between gap-3 py-2.5">
@@ -111,8 +121,11 @@ export function ChatbotDocsClient({ cohortId, docs, canAcademyWide }: { cohortId
                 <p className="mt-0.5 flex flex-wrap items-center gap-1.5 text-xs text-neutral-500">
                   <Badge>{d.isAcademyWide ? "학원 전체" : "이 반"}</Badge>
                   <Badge variant="outline">{AUDIENCE_LABELS[d.audience]}</Badge>
+                  <StatusBadge domain="chatDoc" value={d.status} />
                   {d.sizeLabel} · {d.dateLabel} · {d.uploaderName}
                 </p>
+                {d.status === "FAILED" && <p className="mt-1 text-xs text-status-danger-fg">{d.error ?? "문서를 처리하지 못했습니다."} 삭제한 뒤 다시 등록해 주세요.</p>}
+                {d.status === "UNSYNCED" && <p className="mt-1 text-xs text-neutral-500">챗봇에 전달되지 않은 문서입니다. 삭제한 뒤 다시 등록해 주세요.</p>}
               </div>
               {d.canDelete && (
                 <Button variant="destructive-outline" size="sm" onClick={() => setTarget(d)} aria-label={`${d.title} 삭제`} className="cursor-pointer">

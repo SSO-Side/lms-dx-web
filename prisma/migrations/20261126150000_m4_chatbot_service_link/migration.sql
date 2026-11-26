@@ -1,0 +1,4 @@
+-- AlterTable
+ALTER TABLE `ChatbotDocument` ADD COLUMN `error` VARCHAR(500) NULL,
+    ADD COLUMN `serviceDocId` INTEGER NULL,
+    ADD COLUMN `status` ENUM('PROCESSING', 'READY', 'FAILED') NOT NULL DEFAULT 'READY';

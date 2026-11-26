@@ -22,7 +22,7 @@ export async function listVisibleChatDocs(academyId: number, cohortId: number, r
 export async function listManageChatDocs(academyId: number, cohortId: number) {
   return db.chatbotDocument.findMany({
     where: { academyId, OR: [{ cohortId }, { cohortId: null }] },
-    select: { id: true, title: true, audience: true, cohortId: true, fileName: true, fileSize: true, createdAt: true, uploader: { select: { name: true } } },
+    select: { id: true, title: true, audience: true, cohortId: true, fileName: true, fileSize: true, serviceDocId: true, status: true, error: true, createdAt: true, uploader: { select: { name: true } } },
     orderBy: { id: "desc" },
   });
 }
